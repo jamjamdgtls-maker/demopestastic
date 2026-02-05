@@ -681,25 +681,31 @@ const DB = {
 
 // Replace the existing DB.saveTeam function with this corrected version:
 
+// ===== FIX 1: Replace DB.saveTeam (around line 569) =====
+
 async saveTeam(team) {
   try {
     if (!team.id) {
-      // New team - set both createdAt and updatedAt
-      team.id = this.generateId();
-      team.createdAt = new Date().toISOString();
-      team.updatedAt = new Date().toISOString();
-      await database.ref(`teams/${team.id}`).set(team);
-      return team;
+      // New team - create complete object
+      const newTeam = {
+        id: this.generateId(),
+        name: team.name,
+        members: team.members || [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      await database.ref(`teams/${newTeam.id}`).set(newTeam);
+      return newTeam;
     } else {
-      // Existing team - fetch current data to preserve createdAt
+      // Existing team - fetch to preserve createdAt
       const snapshot = await database.ref(`teams/${team.id}`).once('value');
       const existingTeam = snapshot.val();
       
       const updatedTeam = {
         id: team.id,
         name: team.name,
-        members: team.members,
-        createdAt: existingTeam?.createdAt || new Date().toISOString(), // Preserve or set if missing
+        members: team.members || [],
+        createdAt: existingTeam?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       
@@ -709,6 +715,52 @@ async saveTeam(team) {
   } catch (error) {
     console.error('Error saving team:', error);
     throw error;
+  }
+}
+
+// ===== FIX 2: Replace UI.saveTeam (around line 1460) =====
+
+async saveTeam() {
+  const teamName = document.getElementById('team-name').value.trim();
+  if (!teamName) {
+    this.showToast('Please enter team name', 'error');
+    return;
+  }
+
+  this.showLoading();
+  try {
+    const teamId = document.getElementById('team-id').value;
+    const memberInputs = document.querySelectorAll('#team-members-container .form-grid');
+    const members = [];
+
+    memberInputs.forEach(div => {
+      const name = div.querySelector('.member-name').value.trim();
+      const role = div.querySelector('.member-role').value.trim();
+      if (name) {
+        members.push({ name, role: role || 'Technician' });
+      }
+    });
+
+    // Only pass id, name, and members - let DB.saveTeam handle timestamps
+    const team = {
+      name: teamName,
+      members
+    };
+    
+    // Only include id if editing existing team
+    if (teamId) {
+      team.id = teamId;
+    }
+
+    await DB.saveTeam(team);
+
+    this.closeTeamModal();
+    this.showToast(teamId ? 'Team updated' : 'Team created');
+    this.renderTeamsPage();
+  } catch (error) {
+    this.showToast('Error saving team: ' + error.message, 'error');
+  } finally {
+    this.hideLoading();
   }
 }
 
