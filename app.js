@@ -701,7 +701,7 @@ const DB = {
     }
   },
 
-  // ===== FIXED DB.saveTeam: sanitize + always set timestamps =====
+// ===== FIXED DB.saveTeam: sanitize + always set timestamps =====
   async saveTeam(team) {
     try {
       // Normalize members array to ensure no undefined fields
@@ -731,11 +731,17 @@ const DB = {
         const snapshot = await database.ref(`teams/${team.id}`).once('value');
         const existingTeam = snapshot.val();
 
+        // FIX: Ensure createdAt is NEVER undefined
+        // Use existing createdAt if available, otherwise create new timestamp
+        const createdAtValue = (existingTeam && existingTeam.createdAt) 
+          ? existingTeam.createdAt 
+          : new Date().toISOString();
+
         const updatedTeam = {
           id: team.id,
           name: team.name || (existingTeam?.name || ''),
           members: normalizedMembers,
-          createdAt: existingTeam?.createdAt || new Date().toISOString(),
+          createdAt: createdAtValue,  // This is now guaranteed to be a string, never undefined
           updatedAt: new Date().toISOString()
         };
 
