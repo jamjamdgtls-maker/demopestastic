@@ -679,30 +679,38 @@ const DB = {
     }
   },
 
-  async saveTeam(team) {
-    try {
-      if (!team.id) {
-        // New team
-        team.id = this.generateId();
-        team.createdAt = new Date().toISOString();
-        team.updatedAt = new Date().toISOString();
-        await database.ref(`teams/${team.id}`).set(team);
-      } else {
-        // Existing team - use update to preserve createdAt
-        const updates = {
-          name: team.name,
-          members: team.members,
-          updatedAt: new Date().toISOString()
-        };
-        await database.ref(`teams/${team.id}`).update(updates);
-        team = { ...team, ...updates };
-      }
+// Replace the existing DB.saveTeam function with this corrected version:
+
+async saveTeam(team) {
+  try {
+    if (!team.id) {
+      // New team - set both createdAt and updatedAt
+      team.id = this.generateId();
+      team.createdAt = new Date().toISOString();
+      team.updatedAt = new Date().toISOString();
+      await database.ref(`teams/${team.id}`).set(team);
       return team;
-    } catch (error) {
-      console.error('Error saving team:', error);
-      throw error;
+    } else {
+      // Existing team - fetch current data to preserve createdAt
+      const snapshot = await database.ref(`teams/${team.id}`).once('value');
+      const existingTeam = snapshot.val();
+      
+      const updatedTeam = {
+        id: team.id,
+        name: team.name,
+        members: team.members,
+        createdAt: existingTeam?.createdAt || new Date().toISOString(), // Preserve or set if missing
+        updatedAt: new Date().toISOString()
+      };
+      
+      await database.ref(`teams/${team.id}`).set(updatedTeam);
+      return updatedTeam;
     }
-  },
+  } catch (error) {
+    console.error('Error saving team:', error);
+    throw error;
+  }
+}
 
   async deleteTeam(id) {
     try {
