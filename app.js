@@ -1294,7 +1294,200 @@ const UI = {
   },
 
   async viewContractDetail(contractId) {
-    this.showToast('Contract detail view - implement modal', 'info');
+    this.showLoading();
+    try {
+      const contract = await DB.getContract(contractId);
+      if (!contract) {
+        this.showToast('Contract not found', 'error');
+        return;
+      }
+
+      const client = await DB.getClientByCustomerNo(contract.customerNo);
+      const treatments = await DB.getTreatmentsByContract(contractId);
+      const payments = await DB.getPaymentsByContract(contractId);
+
+      // Calculate payment totals
+      const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      const balance = parseFloat(contract.totalAmount || 0) - totalPaid;
+
+      // Generate HTML content
+      const content = `
+        <div class="contract-detail-grid">
+          <!-- Client Information -->
+          <div class="detail-section">
+            <h4 class="detail-section-title">Client Information</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Customer No:</span>
+                <span class="detail-value">${contract.customerNo}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Client Name:</span>
+                <span class="detail-value">${client?.clientName || '-'}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Contact Person:</span>
+                <span class="detail-value">${client?.contactPerson || '-'}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Contact Number:</span>
+                <span class="detail-value">${client?.contactNumber || '-'}</span>
+              </div>
+              <div class="detail-item full-width">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${client?.address || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contract Information -->
+          <div class="detail-section">
+            <h4 class="detail-section-title">Contract Information</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Contract No:</span>
+                <span class="detail-value">#${contract.contractNumber}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="badge badge-${contract.status}">${contract.status}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Treatment Method:</span>
+                <span class="detail-value">${contract.treatmentMethod}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Frequency:</span>
+                <span class="detail-value">${contract.treatmentFrequency}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Start Date:</span>
+                <span class="detail-value">${Validation.formatDate(contract.contractStartDate)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">End Date:</span>
+                <span class="detail-value">${Validation.formatDate(contract.contractEndDate)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Contract Length:</span>
+                <span class="detail-value">${contract.contractLength} months</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Warranty:</span>
+                <span class="detail-value">${contract.warrantyYears} year(s)</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Sales Agent:</span>
+                <span class="detail-value">${contract.salesAgent || '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Information -->
+          <div class="detail-section">
+            <h4 class="detail-section-title">Financial Information</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Total Amount:</span>
+                <span class="detail-value text-bold">${Validation.formatCurrency(contract.totalAmount)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Downpayment:</span>
+                <span class="detail-value">${Validation.formatCurrency(contract.downpaymentAmount)} (${contract.downpaymentPercent}%)</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Paid:</span>
+                <span class="detail-value text-success">${Validation.formatCurrency(totalPaid)}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Balance:</span>
+                <span class="detail-value ${balance > 0 ? 'text-danger' : 'text-success'}">${Validation.formatCurrency(balance)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Treatments Schedule -->
+          <div class="detail-section full-width">
+            <h4 class="detail-section-title">Treatment Schedule (${treatments.length} treatments)</h4>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Treatment Type</th>
+                    <th>Status</th>
+                    <th>Team</th>
+                    <th>Time Slot</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${treatments.length === 0 ? 
+                    '<tr><td colspan="6" class="text-center text-muted">No treatments scheduled</td></tr>' :
+                    treatments.map((t, idx) => `
+                      <tr>
+                        <td>${idx + 1}</td>
+                        <td>${Validation.formatDate(t.treatmentDate)}</td>
+                        <td>${t.treatmentType}</td>
+                        <td><span class="badge badge-${t.status}">${t.status}</span></td>
+                        <td>${t.teamName || '-'}</td>
+                        <td>${t.timeSlot || '-'}</td>
+                      </tr>
+                    `).join('')
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Payment History -->
+          <div class="detail-section full-width">
+            <h4 class="detail-section-title">Payment History (${payments.length} payments)</h4>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>OR Number</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Received By</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${payments.length === 0 ? 
+                    '<tr><td colspan="6" class="text-center text-muted">No payments recorded</td></tr>' :
+                    payments.map(p => `
+                      <tr>
+                        <td>${p.orNumber}</td>
+                        <td>${Validation.formatDate(p.paymentDate)}</td>
+                        <td class="text-bold">${Validation.formatCurrency(p.amount)}</td>
+                        <td>${p.paymentType}</td>
+                        <td>${p.receivedBy}</td>
+                        <td><span class="badge badge-${p.status}">${p.status}</span></td>
+                      </tr>
+                    `).join('')
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('contract-detail-content').innerHTML = content;
+      document.getElementById('contract-detail-modal').classList.remove('hidden');
+    } catch (error) {
+      console.error('Error loading contract details:', error);
+      this.showToast('Error loading contract details', 'error');
+    } finally {
+      this.hideLoading();
+    }
+  },
+
+  closeContractDetailModal() {
+    document.getElementById('contract-detail-modal').classList.add('hidden');
   },
 
   // ===== PAYMENTS PAGE =====
@@ -2436,9 +2629,19 @@ const UI = {
       const team = {
         id: teamId || null,
         name: teamName,
-        members,
-        createdAt: teamId ? undefined : new Date().toISOString()
+        members
       };
+
+      // Only set createdAt for new teams
+      if (!teamId) {
+        team.createdAt = new Date().toISOString();
+      } else {
+        // For updates, get existing createdAt
+        const existingTeam = await DB.getTeamById(teamId);
+        if (existingTeam && existingTeam.createdAt) {
+          team.createdAt = existingTeam.createdAt;
+        }
+      }
 
       await DB.saveTeam(team);
 
