@@ -994,12 +994,6 @@ body {
   color: var(--status-danger);
 }
 
-/* Team colors */
-.team-1 { border-left: 3px solid #3b82f6; }
-.team-2 { border-left: 3px solid #10b981; }
-.team-3 { border-left: 3px solid #f59e0b; }
-.team-4 { border-left: 3px solid #8b5cf6; }
-
 /* ============= Modal ============= */
 .modal-overlay {
   position: fixed;
