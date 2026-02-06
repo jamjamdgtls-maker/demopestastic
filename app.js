@@ -1026,6 +1026,7 @@ const UI = {
         break;
       case 'contract':
         this.loadExistingClients();
+        this.loadTeamsToDropdown('assigned-team', true);
         break;
       case 'payments':
         this.renderPaymentsPage();
@@ -1839,6 +1840,7 @@ const UI = {
       const statusFilter = document.getElementById('schedule-status-filter')?.value || '';
 
       let treatments = await DB.getScheduledTreatments();
+      const teams = await DB.getTeams();
 
       if (this.scheduleTeamFilter !== 'all') {
         treatments = treatments.filter(t => t.teamId === this.scheduleTeamFilter);
@@ -1889,6 +1891,9 @@ const UI = {
         tbody.innerHTML = treatments.map(t => {
           const status = DB.getTreatmentStatus(t);
           const statusClass = status === 'Completed' ? 'badge-success' : status === 'Lapsed' ? 'badge-danger' : status === 'Cancelled' ? 'badge-muted' : 'badge-info';
+          const team = teams.find(team => team.id === t.teamId);
+          const teamDisplay = team ? team.name : (t.teamId || '-');
+          
           return `
             <tr>
               <td>${t.customerNo}</td>
@@ -1896,7 +1901,7 @@ const UI = {
               <td>#${t.treatmentNo}</td>
               <td>${Validation.formatDate(t.dateScheduled)}</td>
               <td>${t.timeSlot || '-'}</td>
-              <td>${t.teamId || '-'}</td>
+              <td>${teamDisplay}</td>
               <td>${t.treatmentType || '-'}</td>
               <td><span class="badge ${statusClass}">${status}</span></td>
               <td class="actions-cell">
