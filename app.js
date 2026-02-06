@@ -1327,5 +1327,218 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Additional event listeners stay the same...
+  // ============= EVENT LISTENERS =============
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize authentication
+  Auth.init();
+
+  // Google login button
+  document.getElementById('google-login-btn')?.addEventListener('click', () => {
+    Auth.signInWithGoogle();
+  });
+
+  // Mobile menu
+  document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('visible');
+  });
+
+  document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+  });
+
+  // Navigation
+  document.querySelectorAll('.nav-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (tab) UI.switchTab(tab);
+    });
+  });
+
+  // Search inputs - debounce
+  const debounce = (fn, delay) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn(...args), delay);
+    };
+  };
+
+  document.getElementById('clients-search')?.addEventListener('input', debounce(() => UI.renderClientsPage(), 300));
+  document.getElementById('contracts-search')?.addEventListener('input', debounce(() => UI.renderContractsPage(), 300));
+  document.getElementById('contracts-status-filter')?.addEventListener('change', () => UI.renderContractsPage());
+  document.getElementById('payments-search')?.addEventListener('input', debounce(() => UI.renderPaymentsPage(), 300));
+  document.getElementById('payments-status-filter')?.addEventListener('change', () => UI.renderPaymentsPage());
+  document.getElementById('schedule-search')?.addEventListener('input', debounce(() => UI.renderScheduleReport(), 300));
+  document.getElementById('schedule-date-filter')?.addEventListener('change', () => UI.renderScheduleReport());
+  document.getElementById('schedule-status-filter')?.addEventListener('change', () => UI.renderScheduleReport());
+  document.getElementById('complaints-search')?.addEventListener('input', debounce(() => UI.renderComplaintsPage(), 300));
+  document.getElementById('complaints-priority-filter')?.addEventListener('change', () => UI.renderComplaintsPage());
+  document.getElementById('complaints-status-filter')?.addEventListener('change', () => UI.renderComplaintsPage());
+  document.getElementById('updates-search')?.addEventListener('input', debounce(() => UI.renderUpdatesReport(), 300));
+  document.getElementById('updates-type-filter')?.addEventListener('change', () => UI.renderUpdatesReport());
+
+  // Contract form helpers
+  document.getElementById('client-type')?.addEventListener('change', (e) => {
+    const isExisting = e.target.value === 'existing';
+    document.getElementById('existing-client-group').classList.toggle('hidden', !isExisting);
+    if (isExisting) {
+      UI.loadExistingClients();
+    }
+  });
+
+  document.getElementById('contract-start')?.addEventListener('change', () => {
+    const startDate = document.getElementById('contract-start').value;
+    const months = document.getElementById('contract-length').value;
+    if (startDate && months) {
+      document.getElementById('contract-end').value = DB.calculateEndDate(startDate, months);
+    }
+  });
+
+  document.getElementById('contract-length')?.addEventListener('input', () => {
+    const startDate = document.getElementById('contract-start').value;
+    const months = document.getElementById('contract-length').value;
+    if (startDate && months) {
+      document.getElementById('contract-end').value = DB.calculateEndDate(startDate, months);
+    }
+  });
+
+  document.getElementById('downpayment-percent')?.addEventListener('input', (e) => {
+    const percent = e.target.value;
+    document.getElementById('downpayment-percent-display').textContent = `${percent}%`;
+    
+    const total = parseFloat(document.getElementById('total-amount').value) || 0;
+    const downpayment = total * (percent / 100);
+    document.getElementById('downpayment-amount').value = downpayment.toFixed(2);
+  });
+
+  document.getElementById('total-amount')?.addEventListener('input', () => {
+    const total = parseFloat(document.getElementById('total-amount').value) || 0;
+    const percent = parseInt(document.getElementById('downpayment-percent').value) || 0;
+    const downpayment = total * (percent / 100);
+    document.getElementById('downpayment-amount').value = downpayment.toFixed(2);
+  });
+
+  // Reset form button
+  document.getElementById('reset-form-btn')?.addEventListener('click', () => {
+    document.getElementById('contract-form').reset();
+    document.getElementById('treatment-table-container').classList.add('hidden');
+    UI.generatedTreatments = [];
+  });
+
+  // Contract form submission
+  document.getElementById('contract-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    const clientName = document.getElementById('client-name').value.trim();
+    const contactPerson = document.getElementById('contact-person').value.trim();
+    const contactNumber = document.getElementById('contact-number').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const treatmentMethod = document.getElementById('treatment-method').value;
+    const contractLength = document.getElementById('contract-length').value;
+    const contractStart = document.getElementById('contract-start').value;
+    const treatmentFrequency = document.getElementById('treatment-frequency').value;
+    const totalAmount = document.getElementById('total-amount').value;
+    const salesAgent = document.getElementById('sales-agent').value;
+
+    if (!clientName || !contactPerson || !contactNumber || !address || !treatmentMethod || !contractLength || !contractStart || !treatmentFrequency || !totalAmount || !salesAgent) {
+      UI.showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    if (UI.generatedTreatments.length === 0) {
+      UI.showToast('Please generate treatment plan before saving', 'error');
+      return;
+    }
+
+    UI.showLoading();
+    try {
+      const clientType = document.getElementById('client-type').value;
+      let customerNo;
+      let client;
+
+      if (clientType === 'existing') {
+        customerNo = document.getElementById('existing-client-select').value;
+        client = await DB.getClientByCustomerNo(customerNo);
+      } else {
+        customerNo = await DB.generateCustomerNo();
+        
+        // Get pest problems
+        const pests = Array.from(document.querySelectorAll('#pest-checkboxes input:checked')).map(cb => cb.value);
+
+        client = {
+          customerNo,
+          clientName,
+          contactPerson,
+          contactNumber,
+          address,
+          areaSize: document.getElementById('area-size').value,
+          email: document.getElementById('email').value,
+          source: document.getElementById('source').value,
+          salesAgent,
+          pestProblems: pests,
+          createdAt: new Date().toISOString()
+        };
+
+        await DB.saveClient(client);
+      }
+
+      // Get next contract number
+      const contractNumber = await DB.getNextContractNumber(customerNo);
+
+      // Create contract
+      const contract = {
+        customerNo,
+        contractNumber,
+        contractStartDate: contractStart,
+        contractEndDate: DB.calculateEndDate(contractStart, contractLength),
+        contractLength: parseInt(contractLength),
+        treatmentMethod,
+        treatmentFrequency,
+        totalAmount: parseFloat(totalAmount),
+        downpaymentPercent: parseInt(document.getElementById('downpayment-percent').value),
+        downpaymentAmount: parseFloat(document.getElementById('downpayment-amount').value) || 0,
+        warrantyYears: parseInt(document.getElementById('warranty-years').value) || 1,
+        salesAgent,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+
+      const savedContract = await DB.saveContract(contract);
+
+      // Update and save treatments
+      const treatments = UI.generatedTreatments.map(t => ({
+        ...t,
+        id: DB.generateId(),
+        contractId: savedContract.id,
+        customerNo
+      }));
+
+      await DB.saveTreatments(treatments);
+
+      // Log creation
+      await DB.saveContractUpdate({
+        customerNo,
+        changeType: 'Contract Created',
+        oldValue: '-',
+        newValue: `Contract #${contractNumber}`,
+        reason: `${treatmentMethod} - ${Validation.formatCurrency(totalAmount)}`
+      });
+
+      // Reset form
+      document.getElementById('contract-form').reset();
+      document.getElementById('treatment-table-container').classList.add('hidden');
+      UI.generatedTreatments = [];
+
+      UI.showToast('Contract created successfully!');
+      UI.switchTab('contracts');
+    } catch (error) {
+      console.error('Error saving contract:', error);
+      UI.showToast('Error creating contract: ' + error.message, 'error');
+    } finally {
+      UI.hideLoading();
+    }
+  });
 });
