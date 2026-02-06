@@ -911,6 +911,7 @@ const UI = {
   },
 
 // --- Defensive: initDefaultTeams (no-op) ---
+// --- Defensive: initDefaultTeams (no-op) ---
 async initDefaultTeams() {
   // Intentionally do NOT seed or auto-create any teams on startup.
   // Teams must be created manually via the UI by an admin.
