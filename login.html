@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pestastic — Sign In</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:        hsl(142, 76%, 36%);
+      --primary-hover:  hsl(142, 76%, 30%);
+      --primary-light:  hsl(142, 76%, 95%);
+      --primary-glow:   hsla(142, 76%, 36%, 0.25);
+      --red:            hsl(0, 84%, 50%);
+      --red-bg:         hsl(0, 84%, 96%);
+      --red-text:       hsl(0, 84%, 38%);
+      --amber:          hsl(38, 92%, 50%);
+      --amber-bg:       hsl(38, 92%, 95%);
+      --amber-text:     hsl(38, 92%, 32%);
+      --border:         #e5e7eb;
+      --text:           #111827;
+      --text-secondary: #4b5563;
+      --text-muted:     #9ca3af;
+      --bg-secondary:   #f8f9fa;
+      --radius:         8px;
+      --radius-lg:      14px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    html, body {
+      min-height: 100vh;
+      font-family: var(--font);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      color: var(--text);
+    }
+
+    /* ── Background ── */
+    body {
+      background: #0a1a0d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient green glow blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, hsla(142,76%,36%,0.18) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+    }
+
+    body::after {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, hsla(142,60%,25%,0.15) 0%, transparent 70%);
+      bottom: -80px;
+      right: -80px;
+    }
+
+    /* Subtle dot grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    /* ── Container ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 420px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.08),
+        0 4px 6px rgba(0,0,0,0.1),
+        0 20px 50px rgba(0,0,0,0.35),
+        0 0 80px var(--primary-glow);
+      padding: 44px 40px 40px;
+      text-align: center;
+      animation: cardIn 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1);    }
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .logo-icon {
+      width: 68px;
+      height: 68px;
+      background: linear-gradient(135deg, hsl(142,76%,40%) 0%, hsl(142,76%,30%) 100%);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px hsla(142,76%,36%,0.40);
+      position: relative;
+    }
+
+    /* Pulse ring */
+    .logo-icon::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 22px;
+      background: hsla(142,76%,36%,0.15);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);    opacity: 1;   }
+      50%       { transform: scale(1.06); opacity: 0.6; }
+    }
+
+    .logo-icon svg {
+      width: 38px;
+      height: 38px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Heading ── */
+    .card h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .card .tagline {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider span {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Google button ── */
+    .btn-google {
+      width: 100%;
+      padding: 13px 20px;
+      border: 1.5px solid var(--border);
+      background: #ffffff;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-google::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .btn-google:hover {
+      border-color: #c8c8c8;
+      background: var(--bg-secondary);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .btn-google:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .btn-google:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* Loading state */
+    .btn-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid #e5e7eb;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error / Info messages ── */
+    .msg-box {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+      display: none;
+      border: 1px solid transparent;
+    }
+
+    .msg-box.error   { background: var(--red-bg);   color: var(--red-text);   border-color: #fca5a5; display: block; }
+    .msg-box.warning { background: var(--amber-bg); color: var(--amber-text); border-color: #fcd34d; display: block; }
+    .msg-box.success { background: hsl(142,76%,95%); color: hsl(142,76%,28%); border-color: hsl(142,76%,80%); display: block; }
+
+    .msg-box-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .msg-box-inner svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Footer note ── */
+    .card-footer {
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Brand strip below card ── */
+    .brand-note {
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.04em;
+    }
+
+    .brand-note strong { color: rgba(255,255,255,0.5); font-weight: 600; }
+
+    /* ── Screen switching ── */
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* ── Pending screen specifics ── */
+    .pending-icon-wrap {
+      width: 76px;
+      height: 76px;
+      background: var(--amber-bg);
+      border: 2px solid #fcd34d;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 22px;
+      position: relative;
+    }
+
+    /* Spinning ring on pending icon */
+    .pending-icon-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 2px dashed #fcd34d;
+      opacity: 0.6;
+      animation: spin 8s linear infinite;
+    }
+
+    .pending-icon-wrap svg {
+      width: 34px;
+      height: 34px;
+      color: var(--amber);
+    }
+
+    .pending-steps {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .pending-steps h4 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .pending-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 4px 0;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .step-dot.done   { background: var(--primary); }
+    .step-dot.active { background: var(--amber); box-shadow: 0 0 0 3px hsla(38,92%,50%,0.2); }
+    .step-dot.idle   { background: #d1d5db; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: var(--font);
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px hsla(142,76%,36%,0.3); }
+    .btn-primary:active { transform: translateY(0); box-shadow: none; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-outline:hover { background: var(--bg-secondary); color: var(--text); }
+
+    .btn + .btn { margin-top: 10px; }
+
+    /* ── Denied screen ── */
+    .denied-icon-wrap {
+      width: 76px;
+      height: 76px;
+      background: var(--red-bg);
+      border: 2px solid #fca5a5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 22px;
+    }
+
+    .denied-icon-wrap svg { width: 34px; height: 34px; color: var(--red); }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .card { padding: 36px 24px 32px; }
+      .card h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+
+  <div class="page">
+
+    <!-- ============================================================
+         LOGIN CARD
+    ============================================================ -->
+    <div class="card" id="login-card">
+
+      <!-- Login screen -->
+      <div class="screen active" id="screen-login">
+        <div class="logo-wrap">
+          <div class="logo-icon">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Bug body -->
+              <ellipse cx="20" cy="22" rx="9" ry="11" fill="white" fill-opacity="0.95"/>
+              <!-- Head -->
+              <circle cx="20" cy="12" r="5.5" fill="white" fill-opacity="0.95"/>
+              <!-- Eyes -->
+              <circle cx="17.8" cy="11.2" r="1.4" fill="hsl(142,76%,36%)"/>
+              <circle cx="22.2" cy="11.2" r="1.4" fill="hsl(142,76%,36%)"/>
+              <!-- Antennae -->
+              <path d="M17 8 C15 5 12 4 11 3" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M23 8 C25 5 28 4 29 3" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <!-- Body stripes -->
+              <path d="M12 20 C12 20 16 21 20 21 C24 21 28 20 28 20" stroke="hsl(142,76%,36%)" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+              <path d="M12.5 24 C12.5 24 16 25 20 25 C24 25 27.5 24 27.5 24" stroke="hsl(142,76%,36%)" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+              <!-- Legs left -->
+              <path d="M12 19 L7 17" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 23 L7 22" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 27 L7 28" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <!-- Legs right -->
+              <path d="M28 19 L33 17" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M28 23 L33 22" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M28 27 L33 28" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <h1>Pestastic</h1>
+        <p class="tagline">Contract Management System<br>Sign in to continue</p>
+
+        <div class="divider"><span>Continue with</span></div>
+
+        <button class="btn-google" id="btn-google-signin">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
+        <div class="msg-box error" id="login-error">
+          <div class="msg-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span id="login-error-text"></span>
+          </div>
+        </div>
+
+        <p class="card-footer">
+          By signing in, you agree to the terms of use.<br>
+          Access is role-based and requires admin approval.
+        </p>
+      </div>
+
+      <!-- Pending screen -->
+      <div class="screen" id="screen-pending">
+        <div class="pending-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+
+        <h1 style="font-size:21px; margin-bottom:8px;">Pending Approval</h1>
+        <p class="tagline" style="margin-bottom:24px;">
+          Your account has been created and is waiting for an administrator to grant access.
+        </p>
+
+        <div class="pending-steps">
+          <h4>Account Status</h4>
+          <div class="pending-step">
+            <div class="step-dot done"></div>
+            Account created
+          </div>
+          <div class="pending-step">
+            <div class="step-dot active"></div>
+            Awaiting admin approval
+          </div>
+          <div class="pending-step">
+            <div class="step-dot idle"></div>
+            Access granted
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-check-status">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span id="check-status-text">Check Approval Status</span>
+        </button>
+
+        <button class="btn btn-outline" id="btn-signout-pending">
+          Sign Out
+        </button>
+
+        <div class="msg-box" id="pending-msg">
+          <div class="msg-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="pending-msg-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="pending-msg-text"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Denied screen -->
+      <div class="screen" id="screen-denied">
+        <div class="denied-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+
+        <h1 style="font-size:21px; margin-bottom:8px;">Access Denied</h1>
+        <p class="tagline" style="margin-bottom:24px; color: hsl(0,84%,50%);">
+          Your account access has been denied by an administrator.
+        </p>
+
+        <div class="msg-box error" style="display:block; margin-bottom:20px;">
+          <div class="msg-box-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>If you believe this is a mistake, please contact your system administrator to request access.</span>
+          </div>
+        </div>
+
+        <button class="btn btn-outline" id="btn-signout-denied">
+          Back to Sign In
+        </button>
+      </div>
+
+    </div>
+
+    <p class="brand-note">Pestastic &mdash; <strong>Pest Control Management System</strong></p>
+  </div>
+
+  <!-- ============================================================
+       FIREBASE + AUTH LOGIC
+  ============================================================ -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    /* ── Firebase init ── */
+    const app = initializeApp({
+      apiKey:            "AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y",
+      authDomain:        "pestaticdatabase.firebaseapp.com",
+      databaseURL:       "https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:         "pestaticdatabase",
+      storageBucket:     "pestaticdatabase.firebasestorage.app",
+      messagingSenderId: "930313053124",
+      appId:             "1:930313053124:web:66e6ce6c889dc747d77a91"
+    });
+
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    /* ── Screen helpers ── */
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showError(msg) {
+      const el   = document.getElementById('login-error');
+      const text = document.getElementById('login-error-text');
+      text.textContent = msg;
+      el.classList.add('error');
+      el.style.display = 'block';
+    }
+
+    function showPendingMsg(msg, type = 'warning') {
+      const el   = document.getElementById('pending-msg');
+      const text = document.getElementById('pending-msg-text');
+      text.textContent = msg;
+      el.className = `msg-box ${type}`;
+    }
+
+    function setBtnLoading(btnId, loading, label = 'Check Approval Status') {
+      const btn  = document.getElementById(btnId);
+      const span = document.getElementById(`${btnId === 'btn-check-status' ? 'check-status-text' : ''}`);
+      btn.disabled = loading;
+      if (btnId === 'btn-check-status') {
+        btn.innerHTML = loading
+          ? `<div class="spinner"></div> Checking…`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> ${label}`;
+      }
+    }
+
+    /* ── Google Sign-In ── */
+    const googleBtn = document.getElementById('btn-google-signin');
+
+    googleBtn.addEventListener('click', async () => {
+      googleBtn.disabled = true;
+      googleBtn.innerHTML = `<div class="spinner"></div><span>Signing in…</span>`;
+
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        // onAuthStateChanged will handle routing
+      } catch (err) {
+        console.error('Sign-in error:', err);
+        const messages = {
+          'auth/popup-closed-by-user': 'Sign-in was cancelled. Please try again.',
+          'auth/popup-blocked':        'Popup was blocked by your browser. Please allow popups for this site.',
+          'auth/network-request-failed': 'Network error. Please check your connection.',
+          'auth/cancelled-popup-request': 'Sign-in was cancelled.',
+        };
+        showError(messages[err.code] || 'Sign-in failed. Please try again.');
+        resetGoogleBtn();
+      }
+    });
+
+    function resetGoogleBtn() {
+      googleBtn.disabled = false;
+      googleBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Sign in with Google`;
+    }
+
+    /* ── Auth state ── */
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showScreen('screen-login');
+        resetGoogleBtn();
+        return;
+      }
+
+      currentUser = user;
+
+      try {
+        const userRef  = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          // First sign-in — create pending user record
+          await setDoc(userRef, {
+            uid:         user.uid,
+            email:       user.email,
+            displayName: user.displayName || '',
+            photoURL:    user.photoURL    || '',
+            role:        'user',
+            status:      'pending',
+            createdAt:   serverTimestamp(),
+            lastLogin:   serverTimestamp()
+          });
+          showScreen('screen-pending');
+          return;
+        }
+
+        const data = userSnap.data();
+
+        // Update lastLogin silently
+        updateDoc(userRef, { lastLogin: serverTimestamp() }).catch(() => {});
+
+        if (data.status === 'pending') {
+          showScreen('screen-pending');
+          return;
+        }
+
+        if (data.status === 'denied') {
+          showScreen('screen-denied');
+          return;
+        }
+
+        if (data.status === 'approved') {
+          // Redirect to dashboard
+          window.location.href = 'dashboard.html';
+          return;
+        }
+
+        // Fallback — unknown status
+        showError('Unknown account status. Please contact your administrator.');
+        await signOut(auth);
+
+      } catch (err) {
+        console.error('Firestore error:', err);
+        showError('Unable to verify your account. Please try again.');
+        await signOut(auth);
+        resetGoogleBtn();
+      }
+    });
+
+    /* ── Check Status ── */
+    document.getElementById('btn-check-status').addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      setBtnLoading('btn-check-status', true);
+
+      try {
+        const userRef  = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          showPendingMsg('Account record not found. Please sign out and try again.', 'error');
+          setBtnLoading('btn-check-status', false);
+          return;
+        }
+
+        const data = userSnap.data();
+
+        if (data.status === 'approved') {
+          showPendingMsg('Your account has been approved! Redirecting…', 'success');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+          return;
+        }
+
+        if (data.status === 'denied') {
+          showScreen('screen-denied');
+          return;
+        }
+
+        // Still pending
+        showPendingMsg('Your account is still awaiting approval. Please check back later or contact your administrator.', 'warning');
+        setBtnLoading('btn-check-status', false, 'Check Approval Status');
+
+      } catch (err) {
+        console.error(err);
+        showPendingMsg('Could not check status. Please try again.', 'error');
+        setBtnLoading('btn-check-status', false, 'Check Approval Status');
+      }
+    });
+
+    /* ── Sign Out (pending screen) ── */
+    document.getElementById('btn-signout-pending').addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    /* ── Sign Out (denied screen) ── */
+    document.getElementById('btn-signout-denied').addEventListener('click', async () => {
+      await signOut(auth);
+    });
+  </script>
+
+</body>
+</html>
