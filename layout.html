@@ -207,11 +207,7 @@
     /* ============================================================
        APP SHELL
     ============================================================ */
-    #app-shell {
-      display: none;
-      height: 100vh;
-      overflow: hidden;
-    }
+    #app-shell{display:none;height:100vh;overflow:hidden;width:100vw;}
 
     /* ============================================================
        SIDEBAR
@@ -417,14 +413,13 @@
     /* ============================================================
        MAIN CONTENT AREA
     ============================================================ */
-    .main-wrapper {
-      margin-left: var(--sidebar-width);
+    .main-wrapper{
+      margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: margin-left 0.25s;
-    }
+      transition: margin-left 0.25s}
 
     /* Top bar (mobile only / universal) */
     .topbar {
@@ -1233,7 +1228,7 @@
       }
 
       .main-wrapper {
-        margin-left: 0;
+        margin-left:0;width:100vw;
       }
 
       .hamburger {
@@ -1941,7 +1936,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     /* ── App Shell init ── */
     function initAppShell(user, userData) {
       dismissLoadingScreen();dismissLoadingScreen();dismissLoadingScreen();document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-shell').style.display   = 'flex';
+      document.getElementById('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
 
       // Set user info in sidebar
       const name = user.displayName || user.email;
