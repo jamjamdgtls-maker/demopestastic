@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pestastic — User Management</title>
+  <title>Pestastic — Audit Log</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --primary:hsl(142,76%,36%);--primary-hover:hsl(142,76%,30%);--primary-light:hsl(142,76%,95%);--primary-border:hsl(142,76%,80%);
+      --primary:hsl(142,76%,36%);--primary-hover:hsl(142,76%,30%);--primary-light:hsl(142,76%,95%);
       --bg:#fff;--bg-secondary:#f8f9fa;--bg-tertiary:#f1f3f5;
       --sidebar-bg:#0f1b12;--sidebar-text:#c8d6ca;--sidebar-muted:#6b7f6e;
       --text:#111827;--text-secondary:#4b5563;--text-muted:#9ca3af;
@@ -95,56 +95,36 @@
     /* BUTTONS */
     .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
     .btn svg{width:15px;height:15px}
-    .btn-primary{background:var(--primary);color:white}
-    .btn-primary:hover{background:var(--primary-hover)}
-    .btn-primary:active{transform:scale(.98)}
-    .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
     .btn-secondary{background:white;color:var(--text);border:1px solid var(--border)}
     .btn-secondary:hover{background:var(--bg-secondary)}
-    .btn-danger{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
-    .btn-danger:hover{background:#fee2e2}
     .btn-ghost{background:none;color:var(--text-secondary);border:none;padding:6px 10px}
     .btn-ghost:hover{background:var(--bg-secondary);color:var(--text)}
     .btn-sm{padding:5px 10px;font-size:12px}
-    .btn-sm svg{width:13px;height:13px}
 
     /* BADGES */
-    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
-    .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;text-transform:capitalize}
     .badge-green{background:var(--green-bg);color:var(--green-text)}
-    .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
-    .badge-red{background:var(--red-bg);color:var(--red-text)}
     .badge-blue{background:var(--blue-bg);color:var(--blue-text)}
+    .badge-red{background:var(--red-bg);color:var(--red-text)}
+    .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
     .badge-purple{background:var(--purple-bg);color:var(--purple-text)}
     .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
+
+    /* ENTITY TYPE CHIP */
+    .entity-chip{display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);font-size:11.5px;font-weight:600;background:var(--bg-tertiary);color:var(--text-secondary);text-transform:capitalize}
 
     /* PAGE */
     .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
     .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
     .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
 
-    /* ACCESS DENIED */
-    #access-denied{display:none;text-align:center;padding:80px 24px}
-    #access-denied svg{width:56px;height:56px;color:var(--red);margin-bottom:20px;opacity:.6}
-    #access-denied h2{font-size:22px;font-weight:700;margin-bottom:10px}
-    #access-denied p{font-size:14px;color:var(--text-muted);max-width:400px;margin:0 auto}
-
-    /* PENDING ALERT BANNER */
-    .pending-alert{background:var(--amber-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--amber-text)}
-    .pending-alert svg{width:16px;height:16px;flex-shrink:0}
-    .pending-alert strong{font-weight:700}
-
     /* STATS */
-    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-    .stat-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s;cursor:pointer}
-    .stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
-    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
-    .stat-card.total::before{background:var(--blue)}
-    .stat-card.approved::before{background:var(--green)}
-    .stat-card.pending-c::before{background:var(--amber)}
-    .stat-card.denied-c::before{background:var(--red)}
-    .stat-card-val{font-size:28px;font-weight:800;color:var(--text);line-height:1;letter-spacing:-.5px;margin-bottom:4px}
-    .stat-card-lbl{font-size:12px;color:var(--text-muted);font-weight:500}
+    .stats-row{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    .stat-pill{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:10px 18px;display:flex;align-items:center;gap:10px;flex:1;min-width:110px}
+    .stat-pill-icon{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .stat-pill-icon svg{width:15px;height:15px}
+    .stat-pill-val{font-size:20px;font-weight:800;color:var(--text);line-height:1}
+    .stat-pill-lbl{font-size:11.5px;color:var(--text-muted);margin-top:2px}
 
     /* FILTERS */
     .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -153,6 +133,10 @@
     .search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white;outline:none;transition:border-color .15s,box-shadow .15s}
     .search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
     .filter-select{padding:8px 32px 8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;outline:none;cursor:pointer;color:var(--text)}
+    .filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .date-range{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px}
+    .date-range input[type="date"]{border:none;font-size:13px;color:var(--text);outline:none;background:transparent;cursor:pointer;font-family:var(--font)}
+    .date-range span{font-size:12px;color:var(--text-muted)}
 
     /* TABLE */
     .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
@@ -162,23 +146,15 @@
     tbody tr{border-bottom:1px solid var(--bg-tertiary);transition:background .1s}
     tbody tr:last-child{border-bottom:none}
     tbody tr:hover{background:var(--bg-secondary)}
-    tbody tr.pending-row{background:hsl(38,92%,99%)}
-    tbody tr.pending-row:hover{background:hsl(38,92%,97%)}
-    tbody td{padding:10px 14px;font-size:13.5px;color:var(--text);vertical-align:middle}
-    td.muted{color:var(--text-muted);font-size:12.5px}
-    .actions-cell{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+    tbody td{padding:10px 14px;font-size:13px;color:var(--text);vertical-align:top}
+    td.ts{white-space:nowrap;color:var(--text-muted);font-size:12.5px}
+    td.user-cell{white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+    td.desc-cell{max-width:360px;word-break:break-word;line-height:1.5;font-size:13px}
+    td.entity-cell{white-space:nowrap}
 
-    /* USER AVATAR in table */
-    .user-row-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;overflow:hidden}
-    .user-row-avatar img{width:100%;height:100%;object-fit:cover}
-    .user-row-info{display:flex;align-items:center;gap:10px}
-    .user-row-name{font-size:13.5px;font-weight:600;color:var(--text)}
-    .user-row-email{font-size:12px;color:var(--text-muted)}
-
-    /* ROLE SELECTOR in table */
-    .role-select{padding:5px 24px 5px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 6px center/13px;appearance:none;outline:none;cursor:pointer;color:var(--text);transition:border-color .15s;font-family:var(--font)}
-    .role-select:focus{border-color:var(--primary)}
-    .role-select:disabled{opacity:.5;cursor:not-allowed;background-color:var(--bg-secondary)}
+    /* USER AVATAR MINI */
+    .user-mini{display:flex;align-items:center;gap:7px}
+    .user-mini-avatar{width:24px;height:24px;border-radius:50%;background:var(--primary);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
     /* PAGINATION */
     .pagination{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-top:1px solid var(--border);background:white;flex-wrap:wrap;gap:10px}
@@ -189,18 +165,27 @@
     .page-btn.active{background:var(--primary);color:white;border-color:var(--primary);font-weight:600}
     .page-btn:disabled{opacity:.4;cursor:not-allowed}
 
+    /* TIMELINE LINE in rows */
+    .timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+
+    /* READ-ONLY BANNER */
+    .readonly-banner{display:flex;align-items:center;gap:10px;background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:10px 16px;margin-bottom:16px;font-size:13px;color:var(--blue-text)}
+    .readonly-banner svg{width:16px;height:16px;flex-shrink:0}
+
     /* EMPTY */
     .empty-state{text-align:center;padding:52px 20px}
     .empty-state svg{width:40px;height:40px;color:var(--text-muted);margin-bottom:14px;opacity:.5}
     .empty-state h3{font-size:15px;font-weight:600;margin-bottom:6px}
     .empty-state p{font-size:13px;color:var(--text-muted);max-width:340px;margin:0 auto}
 
-    /* SPINNER / TOAST */
+    /* LOADING */
     .spinner{width:18px;height:18px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
     @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* TOAST */
     #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
     .toast{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:280px;max-width:380px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-start;gap:10px;pointer-events:all;animation:toastIn .2s ease;border-left:4px solid var(--primary)}
-    .toast.error{border-left-color:var(--red)}.toast.warning{border-left-color:var(--amber)}
+    .toast.error{border-left-color:var(--red)}
     .toast-icon svg{width:16px;height:16px}
     .toast-body{flex:1}
     .toast-title{font-size:13.5px;font-weight:600}
@@ -210,13 +195,11 @@
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
     /* RESPONSIVE */
-    @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:1024px){
       .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
       .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
     }
-    @media(max-width:768px){.page-content{padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
-    @media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+    @media(max-width:768px){.page-content{padding:16px}.filters-bar{flex-direction:column;align-items:stretch}.date-range{flex-wrap:wrap}}
   
     /* ── PAGE LOAD SCREEN ── */
     #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
@@ -286,9 +269,9 @@
       <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a>
       <div class="nav-section-label">Operations</div>
       <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Teams</a>
-      <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
+      <a class="nav-item active" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
       <div class="nav-section-label" id="admin-nav-label" style="display:none">Admin</div>
-      <a class="nav-item active" href="user-management.html" id="nav-users" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>User Management<span class="nav-badge amber" id="badge-pending-users" style="display:none"></span></a>
+      <a class="nav-item" href="user-management.html" id="nav-users" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>User Management<span class="nav-badge amber" id="badge-pending-users" style="display:none"></span></a>
       <a class="nav-item" href="settings.html" id="nav-settings" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
     </nav>
     <div class="sidebar-footer">
@@ -303,100 +286,117 @@
   <div class="main-wrapper">
     <header class="topbar">
       <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <span class="topbar-title">User Management</span>
+      <span class="topbar-title">Audit Log</span>
       <div class="topbar-spacer"></div>
       <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
     </header>
 
-    <main class="page-content" id="main-content">
-
-      <!-- Access Denied (shown to non-admin users) -->
-      <div id="access-denied">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        <h2>Access Denied</h2>
-        <p>You need admin or super_admin privileges to view this page. Contact your system administrator.</p>
-        <a href="dashboard.html" style="margin-top:20px;display:inline-block;padding:10px 20px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:600;font-size:14px">← Back to Dashboard</a>
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Audit Log</h2>
+          <p>Complete read-only history of all system actions</p>
+        </div>
+        <button class="btn btn-secondary" id="btn-export-csv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
       </div>
 
-      <!-- Actual content (shown to admin+) -->
-      <div id="admin-content" style="display:none">
-        <div class="page-header">
-          <div class="page-header-left">
-            <h2>User Management</h2>
-            <p>Approve, deny, and manage user access and roles</p>
-          </div>
-        </div>
+      <!-- Read-only notice -->
+      <div class="readonly-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        This log is read-only. All create, update, and delete actions across the system are automatically recorded here.
+      </div>
 
-        <!-- Pending alert banner -->
-        <div class="pending-alert" id="pending-alert" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span><strong id="pending-count">0</strong> user(s) are pending approval and waiting for access.</span>
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--blue-bg);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-total">—</div><div class="stat-pill-lbl">Total Events</div></div>
         </div>
-
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="stat-card total" onclick="setFilter('')">
-            <div class="stat-card-val" id="sc-total">—</div>
-            <div class="stat-card-lbl">Total Users</div>
-          </div>
-          <div class="stat-card approved" onclick="setFilter('approved')">
-            <div class="stat-card-val" id="sc-approved" style="color:var(--green)">—</div>
-            <div class="stat-card-lbl">Approved</div>
-          </div>
-          <div class="stat-card pending-c" onclick="setFilter('pending')">
-            <div class="stat-card-val" id="sc-pending" style="color:var(--amber)">—</div>
-            <div class="stat-card-lbl">Pending</div>
-          </div>
-          <div class="stat-card denied-c" onclick="setFilter('denied')">
-            <div class="stat-card-val" id="sc-denied" style="color:var(--red)">—</div>
-            <div class="stat-card-lbl">Denied</div>
-          </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--green-bg);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-created">—</div><div class="stat-pill-lbl">Created</div></div>
         </div>
-
-        <!-- Filters -->
-        <div class="filters-bar">
-          <div class="search-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-input" id="search-input" placeholder="Search by name or email…" />
-          </div>
-          <select class="filter-select" id="filter-status">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="denied">Denied</option>
-          </select>
-          <select class="filter-select" id="filter-role">
-            <option value="">All Roles</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--blue-bg);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-updated">—</div><div class="stat-pill-lbl">Updated</div></div>
         </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--red-bg);color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-deleted">—</div><div class="stat-pill-lbl">Deleted</div></div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--purple-bg);color:var(--purple)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-users">—</div><div class="stat-pill-lbl">Active Users</div></div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" style="background:var(--amber-bg);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div><div class="stat-pill-val" id="sc-today">—</div><div class="stat-pill-lbl">Events Today</div></div>
+        </div>
+      </div>
 
-        <!-- Table -->
-        <div class="table-card">
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Last Login</th>
-                  <th>Member Since</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="users-tbody">
-                <tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="pagination">
-            <span class="pagination-info" id="pagination-info">Loading…</span>
-            <div class="pagination-controls" id="pagination-controls"></div>
-          </div>
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="search-input" placeholder="Search description, entity ID…" />
+        </div>
+        <select class="filter-select" id="filter-action">
+          <option value="">All Actions</option>
+          <option value="created">Created</option>
+          <option value="updated">Updated</option>
+          <option value="deleted">Deleted</option>
+          <option value="bulk_import">Bulk Import</option>
+          <option value="approved">Approved</option>
+          <option value="denied">Denied</option>
+        </select>
+        <select class="filter-select" id="filter-entity">
+          <option value="">All Entity Types</option>
+          <option value="client">Client</option>
+          <option value="contract">Contract</option>
+          <option value="treatment">Treatment</option>
+          <option value="payment">Payment</option>
+          <option value="complaint">Complaint</option>
+          <option value="inspection">Inspection</option>
+          <option value="renewal">Renewal</option>
+          <option value="team">Team</option>
+          <option value="user">User</option>
+        </select>
+        <select class="filter-select" id="filter-user">
+          <option value="">All Users</option>
+        </select>
+        <div class="date-range">
+          <input type="date" id="filter-date-from" title="From date" />
+          <span>to</span>
+          <input type="date" id="filter-date-to" title="To date" />
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Entity Type</th>
+                <th>Entity ID</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="log-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span class="pagination-info" id="pagination-info">Loading…</span>
+          <div class="pagination-controls" id="pagination-controls"></div>
         </div>
       </div>
     </main>
@@ -423,8 +423,8 @@ import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/fire
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc,
-  updateDoc, query, orderBy, serverTimestamp
+  getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc,
+  query, orderBy, limit, startAfter, where, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
@@ -433,7 +433,7 @@ const db   = getFirestore(app);
 
 /* ── State ── */
 let currentUser = null, currentRole = null;
-let allUsers = [], filteredUsers = [], currentPage = 1;
+let allLogs = [], filteredLogs = [], currentPage = 1;
 const PER_PAGE = 20;
 
 /* ── Helpers ── */
@@ -442,293 +442,245 @@ const $ = id => document.getElementById(id);
 function showToast(msg, type='success', title='') {
   const c=$('toast-container'), el=document.createElement('div');
   el.className=`toast ${type==='success'?'':type}`;
-  const icons={success:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,error:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,warning:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>`};
-  el.innerHTML=`<div class="toast-icon">${icons[type]||icons.success}</div><div class="toast-body"><div class="toast-title">${title||(type==='error'?'Error':type==='warning'?'Warning':'Done')}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  const icons={success:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,error:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`};
+  el.innerHTML=`<div class="toast-icon">${icons[type]||icons.success}</div><div class="toast-body"><div class="toast-title">${title||(type==='error'?'Error':'Done')}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   c.appendChild(el); setTimeout(()=>el.remove(),5000);
 }
 
 function fmtDateTime(v) {
-  if(!v) return 'Never';
-  const d=v.toDate?v.toDate():new Date(v);
-  if(isNaN(d)) return 'Never';
-  const diff=Date.now()-d.getTime();
-  if(diff<60000) return 'Just now';
-  if(diff<3600000) return `${Math.floor(diff/60000)}m ago`;
-  if(diff<86400000) return `${Math.floor(diff/3600000)}h ago`;
-  if(diff<604800000) return `${Math.floor(diff/86400000)}d ago`;
-  return d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
-}
-
-function fmtDateOnly(v) {
   if(!v) return '—';
-  const d=v.toDate?v.toDate():new Date(v);
-  return isNaN(d)?'—':d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+  const d = v.toDate ? v.toDate() : new Date(v);
+  if(isNaN(d)) return '—';
+  return d.toLocaleString('en-PH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
 }
 
-function userInitials(name='',email='') {
-  if(name) return name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  return (email||'?')[0].toUpperCase();
+function fmtDateTimeShort(v) {
+  if(!v) return '—';
+  const d = v.toDate ? v.toDate() : new Date(v);
+  if(isNaN(d)) return '—';
+  return d.toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
-function avatarColor(str='') {
-  const colors=['#22c55e','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#f97316','#ec4899'];
-  let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))&0xffffffff;
-  return colors[Math.abs(h)%colors.length];
+function actionBadge(action) {
+  const map = {
+    created:'green', create:'green', bulk_import:'green',
+    updated:'blue', update:'blue', approved:'blue',
+    deleted:'red', delete:'red', denied:'red', cancelled:'red',
+    login:'purple', logout:'purple',
+  };
+  const lc = (action||'').toLowerCase();
+  const cls = Object.keys(map).find(k => lc.includes(k));
+  return `<span class="badge badge-${map[cls]||'gray'}">${action||'—'}</span>`;
 }
 
-function statusBadge(s) {
-  const m={approved:'green',pending:'amber',denied:'red'};
-  return `<span class="badge badge-${m[s]||'gray'}">${s||'—'}</span>`;
+function userInitials(email) {
+  if(!email) return '?';
+  const name = email.split('@')[0];
+  return name.split(/[._-]/).map(p=>p[0]).join('').toUpperCase().slice(0,2);
 }
 
-function roleBadge(r) {
-  const m={super_admin:'purple',admin:'blue',user:'gray'};
-  const labels={super_admin:'Super Admin',admin:'Admin',user:'User'};
-  return `<span class="badge badge-${m[r]||'gray'}">${labels[r]||r||'—'}</span>`;
+function entityLink(entityType, entityId) {
+  const pageMap = {
+    client:'clients.html', contract:'contracts.html', treatment:'treatments.html',
+    payment:'payments.html', complaint:'complaints.html', inspection:'inspections.html',
+    renewal:'renewals.html', team:'teams.html', user:'user-management.html'
+  };
+  const page = pageMap[(entityType||'').toLowerCase()];
+  if(!entityId || entityId==='batch' || !page) return `<span class="entity-chip">${entityId||'—'}</span>`;
+  const shortId = entityId.length>12 ? entityId.slice(0,10)+'…' : entityId;
+  return `<a href="${page}" style="color:var(--primary);font-family:monospace;font-size:12px" title="${entityId}">${shortId}</a>`;
 }
 
-async function logAction(action,entityType,entityId,description){
-  try{await addDoc(collection(db,'audit_log'),{action,entityType,entityId,description,performedBy:currentUser?.email||'',performedByUid:currentUser?.uid||'',createdAt:serverTimestamp()});}catch{}
-}
+/* ── Load ── */
+async function loadLogs() {
+  try {
+    const snap = await getDocs(query(collection(db,'audit_log'), orderBy('createdAt','desc'), limit(500)));
+    allLogs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
 
-/* ── Load users ── */
-async function loadUsers() {
-  const snap=await getDocs(query(collection(db,'users'),orderBy('createdAt','desc')));
-  allUsers=snap.docs.map(d=>({id:d.id,...d.data()}));
-  updateStats();
-  applyFilters();
-}
+    // Collect unique users for filter dropdown
+    const userSet = new Set(allLogs.map(l=>l.performedBy).filter(Boolean));
+    $('filter-user').innerHTML = '<option value="">All Users</option>' +
+      [...userSet].sort().map(u => `<option value="${u}">${u.split('@')[0]}</option>`).join('');
 
-function updateStats() {
-  const total=allUsers.length;
-  const approved=allUsers.filter(u=>u.status==='approved').length;
-  const pending=allUsers.filter(u=>u.status==='pending').length;
-  const denied=allUsers.filter(u=>u.status==='denied').length;
-  $('sc-total').textContent=total;
-  $('sc-approved').textContent=approved;
-  $('sc-pending').textContent=pending;
-  $('sc-denied').textContent=denied;
-
-  // Pending alert banner
-  if(pending>0){
-    $('pending-alert').style.display='';
-    $('pending-count').textContent=pending;
-    // Sidebar badge
-    const b=$('badge-pending-users');
-    if(b){b.textContent=pending;b.style.display='';}
-  } else {
-    $('pending-alert').style.display='none';
-    const b=$('badge-pending-users');
-    if(b)b.style.display='none';
+    computeStats();
+    applyFilters();
+  } catch(err) {
+    dismissLoadingScreen();console.error(err);
+    $('log-tbody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Failed to load audit log. The collection may be empty.</td></tr>`;
   }
+}
+
+function computeStats() {
+  let created=0, updated=0, deleted=0;
+  const users = new Set();
+  const todayStr = new Date().toDateString();
+
+  let todayCount = 0;
+  allLogs.forEach(l => {
+    const act = (l.action||'').toLowerCase();
+    if(act.includes('creat')||act.includes('import'))created++;
+    else if(act.includes('updat')||act.includes('approv')||act.includes('deni'))updated++;
+    else if(act.includes('delet')||act.includes('cancel'))deleted++;
+    if(l.performedBy) users.add(l.performedBy);
+    if(l.createdAt) {
+      const d = l.createdAt.toDate ? l.createdAt.toDate() : new Date(l.createdAt);
+      if(d.toDateString()===todayStr) todayCount++;
+    }
+  });
+  $('sc-total').textContent   = allLogs.length;
+  $('sc-created').textContent = created;
+  $('sc-updated').textContent = updated;
+  $('sc-deleted').textContent = deleted;
+  $('sc-users').textContent   = users.size;
+  $('sc-today').textContent   = todayCount;
 }
 
 /* ── Filters ── */
 function applyFilters() {
-  const q=$('search-input').value.toLowerCase().trim();
-  const status=$('filter-status').value;
-  const role=$('filter-role').value;
-  filteredUsers=allUsers.filter(u=>{
-    const matchQ=!q||[(u.displayName||''),(u.email||'')].some(f=>f.toLowerCase().includes(q));
-    const matchS=!status||u.status===status;
-    const matchR=!role||u.role===role;
-    return matchQ&&matchS&&matchR;
+  const q      = $('search-input').value.toLowerCase().trim();
+  const action = $('filter-action').value;
+  const entity = $('filter-entity').value;
+  const user   = $('filter-user').value;
+  const dfrom  = $('filter-date-from').value;
+  const dto    = $('filter-date-to').value;
+
+  filteredLogs = allLogs.filter(l => {
+    const matchQ = !q || [l.description, l.entityId, l.performedBy, l.action, l.entityType]
+      .some(f => (f||'').toLowerCase().includes(q));
+    const matchA = !action || (l.action||'').toLowerCase().includes(action.toLowerCase());
+    const matchE = !entity || (l.entityType||'').toLowerCase() === entity.toLowerCase();
+    const matchU = !user || l.performedBy === user;
+    let matchD = true;
+    if(dfrom || dto) {
+      const d = l.createdAt?.toDate ? l.createdAt.toDate() : new Date(l.createdAt||0);
+      if(dfrom) { const f=new Date(dfrom); f.setHours(0,0,0,0); if(d<f) matchD=false; }
+      if(dto)   { const t=new Date(dto);   t.setHours(23,59,59,999); if(d>t) matchD=false; }
+    }
+    return matchQ && matchA && matchE && matchU && matchD;
   });
-  // Sort: pending first
-  filteredUsers.sort((a,b)=>{
-    if(a.status==='pending'&&b.status!=='pending') return -1;
-    if(b.status==='pending'&&a.status!=='pending') return 1;
-    return 0;
-  });
-  currentPage=1; renderTable();
+
+  currentPage = 1;
+  renderTable();
 }
 
-['search-input','filter-status','filter-role'].forEach(id=>{$(id).addEventListener('input',applyFilters);$(id).addEventListener('change',applyFilters);});
-$('btn-clear-filters').addEventListener('click',()=>{$('search-input').value='';$('filter-status').value='';$('filter-role').value='';applyFilters();});
-window.setFilter=s=>{$('filter-status').value=s;applyFilters();};
+['search-input','filter-action','filter-entity','filter-user','filter-date-from','filter-date-to'].forEach(id => {
+  $(id).addEventListener('input', applyFilters);
+  $(id).addEventListener('change', applyFilters);
+});
+
+$('btn-clear-filters').addEventListener('click', () => {
+  $('search-input').value=''; $('filter-action').value=''; $('filter-entity').value='';
+  $('filter-user').value=''; $('filter-date-from').value=''; $('filter-date-to').value='';
+  applyFilters();
+});
 
 /* ── Render table ── */
 function renderTable() {
-  const total=filteredUsers.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
-  currentPage=Math.min(currentPage,totalPages);
-  const start=(currentPage-1)*PER_PAGE, end=Math.min(start+PER_PAGE,total);
-  const page=filteredUsers.slice(start,end);
+  const total      = filteredLogs.length;
+  const totalPages = Math.max(1, Math.ceil(total/PER_PAGE));
+  currentPage      = Math.min(currentPage, totalPages);
+  const start      = (currentPage-1)*PER_PAGE;
+  const end        = Math.min(start+PER_PAGE, total);
+  const page       = filteredLogs.slice(start, end);
 
-  $('pagination-info').textContent=total===0?'No users found':`Showing ${start+1}–${end} of ${total} users`;
+  $('pagination-info').textContent = total===0 ? 'No records found' : `Showing ${start+1}–${end} of ${total} events`;
 
-  if(!page.length){
-    $('users-tbody').innerHTML=`<tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><h3>No users found</h3><p>Try adjusting your search or filters.</p></div></td></tr>`;
-    $('pagination-controls').innerHTML=''; return;
+  if(!page.length) {
+    $('log-tbody').innerHTML = `<tr><td colspan="6"><div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <h3>No log entries found</h3>
+      <p>Try adjusting your filters, or system actions will appear here as you use the app.</p>
+    </div></td></tr>`;
+    $('pagination-controls').innerHTML = ''; return;
   }
 
-  $('users-tbody').innerHTML=page.map(u=>{
-    const isPending=u.status==='pending';
-    const isCurrentUser=u.id===currentUser?.uid||u.uid===currentUser?.uid;
-    const isSuper=u.role==='super_admin';
-    // Only super_admin can assign super_admin; admin can assign admin/user
-    const canChangeRole=!isCurrentUser&&(currentRole==='super_admin'||(currentRole==='admin'&&u.role!=='super_admin'));
-    const canAssignSuper=currentRole==='super_admin';
-
-    const roleOptions=['user','admin',...(canAssignSuper?['super_admin']:[])].map(r=>
-      `<option value="${r}" ${u.role===r?'selected':''}>${r==='super_admin'?'Super Admin':r==='admin'?'Admin':'User'}</option>`
-    ).join('');
-
-    const initials=userInitials(u.displayName||'',u.email||'');
-    const color=avatarColor(u.email||u.uid||'');
-
-    return `<tr class="${isPending?'pending-row':''}">
-      <td>
-        <div class="user-row-info">
-          <div class="user-row-avatar" style="background:${color}">
-            ${u.photoURL?`<img src="${u.photoURL}" alt="${u.displayName||''}" />`:`${initials}`}
-          </div>
-          <div>
-            <div class="user-row-name">${u.displayName||'—'} ${isCurrentUser?'<span style="font-size:11px;color:var(--primary);font-weight:600;margin-left:4px">(You)</span>':''}</div>
-            <div class="user-row-email">${u.email||'—'}</div>
-          </div>
+  $('log-tbody').innerHTML = page.map(l => {
+    const userEmail = l.performedBy || 'System';
+    const userShort = userEmail.split('@')[0];
+    return `<tr>
+      <td class="ts">${fmtDateTimeShort(l.createdAt)}</td>
+      <td class="user-cell">
+        <div class="user-mini">
+          <div class="user-mini-avatar">${userInitials(userEmail)}</div>
+          <span style="font-size:12.5px;color:var(--text-secondary)" title="${userEmail}">${userShort}</span>
         </div>
       </td>
-      <td>
-        ${canChangeRole
-          ? `<select class="role-select role-change" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">${roleOptions}</select>`
-          : roleBadge(u.role)
-        }
-      </td>
-      <td>${statusBadge(u.status)}${isPending?` <span style="font-size:11px;color:var(--amber-text);font-weight:600">⚡ Needs review</span>`:''}</td>
-      <td class="muted">${fmtDateTime(u.lastLogin)}</td>
-      <td class="muted">${fmtDateOnly(u.createdAt)}</td>
-      <td>
-        <div class="actions-cell">
-          ${isPending ? `
-            <button class="btn btn-sm btn-primary btn-approve" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Approve
-            </button>
-            <button class="btn btn-sm btn-danger btn-deny" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Deny
-            </button>
-          ` : u.status==='approved' && !isCurrentUser ? `
-            <button class="btn btn-sm btn-secondary btn-revoke" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">
-              Revoke Access
-            </button>
-          ` : u.status==='denied' ? `
-            <button class="btn btn-sm btn-secondary btn-restore" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">
-              Re-Approve
-            </button>
-          ` : isCurrentUser ? `
-            <span style="font-size:12px;color:var(--text-muted)">Current session</span>
-          ` : ''}
-        </div>
-      </td>
+      <td style="white-space:nowrap">${actionBadge(l.action)}</td>
+      <td class="entity-cell"><span class="entity-chip">${l.entityType||'—'}</span></td>
+      <td style="white-space:nowrap">${entityLink(l.entityType, l.entityId)}</td>
+      <td class="desc-cell">${l.description||'—'}</td>
     </tr>`;
   }).join('');
 
   // Pagination
-  const ctrl=$('pagination-controls');
-  if(totalPages<=1){ctrl.innerHTML='';return;}
-  const pages=[];
-  for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
-  ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
-  ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
+  const ctrl = $('pagination-controls');
+  if(totalPages <= 1) { ctrl.innerHTML=''; return; }
+  const pages = [];
+  for(let i=1;i<=totalPages;i++){
+    if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1)) pages.push(i);
+    else if(pages[pages.length-1]!=='…') pages.push('…');
+  }
+  ctrl.innerHTML = `
+    <button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>
+    ${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}
+    <button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
+  ctrl.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => { currentPage=Number(b.dataset.p); renderTable(); }));
+}
 
-  /* ── Bind action buttons ── */
-  document.querySelectorAll('.btn-approve').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'approved')));
-  document.querySelectorAll('.btn-deny').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'denied')));
-  document.querySelectorAll('.btn-revoke').forEach(b=>b.addEventListener('click',()=>{if(confirm(`Revoke access for "${b.dataset.name}"?`))updateUserStatus(b.dataset.uid,b.dataset.name,'denied');}));
-  document.querySelectorAll('.btn-restore').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'approved')));
-
-  /* ── Role change ── */
-  document.querySelectorAll('.role-change').forEach(sel=>{
-    sel.addEventListener('change', async()=>{
-      const newRole=sel.value;
-      const uid=sel.dataset.uid;
-      const name=sel.dataset.name;
-      const u=allUsers.find(x=>x.id===uid); if(!u) return;
-      const oldRole=u.role;
-      if(newRole===oldRole) return;
-
-      // Guard: only super_admin can assign super_admin
-      if(newRole==='super_admin'&&currentRole!=='super_admin'){
-        showToast('Only Super Admins can assign the Super Admin role.','error');
-        sel.value=oldRole; return;
-      }
-
-      sel.disabled=true;
-      try{
-        await updateDoc(doc(db,'users',uid),{role:newRole,updatedAt:serverTimestamp()});
-        u.role=newRole;
-        await logAction('updated','user',uid,`Changed role for "${name}" from ${oldRole} → ${newRole}`);
-        showToast(`Role updated to ${newRole==='super_admin'?'Super Admin':newRole==='admin'?'Admin':'User'} for "${name}".`);
-        updateStats(); applyFilters();
-      }catch(err){showToast('Failed: '+err.message,'error');sel.value=oldRole;}
-      sel.disabled=false;
-    });
+/* ── Export CSV ── */
+$('btn-export-csv').addEventListener('click', () => {
+  const headers = ['timestamp','user','action','entityType','entityId','description'];
+  const rows = filteredLogs.map(l => [
+    fmtDateTime(l.createdAt),
+    l.performedBy||'',
+    l.action||'',
+    l.entityType||'',
+    l.entityId||'',
+    l.description||''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})),
+    download: `pestastic_audit_log_${Date.now()}.csv`
   });
-}
-
-/* ── Approve / Deny / Revoke ── */
-async function updateUserStatus(uid, name, newStatus) {
-  const u=allUsers.find(x=>x.id===uid); if(!u) return;
-  const oldStatus=u.status;
-  try{
-    await updateDoc(doc(db,'users',uid),{status:newStatus,updatedAt:serverTimestamp()});
-    u.status=newStatus;
-    const actionMap={approved:'approved',denied:'denied'};
-    await logAction(actionMap[newStatus]||'updated','user',uid,`${newStatus==='approved'?'Approved':'Denied'} access for "${name}"`);
-    const msgs={approved:`✓ Access approved for "${name}".`,denied:`Access denied for "${name}".`};
-    showToast(msgs[newStatus]||`Status updated for "${name}".`, newStatus==='denied'?'warning':'success');
-    updateStats(); applyFilters();
-  }catch(err){showToast('Failed: '+err.message,'error');}
-}
-
-/* ── Auth ── */
-onAuthStateChanged(auth, async user=>{
-  if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
-  currentUser=user;
-  try{
-    const snap=await getDoc(doc(db,'users',user.uid));
-    if(!snap.exists()){
-      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
-      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
-    }
-    const data=snap.data();
-    updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
-    if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
-    currentRole=data.role;
-    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.display='flex';
-    const name=user.displayName||user.email;
-    $('user-display-name').textContent=name;
-    $('user-role-label').textContent=(data.role||'user').replace('_',' ');
-    if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
-    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-
-    // Show nav items based on role
-    if(data.role==='admin'||data.role==='super_admin'){
-      $('admin-nav-label').style.display=''; $('nav-users').style.display='';
-    }
-    if(data.role==='super_admin') $('nav-settings').style.display='';
-
-    // Access check — only admin+ can view this page
-    if(data.role==='admin'||data.role==='super_admin'){
-      dismissLoadingScreen();$('access-denied').style.display='none';
-      $('admin-content').style.display='block';
-      await loadUsers();
-    } else {
-      dismissLoadingScreen();$('access-denied').style.display='block';
-      $('admin-content').style.display='none';
-    }
-  }catch(err){dismissLoadingScreen();console.error(err);}
+  a.click();
+  showToast(`Exported ${filteredLogs.length} log entries.`);
 });
 
-$('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
-$('btn-signout-pending').addEventListener('click',()=>signOut(auth));
-$('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
-$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth);});
+/* ── Auth ── */
+onAuthStateChanged(auth, async user => {
+  if(!user) { $('auth-screen').style.display='flex'; $('app-shell').style.display='none'; return; }
+  currentUser = user;
+  try {
+    const snap = await getDoc(doc(db,'users',user.uid));
+    if(!snap.exists()) {
+      await setDoc(doc(db,'users',user.uid), { uid:user.uid, email:user.email, displayName:user.displayName||'', photoURL:user.photoURL||'', role:'user', status:'pending', createdAt:serverTimestamp(), lastLogin:serverTimestamp() });
+      $('auth-screen').style.display='flex'; $('login-card').style.display='none'; $('pending-card').style.display='block'; return;
+    }
+    const data = snap.data();
+    updateDoc(doc(db,'users',user.uid), { lastLogin:serverTimestamp() }).catch(()=>{});
+    if(data.status!=='approved') { $('auth-screen').style.display='flex'; $('login-card').style.display='none'; $('pending-card').style.display='block'; return; }
+    currentRole = data.role;
+    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.display='flex';
+    const name = user.displayName||user.email;
+    $('user-display-name').textContent = name;
+    $('user-role-label').textContent   = (data.role||'user').replace('_',' ');
+    if(user.photoURL) $('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
+    else $('user-initials').textContent = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    if(data.role==='admin'||data.role==='super_admin') { $('admin-nav-label').style.display=''; $('nav-users').style.display=''; }
+    if(data.role==='super_admin') $('nav-settings').style.display='';
+    await loadLogs();
+  } catch(err) { dismissLoadingScreen();console.error(err); }
+});
 
-const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
-hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
-overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+$('btn-google-signin').addEventListener('click', async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e) { $('login-error').style.display='block'; $('login-error').textContent='Sign-in failed.'; } });
+$('btn-signout-pending').addEventListener('click', () => signOut(auth));
+$('btn-check-status').addEventListener('click', async () => { if(!currentUser) return; const s=await getDoc(doc(db,'users',currentUser.uid)); if(s.exists()&&s.data().status==='approved') location.reload(); });
+$('btn-signout').addEventListener('click', () => { if(confirm('Sign out?')) signOut(auth); });
+
+const sidebar=$('sidebar'), overlay=$('sidebar-overlay'), hamburger=$('hamburger');
+hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? (sidebar.classList.remove('open'),overlay.classList.remove('open')) : (sidebar.classList.add('open'),overlay.classList.add('open')));
+overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
 </script>
 </body>
 </html>

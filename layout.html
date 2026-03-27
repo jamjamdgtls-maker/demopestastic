@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pestastic — Pest Control Management</title>
+  <style>
+    /* ============================================================
+       PESTASTIC DESIGN SYSTEM — GLOBAL CSS VARIABLES
+    ============================================================ */
+    :root {
+      --primary:          hsl(142, 76%, 36%);
+      --primary-hover:    hsl(142, 76%, 30%);
+      --primary-light:    hsl(142, 76%, 95%);
+      --primary-border:   hsl(142, 76%, 80%);
+
+      --bg:               #ffffff;
+      --bg-secondary:     #f8f9fa;
+      --bg-tertiary:      #f1f3f5;
+      --sidebar-bg:       #0f1b12;
+      --sidebar-text:     #c8d6ca;
+      --sidebar-muted:    #6b7f6e;
+      --sidebar-active:   hsl(142, 76%, 36%);
+      --sidebar-hover:    rgba(255,255,255,0.07);
+
+      --text:             #111827;
+      --text-secondary:   #4b5563;
+      --text-muted:       #9ca3af;
+
+      --border:           #e5e7eb;
+      --border-hover:     #d1d5db;
+
+      --radius:           8px;
+      --radius-sm:        4px;
+      --radius-lg:        12px;
+
+      --shadow-sm:        0 1px 3px rgba(0,0,0,0.08);
+      --shadow:           0 2px 8px rgba(0,0,0,0.10);
+      --shadow-lg:        0 8px 24px rgba(0,0,0,0.12);
+
+      /* Status colors */
+      --green:            hsl(142, 76%, 36%);
+      --green-bg:         hsl(142, 76%, 95%);
+      --green-text:       hsl(142, 76%, 28%);
+
+      --blue:             hsl(213, 94%, 47%);
+      --blue-bg:          hsl(213, 94%, 95%);
+      --blue-text:        hsl(213, 94%, 35%);
+
+      --amber:            hsl(38, 92%, 50%);
+      --amber-bg:         hsl(38, 92%, 95%);
+      --amber-text:       hsl(38, 92%, 32%);
+
+      --red:              hsl(0, 84%, 50%);
+      --red-bg:           hsl(0, 84%, 96%);
+      --red-text:         hsl(0, 84%, 38%);
+
+      --purple:           hsl(262, 83%, 58%);
+      --purple-bg:        hsl(262, 83%, 96%);
+      --purple-text:      hsl(262, 83%, 42%);
+
+      --gray:             hsl(220, 9%, 46%);
+      --gray-bg:          hsl(220, 9%, 95%);
+      --gray-text:        hsl(220, 9%, 35%);
+
+      --sidebar-width:    260px;
+      --topbar-height:    60px;
+      --font:             -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg-secondary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: var(--font); cursor: pointer; }
+    input, select, textarea { font-family: var(--font); font-size: 14px; }
+
+    /* ============================================================
+       AUTH SCREENS (Login + Pending)
+    ============================================================ */
+    #auth-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f1b12 0%, #1a2e1d 50%, #0d1f0f 100%);
+    }
+
+    .auth-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+
+    .auth-logo {
+      width: 64px;
+      height: 64px;
+      background: var(--primary-light);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .auth-logo svg { width: 36px; height: 36px; }
+
+    .auth-card h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .auth-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .btn-google {
+      width: 100%;
+      padding: 12px 20px;
+      border: 1.5px solid var(--border);
+      background: white;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn-google:hover { background: var(--bg-secondary); border-color: var(--border-hover); }
+    .btn-google:active { transform: scale(0.98); }
+    .btn-google svg { width: 20px; height: 20px; }
+
+    .auth-error {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: var(--red-bg);
+      color: var(--red-text);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      border: 1px solid #fca5a5;
+      display: none;
+    }
+
+    /* Pending screen */
+    .pending-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--amber-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .pending-icon svg { width: 36px; height: 36px; color: var(--amber); }
+
+    .btn-pending-check {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      transition: background 0.15s;
+    }
+    .btn-pending-check:hover { background: var(--primary-hover); }
+
+    .btn-signout-pending {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+    .btn-signout-pending:hover { background: var(--bg-secondary); }
+
+    /* ============================================================
+       APP SHELL
+    ============================================================ */
+    #app-shell {
+      display: none;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       SIDEBAR
+    ============================================================ */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      z-index: 200;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo-icon svg { width: 20px; height: 20px; color: white; }
+
+    .sidebar-logo-text span {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+    }
+
+    .sidebar-logo-text small {
+      font-size: 10px;
+      color: var(--sidebar-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 10px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--sidebar-muted);
+      padding: 12px 10px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--sidebar-text);
+      font-size: 13.5px;
+      font-weight: 450;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      user-select: none;
+    }
+
+    .nav-item:hover { background: var(--sidebar-hover); color: white; }
+
+    .nav-item.active {
+      background: rgba(34, 197, 94, 0.15);
+      color: hsl(142, 76%, 65%);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: var(--primary);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .nav-item.active svg { opacity: 1; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--red);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    .nav-badge.amber { background: var(--amber); }
+    .nav-badge.green { background: var(--green); }
+
+    .sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sidebar-user:hover { background: var(--sidebar-hover); }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--sidebar-muted);
+      text-transform: capitalize;
+    }
+
+    .btn-signout {
+      background: none;
+      border: none;
+      padding: 6px;
+      color: var(--sidebar-muted);
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-signout:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+    .btn-signout svg { width: 16px; height: 16px; }
+
+    /* Sidebar overlay on mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+    }
+
+    /* ============================================================
+       MAIN CONTENT AREA
+    ============================================================ */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: margin-left 0.25s;
+    }
+
+    /* Top bar (mobile only / universal) */
+    .topbar {
+      height: var(--topbar-height);
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      transition: background 0.15s;
+    }
+
+    .hamburger:hover { background: var(--bg-secondary); }
+    .hamburger svg { width: 20px; height: 20px; }
+
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .topbar-spacer { flex: 1; }
+
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+    .topbar-btn {
+      width: 34px;
+      height: 34px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .topbar-btn:hover { background: var(--bg-secondary); color: var(--text); }
+    .topbar-btn svg { width: 16px; height: 16px; }
+
+    .topbar-notif-dot {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      border: 1.5px solid white;
+    }
+
+    /* Page content */
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .page-content::-webkit-scrollbar { width: 6px; }
+    .page-content::-webkit-scrollbar-track { background: transparent; }
+    .page-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Page header */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-header-left h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .page-header-left p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* ============================================================
+       CARDS
+    ============================================================ */
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      text-decoration: none;
+    }
+
+    .kpi-card:hover { box-shadow: var(--shadow); border-color: var(--border-hover); }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon svg { width: 22px; height: 22px; }
+    .kpi-icon.green { background: var(--green-bg); color: var(--green); }
+    .kpi-icon.blue  { background: var(--blue-bg);  color: var(--blue);  }
+    .kpi-icon.amber { background: var(--amber-bg); color: var(--amber); }
+    .kpi-icon.red   { background: var(--red-bg);   color: var(--red);   }
+    .kpi-icon.purple{ background: var(--purple-bg);color: var(--purple);}
+
+    .kpi-info { min-width: 0; }
+    .kpi-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1; }
+    .kpi-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn svg { width: 15px; height: 15px; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg-secondary); }
+
+    .btn-danger {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border: 1px solid #fca5a5;
+    }
+    .btn-danger:hover { background: #fee2e2; }
+
+    .btn-ghost {
+      background: none;
+      color: var(--text-secondary);
+      border: none;
+      padding: 6px 10px;
+    }
+    .btn-ghost:hover { background: var(--bg-secondary); color: var(--text); }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-sm svg { width: 13px; height: 13px; }
+
+    .btn-icon {
+      padding: 7px;
+      border-radius: var(--radius);
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-icon:hover { background: var(--bg-secondary); color: var(--text); }
+    .btn-icon svg { width: 15px; height: 15px; }
+
+    /* ============================================================
+       BADGES / STATUS PILLS
+    ============================================================ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge-green  { background: var(--green-bg);  color: var(--green-text); }
+    .badge-blue   { background: var(--blue-bg);   color: var(--blue-text);  }
+    .badge-amber  { background: var(--amber-bg);  color: var(--amber-text); }
+    .badge-red    { background: var(--red-bg);    color: var(--red-text);   }
+    .badge-purple { background: var(--purple-bg); color: var(--purple-text);}
+    .badge-gray   { background: var(--gray-bg);   color: var(--gray-text);  }
+
+    /* ============================================================
+       TABLES
+    ============================================================ */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    thead th {
+      padding: 11px 14px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--bg-tertiary);
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-secondary); }
+
+    tbody td {
+      padding: 11px 14px;
+      font-size: 13.5px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    td.muted { color: var(--text-muted); }
+
+    .actions-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ============================================================
+       PAGINATION
+    ============================================================ */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: white;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pagination-info {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 10px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .page-btn:hover:not(:disabled) { background: var(--bg-secondary); color: var(--text); }
+    .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ============================================================
+       FORMS
+    ============================================================ */
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-label .required { color: var(--red); margin-left: 2px; }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder { color: var(--text-muted); }
+
+    .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; cursor: pointer; }
+
+    .form-textarea { resize: vertical; min-height: 80px; }
+
+    .form-hint { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+    .form-error { font-size: 11.5px; color: var(--red-text); margin-top: 4px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    /* ============================================================
+       MODALS
+    ============================================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: white;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-lg { max-width: 780px; }
+    .modal-xl { max-width: 960px; }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+
+    .modal-close {
+      width: 30px;
+      height: 30px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover { background: var(--bg-secondary); color: var(--text); }
+    .modal-close svg { width: 16px; height: 16px; }
+
+    .modal-body {
+      padding: 22px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 16px 22px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       TABS
+    ============================================================ */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 9px 16px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+    /* ============================================================
+       SEARCH & FILTERS BAR
+    ============================================================ */
+    .filters-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      background: white;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.10);
+    }
+
+    /* ============================================================
+       SKELETON LOADER
+    ============================================================ */
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    .skeleton-text { height: 14px; margin-bottom: 8px; }
+    .skeleton-title { height: 22px; width: 40%; margin-bottom: 6px; }
+    .skeleton-row { height: 44px; margin-bottom: 1px; }
+
+    /* ============================================================
+       ALERTS / TOASTS
+    ============================================================ */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-width: 280px;
+      max-width: 380px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      pointer-events: all;
+      animation: toastIn 0.2s ease;
+      border-left: 4px solid var(--primary);
+    }
+
+    .toast.error { border-left-color: var(--red); }
+    .toast.warning { border-left-color: var(--amber); }
+    .toast.info { border-left-color: var(--blue); }
+
+    .toast-icon { flex-shrink: 0; margin-top: 1px; }
+    .toast-icon svg { width: 16px; height: 16px; }
+
+    .toast-body { flex: 1; }
+    .toast-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .toast-msg { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+
+    .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; }
+    .toast-close:hover { color: var(--text); }
+    .toast-close svg { width: 14px; height: 14px; }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ============================================================
+       CONFIRM DIALOG
+    ============================================================ */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .confirm-box {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+
+    .confirm-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--red-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .confirm-icon svg { width: 26px; height: 26px; color: var(--red); }
+
+    .confirm-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .confirm-box p { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 56px 20px;
+    }
+
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--bg-tertiary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .empty-state-icon svg { width: 30px; height: 30px; color: var(--text-muted); }
+    .empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .empty-state p { font-size: 13.5px; color: var(--text-muted); max-width: 360px; margin: 0 auto 20px; }
+
+    /* ============================================================
+       LOADING SPINNER
+    ============================================================ */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      z-index: 10;
+    }
+
+    /* ============================================================
+       UTILITY CLASSES
+    ============================================================ */
+    .flex { display: flex; }
+    .flex-center { display: flex; align-items: center; justify-content: center; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .text-muted { color: var(--text-muted); }
+    .text-sm { font-size: 12.5px; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hidden { display: none !important; }
+    .w-full { width: 100%; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    /* Currency */
+    .currency { font-variant-numeric: tabular-nums; }
+
+    /* ============================================================
+       DEMO PLACEHOLDER CONTENT
+    ============================================================ */
+    .demo-section {
+      max-width: 700px;
+    }
+
+    .demo-section h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .demo-section p {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* ============================================================
+       RESPONSIVE — TABLET
+    ============================================================ */
+    @media(max-width:900px){
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ============================================================
+       RESPONSIVE — MOBILE
+    ============================================================ */
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay.open {
+        display: block;
+      }
+
+      .main-wrapper {
+        margin-left: 0;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+      .form-row.three { grid-template-columns: 1fr; }
+      .page-content { padding: 16px; }
+    }
+
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .component-grid { grid-template-columns: 1fr; }
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .search-input-wrap { min-width: unset; }
+    }
+  
+    /* ── PAGE LOAD SCREEN ── */
+    #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
+    #loading-screen.fade-out{opacity:0;pointer-events:none}
+    .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
+    .ls-logo svg{width:34px;height:34px;color:white}
+    .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
+    .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       AUTH SCREEN (login + pending)
+  ============================================================ -->
+  
+<!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
+<div id="loading-screen">
+  <div class="ls-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+      <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
+      <circle cx="9.5" cy="9" r="1" fill="white"/>
+      <circle cx="14.5" cy="9" r="1" fill="white"/>
+    </svg>
+  </div>
+  <div class="ls-spinner"></div>
+  <div class="ls-text">Pestastic</div>
+</div>
+
+<div id="auth-screen" style="display:none">
+    <!-- Login Card -->
+    <div id="login-card" class="auth-card">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+          <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
+          <circle cx="9.5" cy="9" r="0.75" fill="hsl(142,76%,36%)"/>
+          <circle cx="14.5" cy="9" r="0.75" fill="hsl(142,76%,36%)"/>
+          <path d="M8.5 14.5s1 1.5 3.5 1.5 3.5-1.5 3.5-1.5"/>
+        </svg>
+      </div>
+      <h1>Pestastic</h1>
+      <p>Contract Management System</p>
+
+      <button class="btn-google" id="btn-google-signin">
+        <svg viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <div class="auth-error" id="login-error"></div>
+    </div>
+
+    <!-- Pending Approval Card -->
+    <div id="pending-card" class="auth-card" style="display:none;">
+      <div class="pending-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <h1 style="font-size:20px;">Pending Approval</h1>
+      <p style="margin-bottom:24px;">Your account has been created and is awaiting approval by an administrator. You'll be notified once access is granted.</p>
+
+      <button class="btn-pending-check" id="btn-check-status">
+        <span id="check-status-text">Check Status</span>
+      </button>
+      <button class="btn-signout-pending" id="btn-signout-pending">Sign Out</button>
+
+      <div class="auth-error" id="pending-msg" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       APP SHELL
+  ============================================================ -->
+  <div id="app-shell">
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+            <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
+            <circle cx="9.5" cy="9" r="1" fill="white"/>
+            <circle cx="14.5" cy="9" r="1" fill="white"/>
+          </svg>
+        </div>
+        <div class="sidebar-logo-text">
+          <span>Pestastic</span>
+          <small>Pest Control</small>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+
+        <div class="nav-section-label">Main</div>
+
+        <a class="nav-item active" href="dashboard.html" data-page="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a class="nav-item" href="clients.html" data-page="clients">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Clients
+        </a>
+
+        <a class="nav-item" href="contracts.html" data-page="contracts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Contracts
+        </a>
+
+        <a class="nav-item" href="treatments.html" data-page="treatments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Treatments
+        </a>
+
+        <div class="nav-section-label">Financial</div>
+
+        <a class="nav-item" href="payments.html" data-page="payments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          Payments
+        </a>
+
+        <a class="nav-item" href="renewals.html" data-page="renewals">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Renewals
+        </a>
+
+        <div class="nav-section-label">Service</div>
+
+        <a class="nav-item" href="complaints.html" data-page="complaints">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Complaints
+          <span class="nav-badge" id="badge-complaints" style="display:none;"></span>
+        </a>
+
+        <a class="nav-item" href="inspections.html" data-page="inspections">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Inspections
+        </a>
+
+        <div class="nav-section-label">Monitoring</div>
+
+        <a class="nav-item" href="overdue.html" data-page="overdue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Overdue
+          <span class="nav-badge" id="badge-overdue" style="display:none;"></span>
+        </a>
+
+        <a class="nav-item" href="calendar.html" data-page="calendar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Calendar
+        </a>
+
+        <a class="nav-item" href="notification-calendar.html" data-page="notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          Notifications
+          <span class="nav-badge amber" id="badge-notifs" style="display:none;"></span>
+        </a>
+
+        <div class="nav-section-label">Operations</div>
+
+        <a class="nav-item" href="teams.html" data-page="teams">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Teams
+        </a>
+
+        <a class="nav-item" href="audit-log.html" data-page="audit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Audit Log
+        </a>
+
+        <!-- Admin section — shown/hidden by role -->
+        <div class="nav-section-label admin-only" id="admin-nav-label" style="display:none;">Admin</div>
+
+        <a class="nav-item admin-only" href="user-management.html" data-page="users" id="nav-users" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          User Management
+          <span class="nav-badge amber" id="badge-pending-users" style="display:none;"></span>
+        </a>
+
+        <a class="nav-item super-admin-only" href="settings.html" data-page="settings" id="nav-settings" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Settings
+        </a>
+
+      </nav>
+
+      <!-- User footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebar-user">
+          <div class="user-avatar" id="user-avatar">
+            <span id="user-initials">?</span>
+          </div>
+          <div class="user-info">
+            <div class="user-name" id="user-display-name">Loading…</div>
+            <div class="user-role" id="user-role-label">—</div>
+          </div>
+          <button class="btn-signout" id="btn-signout" title="Sign Out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main wrapper -->
+    <div class="main-wrapper">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <button class="hamburger" id="hamburger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <span class="topbar-title" id="topbar-title">Dashboard</span>
+        <div class="topbar-spacer"></div>
+
+        <div class="topbar-actions">
+          <button class="topbar-btn" title="Notifications" onclick="window.location.href='notification-calendar.html'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="topbar-notif-dot" id="notif-dot" style="display:none;"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page content — replace this section in child modules -->
+      <main class="page-content" id="page-content">
+
+        <!-- ====================================================
+             COMPONENT SHOWCASE (Template Reference)
+        ==================================================== -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Layout Template</h2>
+            <p>Shared sidebar, auth, and design system — replace this content in each module</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export CSV
+            </button>
+            <button class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add New
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-value">—</div>
+              <div class="kpi-label">Total Clients</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-value">—</div>
+              <div class="kpi-label">Active Contracts</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-value">—</div>
+              <div class="kpi-label">Treatments This Month</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="kpi-info">
+              <div class="kpi-value">—</div>
+              <div class="kpi-label">Overdue Treatments</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badges showcase -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <span class="card-title">Status Badges</span>
+          </div>
+          <div class="flex gap-2" style="flex-wrap:wrap;">
+            <span class="badge badge-green">Active</span>
+            <span class="badge badge-blue">Scheduled</span>
+            <span class="badge badge-amber">Pending</span>
+            <span class="badge badge-red">Overdue</span>
+            <span class="badge badge-purple">Renewed</span>
+            <span class="badge badge-gray">Cancelled</span>
+          </div>
+        </div>
+
+        <!-- Sample Table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Sample Table</span>
+          </div>
+
+          <div class="filters-bar">
+            <div class="search-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="search-input" placeholder="Search…" />
+            </div>
+            <select class="form-select" style="width:auto;">
+              <option>All Status</option>
+              <option>Active</option>
+              <option>Expired</option>
+            </select>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Customer No</th>
+                  <th>Client Name</th>
+                  <th>Contract Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="muted">PC-00001</td>
+                  <td class="font-semibold">Sample Client A</td>
+                  <td>Termite Control</td>
+                  <td class="currency">₱ 12,500.00</td>
+                  <td><span class="badge badge-green">Active</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="btn btn-sm btn-secondary">Edit</button>
+                      <button class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="muted">PC-00002</td>
+                  <td class="font-semibold">Sample Client B</td>
+                  <td>General Pest Control</td>
+                  <td class="currency">₱ 8,200.00</td>
+                  <td><span class="badge badge-amber">Pending</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="btn btn-sm btn-secondary">Edit</button>
+                      <button class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="muted">PC-00003</td>
+                  <td class="font-semibold">Sample Client C</td>
+                  <td>Rodents Control</td>
+                  <td class="currency">₱ 6,800.00</td>
+                  <td><span class="badge badge-red">Overdue</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="btn btn-sm btn-secondary">Edit</button>
+                      <button class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <span class="pagination-info">Showing 1–3 of 3 records</span>
+            <div class="pagination-controls">
+              <button class="page-btn" disabled>‹</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn" disabled>›</button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- ============================================================
+       FIREBASE + APP LOGIC
+  ============================================================ -->
+  <script type="module">
+
+function dismissLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('fade-out');
+  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
+}
+// Failsafe: force-dismiss after 6 seconds no matter what
+setTimeout(()=>dismissLoadingScreen(), 6000);
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      collection,
+      query,
+      where,
+      getDocs,
+      serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    /* ── Firebase init ── */
+    const app = initializeApp({
+      apiKey:            "AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y",
+      authDomain:        "pestaticdatabase.firebaseapp.com",
+      databaseURL:       "https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:         "pestaticdatabase",
+      storageBucket:     "pestaticdatabase.firebasestorage.app",
+      messagingSenderId: "930313053124",
+      appId:             "1:930313053124:web:66e6ce6c889dc747d77a91"
+    });
+
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    /* ── Globals ── */
+    let currentUser   = null;
+    let currentRole   = null;
+
+    /* ── UI helpers ── */
+    function showToast(msg, type = 'success', title = '') {
+      const container = document.getElementById('toast-container');
+      const icons = {
+        success: `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+        error:   `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        warning: `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+        info:    `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(213,94%,47%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+      };
+      const defaultTitles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'success' ? '' : type}`;
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-body">
+          <div class="toast-title">${title || defaultTitles[type]}</div>
+          <div class="toast-msg">${msg}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+    window.showToast = showToast;
+
+    /* ── Auth state ── */
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showAuthScreen('login');
+        return;
+      }
+
+      currentUser = user;
+
+      try {
+        const userRef  = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          // First time sign-in — create pending user
+          await setDoc(userRef, {
+            uid:         user.uid,
+            email:       user.email,
+            displayName: user.displayName,
+            photoURL:    user.photoURL,
+            role:        'user',
+            status:      'pending',
+            createdAt:   serverTimestamp(),
+            lastLogin:   serverTimestamp()
+          });
+          showAuthScreen('pending');
+          return;
+        }
+
+        const userData = userSnap.data();
+
+        // Update last login
+        await updateDoc(userRef, { lastLogin: serverTimestamp() });
+
+        if (userData.status === 'pending') {
+          showAuthScreen('pending');
+          return;
+        }
+
+        if (userData.status === 'denied') {
+          await signOut(auth);
+          showError('login-error', 'Your account access has been denied. Please contact an administrator.');
+          showAuthScreen('login');
+          return;
+        }
+
+        if (userData.status === 'approved') {
+          currentRole = userData.role;
+          initAppShell(user, userData);
+          return;
+        }
+
+      } catch (err) {
+        console.error('Auth error:', err);
+        showError('login-error', 'An error occurred. Please try again.');
+        showAuthScreen('login');
+      }
+    });
+
+    function showAuthScreen(which) {
+      document.getElementById('auth-screen').style.display  = 'flex';
+      document.getElementById('app-shell').style.display    = 'none';
+      document.getElementById('login-card').style.display   = which === 'login'   ? 'block' : 'none';
+      document.getElementById('pending-card').style.display = which === 'pending' ? 'block' : 'none';
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = msg; el.style.display = 'block'; }
+    }
+
+    /* ── Google Sign-In ── */
+    document.getElementById('btn-google-signin').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-google-signin');
+      btn.disabled = true;
+      btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> Signing in…`;
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        dismissLoadingScreen();console.error(err);
+        showError('login-error', 'Sign-in failed. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google`;
+      }
+    });
+
+    /* ── Pending: Check Status ── */
+    document.getElementById('btn-check-status').addEventListener('click', async () => {
+      const btn  = document.getElementById('btn-check-status');
+      const text = document.getElementById('check-status-text');
+      text.textContent = 'Checking…';
+      btn.disabled = true;
+
+      try {
+        const userRef  = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) { text.textContent = 'Check Status'; btn.disabled = false; return; }
+
+        const userData = userSnap.data();
+
+        if (userData.status === 'approved') {
+          currentRole = userData.role;
+          initAppShell(currentUser, userData);
+        } else if (userData.status === 'denied') {
+          const msgEl = document.getElementById('pending-msg');
+          msgEl.textContent = 'Your access has been denied. Contact an administrator.';
+          msgEl.style.display = 'block';
+          msgEl.style.background = 'var(--red-bg)';
+          msgEl.style.color = 'var(--red-text)';
+          text.textContent = 'Check Status';
+          btn.disabled = false;
+        } else {
+          const msgEl = document.getElementById('pending-msg');
+          msgEl.textContent = 'Still pending. Check back later or contact an admin.';
+          msgEl.style.display = 'block';
+          msgEl.style.background = 'var(--amber-bg)';
+          msgEl.style.color = 'var(--amber-text)';
+          text.textContent = 'Check Status';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        dismissLoadingScreen();console.error(err);
+        text.textContent = 'Check Status';
+        btn.disabled = false;
+      }
+    });
+
+    /* ── Pending: Sign Out ── */
+    document.getElementById('btn-signout-pending').addEventListener('click', () => signOut(auth));
+
+    /* ── App Shell init ── */
+    function initAppShell(user, userData) {
+      dismissLoadingScreen();dismissLoadingScreen();dismissLoadingScreen();document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-shell').style.display   = 'flex';
+
+      // Set user info in sidebar
+      const name = user.displayName || user.email;
+      document.getElementById('user-display-name').textContent = name;
+      document.getElementById('user-role-label').textContent   = (userData.role || 'user').replace('_', ' ');
+
+      // Avatar
+      if (user.photoURL) {
+        document.getElementById('user-avatar').innerHTML =
+          `<img src="${user.photoURL}" alt="${name}" />`;
+      } else {
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+        document.getElementById('user-initials').textContent = initials;
+      }
+
+      // Role-based nav visibility
+      const role = userData.role;
+      if (role === 'admin' || role === 'super_admin') {
+        document.getElementById('admin-nav-label').style.display = '';
+        document.getElementById('nav-users').style.display = '';
+      }
+      if (role === 'super_admin') {
+        document.getElementById('nav-settings').style.display = '';
+      }
+
+      // Highlight active nav item based on current page
+      const page = window.location.pathname.split('/').pop().replace('.html','') || 'layout';
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('active');
+        if (el.dataset.page === page) {
+          el.classList.add('active');
+          document.getElementById('topbar-title').textContent =
+            el.textContent.trim().split('\n')[0].trim();
+        }
+      });
+
+      // Load notification badges
+      loadBadges();
+    }
+
+    /* ── Badges loader ── */
+    async function loadBadges() {
+      try {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        // Overdue treatments
+        const overdueQ = query(
+          collection(db, 'treatments'),
+          where('status', '==', 'scheduled')
+        );
+        const overdueSnap = await getDocs(overdueQ);
+        let overdueCount = 0;
+        overdueSnap.forEach(d => {
+          const data = d.data();
+          if (data.treatmentDate) {
+            const tDate = data.treatmentDate.toDate ? data.treatmentDate.toDate() : new Date(data.treatmentDate);
+            if (tDate < today) overdueCount++;
+          }
+        });
+        if (overdueCount > 0) {
+          const badge = document.getElementById('badge-overdue');
+          badge.textContent = overdueCount;
+          badge.style.display = '';
+          document.getElementById('notif-dot').style.display = '';
+        }
+
+        // Open complaints
+        const complaintsQ = query(
+          collection(db, 'complaints'),
+          where('status', 'in', ['Open', 'In Progress'])
+        );
+        const complaintsSnap = await getDocs(complaintsQ);
+        if (!complaintsSnap.empty) {
+          const badge = document.getElementById('badge-complaints');
+          badge.textContent = complaintsSnap.size;
+          badge.style.display = '';
+        }
+
+        // Pending users (admin+)
+        if (currentRole === 'admin' || currentRole === 'super_admin') {
+          const pendingQ = query(
+            collection(db, 'users'),
+            where('status', '==', 'pending')
+          );
+          const pendingSnap = await getDocs(pendingQ);
+          if (!pendingSnap.empty) {
+            const badge = document.getElementById('badge-pending-users');
+            badge.textContent = pendingSnap.size;
+            badge.style.display = '';
+          }
+        }
+
+      } catch (err) {
+        console.warn('Badge load error:', err);
+      }
+    }
+
+    /* ── Sign Out ── */
+    document.getElementById('btn-signout').addEventListener('click', async () => {
+      if (confirm('Sign out of Pestastic?')) {
+        await signOut(auth);
+      }
+    });
+
+    /* ── Mobile sidebar ── */
+    const hamburger = document.getElementById('hamburger');
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('sidebar-overlay');
+
+    function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('open'); }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+
+    hamburger.addEventListener('click', () =>
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar()
+    );
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar on nav click (mobile)
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => {
+        if (window.innerWidth < 1024) closeSidebar();
+      });
+    });
+
+    /* ── Expose utilities globally for child modules ── */
+    window.pestastic = {
+      getAuth: () => auth,
+      getDb:   () => db,
+      getUser: () => currentUser,
+      getRole: () => currentRole,
+      showToast,
+
+      // Format currency
+      formatCurrency(amount) {
+        return new Intl.NumberFormat('en-PH', {
+          style: 'currency',
+          currency: 'PHP',
+          minimumFractionDigits: 2
+        }).format(amount || 0);
+      },
+
+      // Format date
+      formatDate(val) {
+        if (!val) return '—';
+        const d = val.toDate ? val.toDate() : new Date(val);
+        if (isNaN(d)) return '—';
+        return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+      },
+
+      // Audit log helper
+      async logAction(action, entityType, entityId, description) {
+        try {
+          const { addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          await addDoc(collection(db, 'audit_log'), {
+            action,
+            entityType,
+            entityId,
+            description,
+            performedBy:  currentUser?.email || 'unknown',
+            performedByUid: currentUser?.uid || '',
+            createdAt:    serverTimestamp()
+          });
+        } catch (err) {
+          console.warn('Audit log error:', err);
+        }
+      },
+
+      // Contract types
+      CONTRACT_TYPES: [
+        'Termite Control',
+        'General Pest Control',
+        'Rodents Control',
+        'Crawling Insects Control',
+        'Pre-Construction Termite Control',
+        'Reticulation System',
+        'Flying Insects Control'
+      ],
+
+      // Dropdown options
+      FREQUENCIES:       ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual', 'one-time'],
+      CONTRACT_STATUSES: ['active', 'expired', 'renewed', 'cancelled'],
+      TREATMENT_STATUSES:['scheduled', 'completed', 'cancelled', 'rescheduled'],
+      PAYMENT_STATUSES:  ['Pending', 'Received', 'Deposited', 'Remitted', 'Collected'],
+      PAYMENT_MODES:     ['cash', 'check', 'bank-transfer', 'credit-card', 'gcash', 'maya'],
+      COMPLAINT_PRIORITIES: ['low', 'medium', 'high'],
+      COMPLAINT_STATUSES:   ['Open', 'In Progress', 'Scheduled', 'Completed', 'Closed'],
+      INSPECTION_STATUSES:  ['Scheduled', 'Completed', 'Converted', 'Cancelled', 'No Show', 'Lost'],
+      RENEWAL_STATUSES:     ['pending', 'proposal-sent', 'awaiting-response', 'renewed', 'declined'],
+      COMMUNICATION_SOURCES:['Cavite Page', 'Parañaque Page', 'Main Page', 'Batangas Page', 'Phone Number', 'Email', 'Walk-in', 'Referral'],
+
+      // Status badge helper
+      statusBadge(status) {
+        const map = {
+          'active': 'green', 'completed': 'green', 'renewed': 'green',
+          'Received': 'green', 'Deposited': 'green', 'Remitted': 'green', 'Collected': 'green',
+          'Converted': 'green',
+
+          'scheduled': 'blue', 'Open': 'blue', 'Scheduled': 'blue', 'In Progress': 'blue',
+
+          'pending': 'amber', 'Pending': 'amber', 'rescheduled': 'amber',
+          'awaiting-response': 'amber', 'No Show': 'amber', 'proposal-sent': 'amber',
+
+          'expired': 'red', 'overdue': 'red', 'cancelled': 'gray', 'Cancelled': 'gray',
+          'denied': 'red', 'declined': 'red', 'Lost': 'gray', 'Closed': 'gray',
+        };
+        const cls = map[status] || 'gray';
+        return `<span class="badge badge-${cls}">${status}</span>`;
+      },
+
+      // Priority badge
+      priorityBadge(priority) {
+        const map = { 'high': 'red', 'medium': 'amber', 'low': 'blue' };
+        const cls = map[(priority||'').toLowerCase()] || 'gray';
+        return `<span class="badge badge-${cls}">${priority}</span>`;
+      },
+
+      // Pagination helper
+      paginate(items, page, perPage = 20) {
+        const total = items.length;
+        const totalPages = Math.ceil(total / perPage);
+        const start = (page - 1) * perPage;
+        const end   = Math.min(start + perPage, total);
+        return {
+          items:      items.slice(start, end),
+          total,
+          totalPages,
+          page,
+          start: start + 1,
+          end,
+        };
+      },
+
+      // Render pagination controls
+      renderPagination(containerId, infoId, state, onPageChange) {
+        const info = document.getElementById(infoId);
+        const container = document.getElementById(containerId);
+        if (!info || !container) return;
+
+        info.textContent = `Showing ${state.start}–${state.end} of ${state.total} records`;
+
+        const pages = [];
+        for (let i = 1; i <= state.totalPages; i++) {
+          if (
+            i === 1 || i === state.totalPages ||
+            (i >= state.page - 1 && i <= state.page + 1)
+          ) {
+            pages.push(i);
+          } else if (pages[pages.length - 1] !== '…') {
+            pages.push('…');
+          }
+        }
+
+        container.innerHTML = `
+          <button class="page-btn" ${state.page <= 1 ? 'disabled' : ''} data-p="${state.page - 1}">‹</button>
+          ${pages.map(p => p === '…'
+            ? `<button class="page-btn" disabled>…</button>`
+            : `<button class="page-btn ${p === state.page ? 'active' : ''}" data-p="${p}">${p}</button>`
+          ).join('')}
+          <button class="page-btn" ${state.page >= state.totalPages ? 'disabled' : ''} data-p="${state.page + 1}">›</button>
+        `;
+
+        container.querySelectorAll('[data-p]').forEach(btn => {
+          btn.addEventListener('click', () => onPageChange(Number(btn.dataset.p)));
+        });
+      },
+
+      // CSV export
+      exportCSV(headers, rows, filename) {
+        const csv = [
+          headers.join(','),
+          ...rows.map(r => r.map(cell =>
+            `"${String(cell ?? '').replace(/"/g, '""')}"`
+          ).join(','))
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+
+      // Clean client names (strip parenthetical notes)
+      cleanClientName(name) {
+        return (name || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+      },
+
+      // Local date (not UTC) for Firestore queries
+      toLocalDateStart(date) {
+        const d = new Date(date);
+        d.setHours(0,0,0,0);
+        return d;
+      },
+
+      toLocalDateEnd(date) {
+        const d = new Date(date);
+        d.setHours(23,59,59,999);
+        return d;
+      }
+    };
+  </script>
+
+</body>
+</html>

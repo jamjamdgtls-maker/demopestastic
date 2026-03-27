@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pestastic — Settings</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --primary:hsl(142,76%,36%);--primary-hover:hsl(142,76%,30%);--primary-light:hsl(142,76%,95%);--primary-border:hsl(142,76%,80%);
+      --bg:#fff;--bg-secondary:#f8f9fa;--bg-tertiary:#f1f3f5;
+      --sidebar-bg:#0f1b12;--sidebar-text:#c8d6ca;--sidebar-muted:#6b7f6e;
+      --text:#111827;--text-secondary:#4b5563;--text-muted:#9ca3af;
+      --border:#e5e7eb;--border-hover:#d1d5db;
+      --radius:8px;--radius-sm:4px;--radius-lg:12px;
+      --shadow:0 2px 8px rgba(0,0,0,.10);--shadow-lg:0 8px 24px rgba(0,0,0,.12);
+      --green:hsl(142,76%,36%);--green-bg:hsl(142,76%,95%);--green-text:hsl(142,76%,28%);
+      --blue:hsl(213,94%,47%);--blue-bg:hsl(213,94%,95%);--blue-text:hsl(213,94%,35%);
+      --amber:hsl(38,92%,50%);--amber-bg:hsl(38,92%,95%);--amber-text:hsl(38,92%,32%);
+      --red:hsl(0,84%,50%);--red-bg:hsl(0,84%,96%);--red-text:hsl(0,84%,38%);
+      --purple:hsl(262,83%,58%);--purple-bg:hsl(262,83%,96%);--purple-text:hsl(262,83%,42%);
+      --gray:hsl(220,9%,46%);--gray-bg:hsl(220,9%,95%);--gray-text:hsl(220,9%,35%);
+      --sidebar-width:260px;--topbar-height:60px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif
+    }
+    html,body{height:100%;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg-secondary);line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    button{font-family:var(--font);cursor:pointer}
+    input,select,textarea{font-family:var(--font);font-size:14px}
+
+    /* AUTH */
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
+    .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
+    .auth-logo{width:64px;height:64px;background:var(--primary-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .auth-logo svg{width:36px;height:36px}
+    .auth-card h1{font-size:24px;font-weight:700;margin-bottom:4px}
+    .auth-card>p{color:var(--text-muted);font-size:14px;margin-bottom:32px}
+    .btn-google{width:100%;padding:12px 20px;border:1.5px solid var(--border);background:white;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;gap:12px;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s}
+    .btn-google:hover{background:var(--bg-secondary)}
+    .btn-google svg{width:20px;height:20px}
+    .auth-error{margin-top:16px;padding:10px 14px;background:var(--red-bg);color:var(--red-text);border-radius:var(--radius-sm);font-size:13px;border:1px solid #fca5a5;display:none}
+    .pending-icon{width:72px;height:72px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .pending-icon svg{width:36px;height:36px;color:var(--amber)}
+    .btn-pending-check{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;margin-bottom:12px;cursor:pointer}
+    .btn-signout-pending{width:100%;padding:12px;background:transparent;color:var(--text-secondary);border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;cursor:pointer}
+
+    /* APP SHELL */
+    #app-shell{display:none;height:100vh;overflow:hidden}
+
+    /* SIDEBAR */
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;z-index:200;transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .sidebar-logo-icon{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sidebar-logo-icon svg{width:20px;height:20px;color:white}
+    .sidebar-logo-text span{display:block;font-size:15px;font-weight:700;color:white;line-height:1.2}
+    .sidebar-logo-text small{font-size:10px;color:var(--sidebar-muted);text-transform:uppercase;letter-spacing:.08em}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px}
+    .sidebar-nav::-webkit-scrollbar{width:4px}
+    .sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+    .nav-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--sidebar-muted);padding:12px 10px 6px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--sidebar-text);font-size:13.5px;font-weight:450;cursor:pointer;transition:all .15s;position:relative;user-select:none}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:white}
+    .nav-item.active{background:rgba(34,197,94,.15);color:hsl(142,76%,65%)}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--primary);border-radius:0 2px 2px 0}
+    .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85}
+    .nav-item.active svg{opacity:1}
+    .nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+    .nav-badge.amber{background:var(--amber)}
+    .sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
+    .sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s}
+    .sidebar-user:hover{background:rgba(255,255,255,.07)}
+    .user-avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;flex-shrink:0;overflow:hidden}
+    .user-avatar img{width:100%;height:100%;object-fit:cover}
+    .user-info{flex:1;min-width:0}
+    .user-name{font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:11px;color:var(--sidebar-muted);text-transform:capitalize}
+    .btn-signout{background:none;border:none;padding:6px;color:var(--sidebar-muted);border-radius:var(--radius-sm);transition:all .15s;display:flex;align-items:center;cursor:pointer}
+    .btn-signout:hover{color:var(--red);background:rgba(239,68,68,.1)}
+    .btn-signout svg{width:16px;height:16px}
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+
+    /* MAIN */
+    .main-wrapper{margin-left:var(--sidebar-width);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+    .hamburger{display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}
+    .hamburger svg{width:20px;height:20px}
+    .topbar-title{font-size:16px;font-weight:700}
+    .topbar-spacer{flex:1}
+    .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer}
+    .topbar-btn svg{width:16px;height:16px}
+    .page-content{flex:1;overflow-y:auto;padding:24px;max-width:100%}
+    .page-content::-webkit-scrollbar{width:6px}
+    .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .btn svg{width:15px;height:15px}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:hover{background:var(--primary-hover)}
+    .btn-primary:active{transform:scale(.98)}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn-secondary{background:white;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg-secondary)}
+    .btn-danger{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
+    .btn-danger:hover{background:#fee2e2}
+    .btn-ghost{background:none;color:var(--text-secondary);border:none;padding:6px 10px}
+    .btn-ghost:hover{background:var(--bg-secondary);color:var(--text)}
+    .btn-sm{padding:5px 10px;font-size:12px}
+    .btn-sm svg{width:13px;height:13px}
+
+    /* ACCESS DENIED */
+    #access-denied{display:none;text-align:center;padding:80px 24px}
+    #access-denied svg{width:56px;height:56px;color:var(--red);margin-bottom:20px;opacity:.6}
+    #access-denied h2{font-size:22px;font-weight:700;margin-bottom:10px}
+    #access-denied p{font-size:14px;color:var(--text-muted);max-width:400px;margin:0 auto 20px}
+
+    /* PAGE */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+    .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+    .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
+
+    /* TABS */
+    .tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:24px}
+    .tab-btn{padding:10px 20px;font-size:14px;font-weight:500;color:var(--text-muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;font-family:var(--font)}
+    .tab-btn svg{width:15px;height:15px}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+    .tab-pane{display:none}
+    .tab-pane.active{display:block}
+
+    /* SETTINGS CARDS */
+    .settings-card{background:white;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;overflow:hidden}
+    .settings-card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .settings-card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:9px}
+    .settings-card-title svg{width:18px;height:18px;color:var(--primary)}
+    .settings-card-subtitle{font-size:12.5px;color:var(--text-muted);margin-top:2px}
+    .settings-card-body{padding:20px}
+
+    /* TOGGLE */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bg-tertiary)}
+    .toggle-row:last-child{border-bottom:none}
+    .toggle-label{flex:1}
+    .toggle-label strong{font-size:13.5px;font-weight:600;display:block}
+    .toggle-label span{font-size:12.5px;color:var(--text-muted)}
+    .toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:background .2s}
+    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .toggle input:checked+.toggle-slider{background:var(--primary)}
+    .toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+    .toggle input:disabled+.toggle-slider{opacity:.5;cursor:not-allowed}
+
+    /* FORMS */
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+    .form-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px}
+    .form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;color:var(--text);background:white;transition:border-color .15s,box-shadow .15s;outline:none}
+    .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:32px;cursor:pointer}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+    .form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
+    .form-textarea{resize:vertical;min-height:80px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-row.three{grid-template-columns:1fr 1fr 1fr}
+    .reminder-row{display:flex;align-items:center;gap:10px}
+    .reminder-row input[type="number"]{width:80px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;outline:none;transition:border-color .15s;font-family:var(--font)}
+    .reminder-row input[type="number"]:focus{border-color:var(--primary)}
+    .reminder-row span{font-size:13px;color:var(--text-secondary)}
+
+    /* AGENTS */
+    .agents-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:40px}
+    .agent-chip{display:flex;align-items:center;gap:6px;background:var(--primary-light);border:1px solid var(--primary-border);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500;color:var(--green-text)}
+    .agent-chip button{background:none;border:none;color:var(--green-text);cursor:pointer;padding:0;display:flex;align-items:center;opacity:.7;transition:opacity .15s}
+    .agent-chip button:hover{opacity:1}
+    .agent-chip button svg{width:13px;height:13px}
+    .add-agent-row{display:flex;gap:8px}
+    .add-agent-row input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;outline:none;transition:border-color .15s;font-family:var(--font)}
+    .add-agent-row input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+
+    /* BULK UPLOAD */
+    .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .upload-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+    .upload-card-title{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+    .upload-card-title svg{width:15px;height:15px;color:var(--primary)}
+    .upload-card-desc{font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
+    .upload-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:10px}
+    .upload-zone:hover{border-color:var(--primary);background:var(--primary-light)}
+    .upload-zone svg{width:28px;height:28px;color:var(--text-muted);margin-bottom:8px}
+    .upload-zone p{font-size:12.5px;color:var(--text-muted)}
+    .upload-zone p strong{color:var(--primary)}
+    .upload-result{font-size:12.5px;padding:8px 12px;border-radius:var(--radius-sm);display:none;margin-top:8px}
+    .upload-result.success{background:var(--green-bg);color:var(--green-text)}
+    .upload-result.error{background:var(--red-bg);color:var(--red-text)}
+
+    /* FIELDS TABLE */
+    .fields-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+    .fields-table th{padding:6px 10px;background:var(--bg-tertiary);font-weight:700;text-align:left;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+    .fields-table td{padding:5px 10px;border-top:1px solid var(--border);color:var(--text)}
+    .fields-table td.req{color:var(--red-text);font-weight:700}
+    .fields-table td code{background:var(--bg-tertiary);padding:1px 5px;border-radius:3px;font-size:11px;font-family:monospace}
+
+    /* SAVE BANNER */
+    .save-banner{position:sticky;bottom:0;background:white;border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+    .save-banner-text{font-size:13px;color:var(--text-secondary)}
+    .save-banner-text strong{color:var(--text)}
+
+    /* SPINNER / TOAST */
+    .spinner{width:18px;height:18px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+    .toast{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:280px;max-width:380px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-start;gap:10px;pointer-events:all;animation:toastIn .2s ease;border-left:4px solid var(--primary)}
+    .toast.error{border-left-color:var(--red)}.toast.warning{border-left-color:var(--amber)}
+    .toast-icon svg{width:16px;height:16px}
+    .toast-body{flex:1}
+    .toast-title{font-size:13.5px;font-weight:600}
+    .toast-msg{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+    .toast-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0}
+    .toast-close svg{width:14px;height:14px}
+    @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+    /* RESPONSIVE */
+    @media(max-width:1024px){
+      .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+      .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
+      .form-row,.form-row.three,.upload-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:768px){.page-content{padding:16px}.tabs{overflow-x:auto;white-space:nowrap}}
+  
+    /* ── PAGE LOAD SCREEN ── */
+    #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
+    #loading-screen.fade-out{opacity:0;pointer-events:none}
+    .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
+    .ls-logo svg{width:34px;height:34px;color:white}
+    .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
+    .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+
+
+<!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
+<div id="loading-screen">
+  <div class="ls-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+      <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
+      <circle cx="9.5" cy="9" r="1" fill="white"/>
+      <circle cx="14.5" cy="9" r="1" fill="white"/>
+    </svg>
+  </div>
+  <div class="ls-spinner"></div>
+  <div class="ls-text">Pestastic</div>
+</div>
+
+<!-- AUTH -->
+<div id="auth-screen" style="display:none">
+  <div id="login-card" class="auth-card">
+    <div class="auth-logo"><svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/><circle cx="9.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/><circle cx="14.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/></svg></div>
+    <h1>Pestastic</h1><p>Sign in to continue</p>
+    <button class="btn-google" id="btn-google-signin"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
+    <div class="auth-error" id="login-error"></div>
+  </div>
+  <div id="pending-card" class="auth-card" style="display:none">
+    <div class="pending-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <h1 style="font-size:20px">Pending Approval</h1><p style="margin-bottom:24px">Your account awaits admin approval.</p>
+    <button class="btn-pending-check" id="btn-check-status">Check Status</button>
+    <button class="btn-signout-pending" id="btn-signout-pending">Sign Out</button>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/><circle cx="9.5" cy="9" r="1" fill="white"/><circle cx="14.5" cy="9" r="1" fill="white"/></svg></div>
+      <div class="sidebar-logo-text"><span>Pestastic</span><small>Pest Control</small></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a class="nav-item" href="clients.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</a>
+      <a class="nav-item" href="contracts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Contracts</a>
+      <a class="nav-item" href="treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Treatments</a>
+      <div class="nav-section-label">Financial</div>
+      <a class="nav-item" href="payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</a>
+      <a class="nav-item" href="renewals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Renewals</a>
+      <div class="nav-section-label">Service</div>
+      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints</a>
+      <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections</a>
+      <div class="nav-section-label">Monitoring</div>
+      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue</a>
+      <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a>
+      <div class="nav-section-label">Operations</div>
+      <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Teams</a>
+      <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
+      <div class="nav-section-label" id="admin-nav-label" style="display:none">Admin</div>
+      <a class="nav-item" href="user-management.html" id="nav-users" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>User Management</a>
+      <a class="nav-item active" href="settings.html" id="nav-settings" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar"><span id="user-initials">?</span></div>
+        <div class="user-info"><div class="user-name" id="user-display-name">Loading…</div><div class="user-role" id="user-role-label">—</div></div>
+        <button class="btn-signout" id="btn-signout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <span class="topbar-title">Settings</span>
+      <div class="topbar-spacer"></div>
+      <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+    </header>
+
+    <main class="page-content" id="main-content">
+
+      <!-- Access Denied -->
+      <div id="access-denied">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <h2>Super Admin Only</h2>
+        <p>Settings are restricted to Super Admins. Contact your Super Admin to make system changes.</p>
+        <a href="dashboard.html" style="padding:10px 20px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:600;font-size:14px">← Back to Dashboard</a>
+      </div>
+
+      <!-- Settings content -->
+      <div id="settings-content" style="display:none">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Settings</h2>
+            <p>System configuration — Super Admin only</p>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Notifications
+          </button>
+          <button class="tab-btn" data-tab="system">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            System Config
+          </button>
+          <button class="tab-btn" data-tab="data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Data Management
+          </button>
+        </div>
+
+        <!-- ══════════ TAB: NOTIFICATIONS ══════════ -->
+        <div class="tab-pane active" id="tab-notifications">
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Email Notifications</div>
+                <div class="settings-card-subtitle">Control when the system sends email reminders</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>Enable Email Notifications</strong><span>Master toggle — disabling this will suppress all emails</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-email-enabled" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>Treatment Reminders</strong><span>Remind teams about upcoming scheduled treatments</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-treatment" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>Payment Due Reminders</strong><span>Alert about upcoming and overdue payments</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-payment" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>Contract Expiry Alerts</strong><span>Notify when contracts are approaching expiration</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-contract-expiry" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>New User Registration</strong><span>Notify admins when a new user requests access</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-new-user" /><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label"><strong>Complaint Updates</strong><span>Alert assigned staff when complaint status changes</span></div>
+                <label class="toggle"><input type="checkbox" id="notif-complaint" /><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Reminder Timing</div>
+                <div class="settings-card-subtitle">How many days before an event to send reminders</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Treatment Reminder (days before)</label>
+                  <div class="reminder-row">
+                    <input type="number" id="remind-treatment" min="1" max="30" value="3" />
+                    <span>days before scheduled treatment</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Payment Due Reminder (days before)</label>
+                  <div class="reminder-row">
+                    <input type="number" id="remind-payment" min="1" max="30" value="7" />
+                    <span>days before payment due date</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Contract Expiry Reminder (days before)</label>
+                  <div class="reminder-row">
+                    <input type="number" id="remind-contract" min="1" max="120" value="30" />
+                    <span>days before contract end date</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Overdue Treatment Alert (days after)</label>
+                  <div class="reminder-row">
+                    <input type="number" id="remind-overdue" min="1" max="30" value="1" />
+                    <span>days after missed treatment date</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Notification Email Recipients</label>
+                <input type="text" class="form-input" id="notif-emails" placeholder="admin@company.com, manager@company.com" />
+                <div class="form-hint">Comma-separated email addresses for system notifications</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:right;margin-top:4px">
+            <button class="btn btn-primary" id="btn-save-notifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span id="save-notif-text">Save Notification Settings</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ══════════ TAB: SYSTEM CONFIG ══════════ -->
+        <div class="tab-pane" id="tab-system">
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Company Information</div>
+                <div class="settings-card-subtitle">Details used in reports, receipts, and correspondence</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Company Name</label>
+                  <input type="text" class="form-input" id="company-name" placeholder="Pestastic Pest Control" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Business Registration No.</label>
+                  <input type="text" class="form-input" id="company-reg" placeholder="e.g. SEC-12345" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Address</label>
+                <textarea class="form-textarea" id="company-address" placeholder="Full business address…" style="min-height:60px"></textarea>
+              </div>
+              <div class="form-row three">
+                <div class="form-group">
+                  <label class="form-label">Phone Number</label>
+                  <input type="text" class="form-input" id="company-phone" placeholder="+63 2 8XXX XXXX" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" class="form-input" id="company-email" placeholder="info@pestastic.com" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Website</label>
+                  <input type="text" class="form-input" id="company-website" placeholder="www.pestastic.com" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Contract Defaults</div>
+                <div class="settings-card-subtitle">Default values applied to new contracts</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Default Warranty Period (months)</label>
+                  <input type="number" class="form-input" id="default-warranty" min="0" max="60" placeholder="e.g. 6" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Default Payment Terms</label>
+                  <select class="form-select" id="default-payment-terms">
+                    <option value="upon-signing">Upon Signing</option>
+                    <option value="net-15">Net 15 days</option>
+                    <option value="net-30">Net 30 days</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Currency Symbol</label>
+                  <select class="form-select" id="currency-symbol">
+                    <option value="₱">₱ Philippine Peso (PHP)</option>
+                    <option value="$">$ US Dollar (USD)</option>
+                    <option value="€">€ Euro (EUR)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Sales Agents</div>
+                <div class="settings-card-subtitle">Agents appear in all customer and contract assignment dropdowns</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="agents-list" id="agents-list"></div>
+              <div class="add-agent-row">
+                <input type="text" id="new-agent-input" placeholder="Agent full name (e.g. Juan dela Cruz)" />
+                <button class="btn btn-primary" id="btn-add-agent">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add Agent
+                </button>
+              </div>
+              <div class="form-hint" style="margin-top:8px">Press Enter to add quickly. Changes are saved with the Save button below.</div>
+            </div>
+          </div>
+
+          <div style="text-align:right;margin-top:4px">
+            <button class="btn btn-primary" id="btn-save-system">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span id="save-sys-text">Save System Config</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ══════════ TAB: DATA MANAGEMENT ══════════ -->
+        <div class="tab-pane" id="tab-data">
+
+          <div style="background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--blue-text)">
+            <strong>⚠ Bulk Upload Guidelines:</strong> CSV files must include the exact required headers (case-sensitive). Date fields must use <code style="background:white;padding:1px 5px;border-radius:3px">YYYY-MM-DD</code> format. All required fields must be filled. Invalid rows will be skipped with an error count.
+          </div>
+
+          <div class="upload-grid">
+
+            <!-- Clients -->
+            <div class="upload-card">
+              <div class="upload-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</div>
+              <div class="upload-card-desc">
+                Upload new client records. Customer numbers are auto-generated (PC-00001 format).
+                <table class="fields-table">
+                  <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+                  <tr><td>clientName</td><td class="req">✓</td><td>Full name</td></tr>
+                  <tr><td>contactNumber</td><td></td><td>Phone</td></tr>
+                  <tr><td>emailAddress</td><td></td><td>Email</td></tr>
+                  <tr><td>address</td><td></td><td>Full address</td></tr>
+                  <tr><td>city</td><td></td><td></td></tr>
+                  <tr><td>province</td><td></td><td></td></tr>
+                  <tr><td>salesAgent</td><td></td><td>Must match agent list</td></tr>
+                </table>
+              </div>
+              <div class="upload-card-actions">
+                <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('clients')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download Template
+                </button>
+                <label class="btn btn-primary btn-sm" style="cursor:pointer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload CSV
+                  <input type="file" accept=".csv" style="display:none" onchange="handleUpload(event,'clients')" />
+                </label>
+              </div>
+              <div class="upload-result" id="upload-result-clients"></div>
+            </div>
+
+            <!-- Contracts -->
+            <div class="upload-card">
+              <div class="upload-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Contracts</div>
+              <div class="upload-card-desc">
+                Import contracts with treatment schedules. Treatments and payments are NOT auto-generated — use dedicated imports below.
+                <table class="fields-table">
+                  <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+                  <tr><td>customerNo</td><td class="req">✓</td><td>Must exist in clients</td></tr>
+                  <tr><td>contractType</td><td class="req">✓</td><td>One of 7 canonical types</td></tr>
+                  <tr><td>contractStartDate</td><td class="req">✓</td><td>YYYY-MM-DD</td></tr>
+                  <tr><td>contractEndDate</td><td class="req">✓</td><td>YYYY-MM-DD</td></tr>
+                  <tr><td>totalAmount</td><td class="req">✓</td><td>Numeric</td></tr>
+                  <tr><td>frequency</td><td></td><td><code>monthly</code>, <code>quarterly</code>, etc.</td></tr>
+                  <tr><td>noOfSessions</td><td></td><td>Numeric</td></tr>
+                  <tr><td>assignedTeam</td><td></td><td>Must match team name</td></tr>
+                </table>
+              </div>
+              <div class="upload-card-actions">
+                <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('contracts')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download Template
+                </button>
+                <label class="btn btn-primary btn-sm" style="cursor:pointer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload CSV
+                  <input type="file" accept=".csv" style="display:none" onchange="handleUpload(event,'contracts')" />
+                </label>
+              </div>
+              <div class="upload-result" id="upload-result-contracts"></div>
+            </div>
+
+            <!-- Treatments -->
+            <div class="upload-card">
+              <div class="upload-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Treatments</div>
+              <div class="upload-card-desc">
+                Bulk import historical or pre-planned treatments.
+                <table class="fields-table">
+                  <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+                  <tr><td>customerNo</td><td class="req">✓</td><td></td></tr>
+                  <tr><td>contractId</td><td></td><td>Firestore doc ID</td></tr>
+                  <tr><td>contractType</td><td class="req">✓</td><td>One of 7 types</td></tr>
+                  <tr><td>treatmentDate</td><td class="req">✓</td><td>YYYY-MM-DD</td></tr>
+                  <tr><td>status</td><td></td><td><code>scheduled</code>, <code>completed</code>, <code>cancelled</code></td></tr>
+                  <tr><td>assignedTeam</td><td></td><td></td></tr>
+                  <tr><td>technician</td><td></td><td></td></tr>
+                  <tr><td>chemicalsUsed</td><td></td><td></td></tr>
+                </table>
+              </div>
+              <div class="upload-card-actions">
+                <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('treatments')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download Template
+                </button>
+                <label class="btn btn-primary btn-sm" style="cursor:pointer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload CSV
+                  <input type="file" accept=".csv" style="display:none" onchange="handleUpload(event,'treatments')" />
+                </label>
+              </div>
+              <div class="upload-result" id="upload-result-treatments"></div>
+            </div>
+
+            <!-- Payments -->
+            <div class="upload-card">
+              <div class="upload-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</div>
+              <div class="upload-card-desc">
+                Import historical or scheduled payment records.
+                <table class="fields-table">
+                  <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+                  <tr><td>customerNo</td><td class="req">✓</td><td></td></tr>
+                  <tr><td>contractId</td><td></td><td>Firestore doc ID</td></tr>
+                  <tr><td>amount</td><td class="req">✓</td><td>Numeric</td></tr>
+                  <tr><td>dueDate</td><td class="req">✓</td><td>YYYY-MM-DD</td></tr>
+                  <tr><td>status</td><td></td><td><code>Pending</code>, <code>Received</code>, <code>Deposited</code>, <code>Remitted</code>, <code>Collected</code></td></tr>
+                  <tr><td>paymentDate</td><td></td><td>YYYY-MM-DD</td></tr>
+                  <tr><td>paymentMode</td><td></td><td><code>cash</code>, <code>gcash</code>, <code>bank-transfer</code>, etc.</td></tr>
+                  <tr><td>orNumber</td><td></td><td>Official Receipt</td></tr>
+                </table>
+              </div>
+              <div class="upload-card-actions">
+                <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('payments')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download Template
+                </button>
+                <label class="btn btn-primary btn-sm" style="cursor:pointer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload CSV
+                  <input type="file" accept=".csv" style="display:none" onchange="handleUpload(event,'payments')" />
+                </label>
+              </div>
+              <div class="upload-result" id="upload-result-payments"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /settings-content -->
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════
+     FIREBASE + APP LOGIC
+════════════════════════════════════ -->
+<script type="module">
+
+function dismissLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('fade-out');
+  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
+}
+// Failsafe: force-dismiss after 6 seconds no matter what
+setTimeout(()=>dismissLoadingScreen(), 6000);
+
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc,
+  updateDoc, writeBatch, runTransaction, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+/* ── State ── */
+let currentUser = null, currentRole = null;
+let salesAgents = [];
+let settings = {};
+
+/* ── Helpers ── */
+const $ = id => document.getElementById(id);
+
+function showToast(msg, type='success', title='') {
+  const c=$('toast-container'), el=document.createElement('div');
+  el.className=`toast ${type==='success'?'':type}`;
+  const icons={success:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,error:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,warning:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>`};
+  el.innerHTML=`<div class="toast-icon">${icons[type]||icons.success}</div><div class="toast-body"><div class="toast-title">${title||(type==='error'?'Error':type==='warning'?'Warning':'Saved')}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  c.appendChild(el); setTimeout(()=>el.remove(),5000);
+}
+
+async function logAction(action,entityType,entityId,description){
+  try{await addDoc(collection(db,'audit_log'),{action,entityType,entityId,description,performedBy:currentUser?.email||'',performedByUid:currentUser?.uid||'',createdAt:serverTimestamp()});}catch{}
+}
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    $('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── Load settings ── */
+async function loadSettings() {
+  try{
+    const snap=await getDoc(doc(db,'config','settings'));
+    if(snap.exists()) settings=snap.data();
+    else settings={};
+  }catch{settings={};}
+
+  /* Notifications */
+  $('notif-email-enabled').checked=settings.emailEnabled!==false;
+  $('notif-treatment').checked=settings.notifTreatment!==false;
+  $('notif-payment').checked=settings.notifPayment!==false;
+  $('notif-contract-expiry').checked=settings.notifContractExpiry!==false;
+  $('notif-new-user').checked=settings.notifNewUser!==false;
+  $('notif-complaint').checked=settings.notifComplaint!==false;
+  $('remind-treatment').value=settings.remindTreatmentDays||3;
+  $('remind-payment').value=settings.remindPaymentDays||7;
+  $('remind-contract').value=settings.remindContractDays||30;
+  $('remind-overdue').value=settings.remindOverdueDays||1;
+  $('notif-emails').value=(settings.notificationEmails||[]).join(', ');
+
+  /* System */
+  $('company-name').value=settings.companyName||'Pestastic Pest Control';
+  $('company-reg').value=settings.companyReg||'';
+  $('company-address').value=settings.companyAddress||'';
+  $('company-phone').value=settings.companyPhone||'';
+  $('company-email').value=settings.companyEmail||'';
+  $('company-website').value=settings.companyWebsite||'';
+  $('default-warranty').value=settings.defaultWarrantyPeriod??6;
+  $('default-payment-terms').value=settings.defaultPaymentTerms||'upon-signing';
+  $('currency-symbol').value=settings.currencySymbol||'₱';
+
+  /* Agents */
+  salesAgents=[...(settings.salesAgents||[])];
+  renderAgents();
+}
+
+/* ── Render agents ── */
+function renderAgents(){
+  $('agents-list').innerHTML=salesAgents.length
+    ? salesAgents.map(a=>`<div class="agent-chip">${a}<button onclick="removeAgent('${encodeURIComponent(a)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('')
+    : '<span style="font-size:13px;color:var(--text-muted)">No agents added yet</span>';
+}
+
+window.removeAgent=function(encoded){
+  const name=decodeURIComponent(encoded);
+  salesAgents=salesAgents.filter(a=>a!==name);
+  renderAgents();
+};
+
+$('btn-add-agent').addEventListener('click',()=>{
+  const val=$('new-agent-input').value.trim();
+  if(!val)return;
+  if(salesAgents.includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
+  salesAgents.push(val);
+  $('new-agent-input').value='';
+  renderAgents();
+});
+
+$('new-agent-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('btn-add-agent').click();}});
+
+/* ── Save Notifications ── */
+$('btn-save-notifications').addEventListener('click', async()=>{
+  const btn=$('btn-save-notifications'); btn.disabled=true; $('save-notif-text').textContent='Saving…';
+  const emailsRaw=$('notif-emails').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const data={
+    emailEnabled:$('notif-email-enabled').checked,
+    notifTreatment:$('notif-treatment').checked,
+    notifPayment:$('notif-payment').checked,
+    notifContractExpiry:$('notif-contract-expiry').checked,
+    notifNewUser:$('notif-new-user').checked,
+    notifComplaint:$('notif-complaint').checked,
+    remindTreatmentDays:Number($('remind-treatment').value)||3,
+    remindPaymentDays:Number($('remind-payment').value)||7,
+    remindContractDays:Number($('remind-contract').value)||30,
+    remindOverdueDays:Number($('remind-overdue').value)||1,
+    notificationEmails:emailsRaw,
+    updatedAt:serverTimestamp()
+  };
+  try{
+    const ref=doc(db,'config','settings');
+    const snap=await getDoc(ref);
+    if(snap.exists()) await updateDoc(ref,data);
+    else await setDoc(ref,{...settings,...data});
+    Object.assign(settings,data);
+    await logAction('updated','settings','notifications','Updated notification settings');
+    showToast('Notification settings saved.','success','Settings Saved');
+  }catch(err){showToast('Failed: '+err.message,'error');}
+  btn.disabled=false; $('save-notif-text').textContent='Save Notification Settings';
+});
+
+/* ── Save System Config ── */
+$('btn-save-system').addEventListener('click', async()=>{
+  const btn=$('btn-save-system'); btn.disabled=true; $('save-sys-text').textContent='Saving…';
+  const data={
+    companyName:$('company-name').value.trim(),
+    companyReg:$('company-reg').value.trim(),
+    companyAddress:$('company-address').value.trim(),
+    companyPhone:$('company-phone').value.trim(),
+    companyEmail:$('company-email').value.trim(),
+    companyWebsite:$('company-website').value.trim(),
+    defaultWarrantyPeriod:Number($('default-warranty').value)||6,
+    defaultPaymentTerms:$('default-payment-terms').value,
+    currencySymbol:$('currency-symbol').value,
+    salesAgents,
+    updatedAt:serverTimestamp()
+  };
+  try{
+    const ref=doc(db,'config','settings');
+    const snap=await getDoc(ref);
+    if(snap.exists()) await updateDoc(ref,data);
+    else await setDoc(ref,{...settings,...data});
+    Object.assign(settings,data);
+    await logAction('updated','settings','system','Updated system configuration and sales agents');
+    showToast('System configuration saved.','success','Settings Saved');
+  }catch(err){showToast('Failed: '+err.message,'error');}
+  btn.disabled=false; $('save-sys-text').textContent='Save System Config';
+});
+
+/* ── CSV Template downloads ── */
+const TEMPLATES = {
+  clients: { headers:['clientName','contactNumber','emailAddress','address','city','province','salesAgent'], sample:['Juan dela Cruz','09171234567','juan@email.com','123 Mabini St Brgy. Santa Ana','Manila','NCR','Maria Santos'] },
+  contracts: { headers:['customerNo','contractType','contractStartDate','contractEndDate','totalAmount','frequency','noOfSessions','warrantyPeriod','assignedTeam','salesAgent','treatmentMethod'], sample:['PC-00001','Termite Control','2024-01-15','2025-01-14','12000','monthly','12','6','Team Alpha','Maria Santos','Chemical spraying'] },
+  treatments: { headers:['customerNo','contractId','contractType','treatmentDate','status','assignedTeam','technician','chemicalsUsed','notes'], sample:['PC-00001','','Termite Control','2024-02-15','scheduled','Team Alpha','Juan Cruz','Biflex SC','Initial treatment'] },
+  payments: { headers:['customerNo','contractId','amount','dueDate','status','paymentDate','paymentMode','orNumber','receivedBy','remarks'], sample:['PC-00001','','1000.00','2024-02-15','Pending','','','','',''] },
+};
+
+window.downloadTemplate = function(type){
+  const t=TEMPLATES[type]; if(!t)return;
+  const csv=[t.headers,t.sample].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`pestastic_${type}_template.csv`});
+  a.click(); showToast(`${type.charAt(0).toUpperCase()+type.slice(1)} CSV template downloaded.`);
+};
+
+/* ── CSV Upload handler ── */
+window.handleUpload = async function(event, collectionName) {
+  const file=event.target.files[0]; if(!file)return;
+  const resultEl=$(`upload-result-${collectionName}`);
+  resultEl.style.display='block';
+  resultEl.className='upload-result';
+  resultEl.textContent='Parsing CSV…';
+  event.target.value='';
+
+  const text=await file.text();
+  const rows=parseCSV(text);
+  if(rows.length<2){resultEl.className='upload-result error';resultEl.textContent='CSV must have at least one data row.';return;}
+
+  const headers=rows[0];
+  const data=rows.slice(1).map(row=>{
+    const obj={};
+    headers.forEach((h,i)=>{if(row[i]!==undefined)obj[h.trim()]=row[i].trim();});
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v!==''));
+
+  let success=0, failed=0;
+  const batch=writeBatch(db);
+
+  for(const row of data){
+    try{
+      const clean=prepareRow(collectionName,row);
+      if(!clean){failed++;continue;}
+      batch.set(doc(collection(db,collectionName)),{...clean,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      success++;
+    }catch{failed++;}
+  }
+
+  try{
+    if(success>0) await batch.commit();
+    await logAction('bulk_import',collectionName,'batch',`Bulk imported ${success} ${collectionName} records (${failed} skipped)`);
+    resultEl.className='upload-result success';
+    resultEl.textContent=`✓ Imported ${success} records${failed>0?`. ${failed} rows skipped (missing required fields)`:'.'}`;
+  }catch(err){
+    resultEl.className='upload-result error';
+    resultEl.textContent='Import failed: '+err.message;
+  }
+};
+
+function prepareRow(type, row) {
+  const parseD = s=>{if(!s)return null;const[y,m,d]=s.split('-').map(Number);return y&&m&&d?new Date(y,m-1,d):null;};
+  if(type==='clients'){
+    if(!row.clientName)return null;
+    return {clientName:row.clientName,contactNumber:row.contactNumber||'',emailAddress:row.emailAddress||'',address:row.address||'',city:row.city||'',province:row.province||'',salesAgent:row.salesAgent||''};
+  }
+  if(type==='contracts'){
+    if(!row.customerNo||!row.contractType||!row.contractStartDate||!row.contractEndDate||!row.totalAmount)return null;
+    return {customerNo:row.customerNo,contractType:row.contractType,contractStartDate:parseD(row.contractStartDate),contractEndDate:parseD(row.contractEndDate),totalAmount:parseFloat(row.totalAmount)||0,frequency:row.frequency||'monthly',noOfSessions:parseInt(row.noOfSessions)||0,warrantyPeriod:parseInt(row.warrantyPeriod)||0,assignedTeam:row.assignedTeam||'',salesAgent:row.salesAgent||'',treatmentMethod:row.treatmentMethod||'',status:'active'};
+  }
+  if(type==='treatments'){
+    if(!row.customerNo||!row.treatmentDate)return null;
+    return {customerNo:row.customerNo,contractId:row.contractId||'',contractType:row.contractType||'',treatmentDate:parseD(row.treatmentDate),status:row.status||'scheduled',assignedTeam:row.assignedTeam||'',technician:row.technician||'',chemicalsUsed:row.chemicalsUsed||'',notes:row.notes||''};
+  }
+  if(type==='payments'){
+    if(!row.customerNo||!row.amount||!row.dueDate)return null;
+    return {customerNo:row.customerNo,contractId:row.contractId||'',amount:parseFloat(row.amount)||0,dueDate:parseD(row.dueDate),status:row.status||'Pending',paymentDate:parseD(row.paymentDate)||null,paymentMode:row.paymentMode||'',orNumber:row.orNumber||'',receivedBy:row.receivedBy||'',remarks:row.remarks||''};
+  }
+  return null;
+}
+
+function parseCSV(text) {
+  const rows=[]; let row=[], cell='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(c==='"'){ if(inQ&&text[i+1]==='"'){cell+='"';i++;}else inQ=!inQ; }
+    else if(c===','&&!inQ){ row.push(cell);cell=''; }
+    else if((c==='\n'||c==='\r')&&!inQ){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(cell);if(row.some(v=>v!==''))rows.push(row);row=[];cell=''; }
+    else cell+=c;
+  }
+  if(cell||row.length)row.push(cell),rows.push(row);
+  return rows;
+}
+
+/* ── Auth ── */
+onAuthStateChanged(auth, async user=>{
+  if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
+  currentUser=user;
+  try{
+    const snap=await getDoc(doc(db,'users',user.uid));
+    if(!snap.exists()){
+      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
+      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
+    }
+    const data=snap.data();
+    updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
+    if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
+    currentRole=data.role;
+    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.display='flex';
+    const name=user.displayName||user.email;
+    $('user-display-name').textContent=name;
+    $('user-role-label').textContent=(data.role||'user').replace('_',' ');
+    if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
+    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
+    if(data.role==='super_admin')$('nav-settings').style.display='';
+
+    if(data.role==='super_admin'){
+      dismissLoadingScreen();$('access-denied').style.display='none';
+      $('settings-content').style.display='block';
+      await loadSettings();
+    } else {
+      dismissLoadingScreen();$('access-denied').style.display='block';
+      $('settings-content').style.display='none';
+    }
+  }catch(err){dismissLoadingScreen();console.error(err);}
+});
+
+$('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
+$('btn-signout-pending').addEventListener('click',()=>signOut(auth));
+$('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
+$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth);});
+
+const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
+hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+</script>
+</body>
+</html>
