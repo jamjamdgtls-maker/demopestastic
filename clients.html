@@ -80,7 +80,7 @@
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
 
     /* ── MAIN ── */
-    .main-wrapper{margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .main-wrapper{margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));height:100vh;display:flex;flex-direction:column;overflow:hidden}
     .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
     .hamburger{display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}
     .hamburger svg{width:20px;height:20px}
@@ -261,7 +261,7 @@
       .form-row,.form-row.three{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}
     }
     @media(max-width:768px){.page-content{padding:16px}.stats-row{gap:8px}.filters-bar{flex-direction:column;align-items:stretch}}
-  
+
     /* ── PAGE LOAD SCREEN ── */
     #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
     #loading-screen.fade-out{opacity:0;pointer-events:none}
@@ -273,9 +273,7 @@
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
-
-<!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
+<!-- PAGE LOAD SCREEN -->
 <div id="loading-screen">
   <div class="ls-logo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -289,6 +287,7 @@
   <div class="ls-text">Pestastic</div>
 </div>
 
+<!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none">
   <div id="login-card" class="auth-card">
     <div class="auth-logo"><svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/><circle cx="9.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/><circle cx="14.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/></svg></div>
@@ -353,7 +352,6 @@
     </header>
 
     <main class="page-content">
-      <!-- Page header -->
       <div class="page-header">
         <div class="page-header-left">
           <h2>Clients</h2>
@@ -430,9 +428,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     ADD / EDIT CLIENT MODAL
-══════════════════════════════════════════ -->
+<!-- ADD / EDIT CLIENT MODAL -->
 <div class="modal-overlay" id="client-form-modal">
   <div class="modal">
     <div class="modal-header">
@@ -513,9 +509,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     CLIENT DETAIL MODAL
-══════════════════════════════════════════ -->
+<!-- CLIENT DETAIL MODAL -->
 <div class="modal-overlay" id="client-detail-modal">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -539,22 +533,18 @@
         <button class="tab" data-tab="documents">Documents</button>
       </div>
 
-      <!-- Info tab -->
       <div id="tab-info" class="tab-panel">
         <div class="detail-grid" id="detail-info-grid"></div>
       </div>
 
-      <!-- Contracts tab -->
       <div id="tab-contracts" class="tab-panel" style="display:none">
         <div id="detail-contracts-body"><div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div></div>
       </div>
 
-      <!-- Complaints tab -->
       <div id="tab-complaints" class="tab-panel" style="display:none">
         <div id="detail-complaints-body"><div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div></div>
       </div>
 
-      <!-- Documents tab -->
       <div id="tab-documents" class="tab-panel" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
           <span style="font-size:13px;color:var(--text-muted)" id="doc-count-label">No documents</span>
@@ -563,7 +553,6 @@
             Add Link
           </button>
         </div>
-        <!-- Add doc form (hidden) -->
         <div id="add-doc-form" style="display:none;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
           <div class="form-row" style="margin-bottom:0">
             <div class="form-group" style="margin-bottom:0">
@@ -586,9 +575,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     CSV IMPORT MODAL
-══════════════════════════════════════════ -->
+<!-- CSV IMPORT MODAL -->
 <div class="modal-overlay" id="csv-import-modal">
   <div class="modal">
     <div class="modal-header">
@@ -625,21 +612,23 @@
 
 <div id="toast-container"></div>
 
-<!-- ══════════════════════════════════════════
-     FIREBASE + APP LOGIC
-══════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════ -->
 <script>
-function dismissLoadingScreen(){
-  const ls=document.getElementById('loading-screen');
-  if(!ls)return;
-  ls.classList.add('fade-out');
-  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
-}
-// Failsafe: force-dismiss loading screen after 6 seconds
-setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+  /* Dismiss loading screen helper — defined in plain script so it's always available */
+  function dismissLoadingScreen() {
+    const ls = document.getElementById('loading-screen');
+    if (!ls) return;
+    ls.classList.add('fade-out');
+    setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 280);
+  }
+  /* Failsafe: force-dismiss after 6 seconds */
+  setTimeout(dismissLoadingScreen, 6000);
 </script>
+
 <script type="module">
-import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -648,10 +637,15 @@ import {
   runTransaction, increment, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-
-,280);
-}
-const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
+const app  = initializeApp({
+  apiKey:            "AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y",
+  authDomain:        "pestaticdatabase.firebaseapp.com",
+  databaseURL:       "https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "pestaticdatabase",
+  storageBucket:     "pestaticdatabase.firebasestorage.app",
+  messagingSenderId: "930313053124",
+  appId:             "1:930313053124:web:66e6ce6c889dc747d77a91"
+});
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
@@ -665,38 +659,54 @@ let csvRows = [];
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
-function showToast(msg, type='success', title='') {
+
+function showToast(msg, type = 'success', title = '') {
   const c = $('toast-container'), el = document.createElement('div');
-  el.className = `toast ${type==='success'?'':type}`;
-  const icons = { success:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`, error:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`, warning:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>` };
-  const titles = { success:'Saved', error:'Error', warning:'Warning' };
-  el.innerHTML = `<div class="toast-icon">${icons[type]||icons.success}</div><div class="toast-body"><div class="toast-title">${title||titles[type]||'Done'}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
-  c.appendChild(el); setTimeout(()=>el.remove(),5000);
+  el.className = `toast ${type === 'success' ? '' : type}`;
+  const icons = {
+    success: `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    error:   `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    warning: `<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>`
+  };
+  const titles = { success: 'Saved', error: 'Error', warning: 'Warning' };
+  el.innerHTML = `<div class="toast-icon">${icons[type] || icons.success}</div><div class="toast-body"><div class="toast-title">${title || titles[type] || 'Done'}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
 }
 
 function openModal(id)  { $(id).classList.add('open'); }
 function closeModal(id) { $(id).classList.remove('open'); }
-document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
-document.querySelectorAll('.modal-overlay').forEach(ov => ov.addEventListener('click', e => { if(e.target===ov) closeModal(ov.id); }));
+
+document.querySelectorAll('[data-close]').forEach(btn =>
+  btn.addEventListener('click', () => closeModal(btn.dataset.close))
+);
+document.querySelectorAll('.modal-overlay').forEach(ov =>
+  ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); })
+);
 
 function fmtDate(val) {
-  if(!val) return '—';
-  const d = val.toDate?val.toDate():new Date(val);
-  if(isNaN(d)) return '—';
-  return d.toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});
+  if (!val) return '—';
+  const d = val.toDate ? val.toDate() : new Date(val);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function cleanName(n) { return (n||'').replace(/\s*\(.*?\)\s*/g,'').trim() || '—'; }
+function cleanName(n) { return (n || '').replace(/\s*\(.*?\)\s*/g, '').trim() || '—'; }
 
 function statusBadge(s) {
-  const m={active:'green',expired:'red',renewed:'purple',cancelled:'gray',pending:'amber'};
-  return `<span class="badge badge-${m[s]||'gray'}">${s||'—'}</span>`;
+  const m = { active: 'green', expired: 'red', renewed: 'purple', cancelled: 'gray', pending: 'amber' };
+  return `<span class="badge badge-${m[s] || 'gray'}">${s || '—'}</span>`;
 }
 
 /* ── Audit log ── */
 async function logAction(action, entityType, entityId, description) {
   try {
-    await addDoc(collection(db,'audit_log'), { action, entityType, entityId, description, performedBy: currentUser?.email||'', performedByUid: currentUser?.uid||'', createdAt: serverTimestamp() });
+    await addDoc(collection(db, 'audit_log'), {
+      action, entityType, entityId, description,
+      performedBy: currentUser?.email || '',
+      performedByUid: currentUser?.uid || '',
+      createdAt: serverTimestamp()
+    });
   } catch {}
 }
 
@@ -714,23 +724,21 @@ async function getNextCustomerNo() {
       tx.update(counterRef, { clientCounter: nextNum });
     }
   });
-  return `PC-${String(nextNum).padStart(5,'0')}`;
+  return `PC-${String(nextNum).padStart(5, '0')}`;
 }
 
 /* ── Load clients ── */
 async function loadClients() {
-  const snap = await getDocs(query(collection(db,'clients'), orderBy('clientName','asc')));
-  allClients = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  const snap = await getDocs(query(collection(db, 'clients'), orderBy('clientName', 'asc')));
+  allClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  // Load sales agents from config
   try {
-    const cfg = await getDoc(doc(db,'config','settings'));
+    const cfg = await getDoc(doc(db, 'config', 'settings'));
     salesAgents = cfg.exists() ? (cfg.data().salesAgents || []) : [];
   } catch { salesAgents = []; }
 
-  // Also collect unique agents from clients
   const agentSet = new Set(salesAgents);
-  allClients.forEach(c => { if(c.salesAgent) agentSet.add(c.salesAgent); });
+  allClients.forEach(c => { if (c.salesAgent) agentSet.add(c.salesAgent); });
   salesAgents = [...agentSet].filter(Boolean).sort();
 
   populateFilters();
@@ -743,85 +751,80 @@ function loadStats() {
   $('stat-total').textContent = allClients.length;
 }
 
-/* ── Populate filter dropdowns ── */
 function populateFilters() {
-  const cities    = [...new Set(allClients.map(c=>c.city).filter(Boolean))].sort();
-  const provinces = [...new Set(allClients.map(c=>c.province).filter(Boolean))].sort();
-  const agents    = [...new Set(allClients.map(c=>c.salesAgent).filter(Boolean))].sort();
+  const cities    = [...new Set(allClients.map(c => c.city).filter(Boolean))].sort();
+  const provinces = [...new Set(allClients.map(c => c.province).filter(Boolean))].sort();
+  const agents    = [...new Set(allClients.map(c => c.salesAgent).filter(Boolean))].sort();
 
-  const citySelect = $('filter-city');
-  citySelect.innerHTML = '<option value="">All Cities</option>' + cities.map(c=>`<option>${c}</option>`).join('');
+  $('filter-city').innerHTML     = '<option value="">All Cities</option>'     + cities.map(c => `<option>${c}</option>`).join('');
+  $('filter-province').innerHTML = '<option value="">All Provinces</option>'  + provinces.map(p => `<option>${p}</option>`).join('');
+  $('filter-agent').innerHTML    = '<option value="">All Agents</option>'     + agents.map(a => `<option>${a}</option>`).join('');
 
-  const provSelect = $('filter-province');
-  provSelect.innerHTML = '<option value="">All Provinces</option>' + provinces.map(p=>`<option>${p}</option>`).join('');
-
-  const agentSelect = $('filter-agent');
-  agentSelect.innerHTML = '<option value="">All Agents</option>' + agents.map(a=>`<option>${a}</option>`).join('');
-
-  // Datalists for form
-  $('city-datalist').innerHTML = cities.map(c=>`<option value="${c}">`).join('');
-  $('province-datalist').innerHTML = provinces.map(p=>`<option value="${p}">`).join('');
+  $('city-datalist').innerHTML     = cities.map(c => `<option value="${c}">`).join('');
+  $('province-datalist').innerHTML = provinces.map(p => `<option value="${p}">`).join('');
 }
 
 function populateAgentDropdowns() {
-  const opts = '<option value="">— Select Agent —</option>' + salesAgents.map(a=>`<option>${a}</option>`).join('');
-  $('form-sales-agent').innerHTML = opts;
+  $('form-sales-agent').innerHTML =
+    '<option value="">— Select Agent —</option>' + salesAgents.map(a => `<option>${a}</option>`).join('');
 }
 
 /* ── Filters ── */
 function applyFilters() {
-  const q    = $('search-input').value.toLowerCase().trim();
-  const city = $('filter-city').value;
-  const prov = $('filter-province').value;
-  const agent= $('filter-agent').value;
+  const q     = $('search-input').value.toLowerCase().trim();
+  const city  = $('filter-city').value;
+  const prov  = $('filter-province').value;
+  const agent = $('filter-agent').value;
 
   filteredClients = allClients.filter(c => {
-    const match = !q || [c.customerNo,c.clientName,c.contactPerson,c.contactNumber,c.email,c.city,c.province]
-      .some(f => (f||'').toLowerCase().includes(q));
-    return match
-      && (!city  || c.city===city)
-      && (!prov  || c.province===prov)
-      && (!agent || c.salesAgent===agent);
+    const match = !q || [c.customerNo, c.clientName, c.contactPerson, c.contactNumber, c.email, c.city, c.province]
+      .some(f => (f || '').toLowerCase().includes(q));
+    return match && (!city || c.city === city) && (!prov || c.province === prov) && (!agent || c.salesAgent === agent);
   });
 
   currentPage = 1;
   renderTable();
 }
 
-['search-input','filter-city','filter-province','filter-agent'].forEach(id => {
+['search-input', 'filter-city', 'filter-province', 'filter-agent'].forEach(id => {
   $(id).addEventListener('input', applyFilters);
   $(id).addEventListener('change', applyFilters);
 });
+
 $('btn-clear-filters').addEventListener('click', () => {
-  $('search-input').value=''; $('filter-city').value=''; $('filter-province').value=''; $('filter-agent').value='';
+  $('search-input').value = ''; $('filter-city').value = '';
+  $('filter-province').value = ''; $('filter-agent').value = '';
   applyFilters();
 });
 
 /* ── Render table ── */
 function renderTable() {
-  const total     = filteredClients.length;
-  const totalPages= Math.max(1, Math.ceil(total/PER_PAGE));
-  currentPage     = Math.min(currentPage, totalPages);
-  const start     = (currentPage-1)*PER_PAGE;
-  const end       = Math.min(start+PER_PAGE, total);
-  const page      = filteredClients.slice(start, end);
+  const total      = filteredClients.length;
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  currentPage      = Math.min(currentPage, totalPages);
+  const start      = (currentPage - 1) * PER_PAGE;
+  const end        = Math.min(start + PER_PAGE, total);
+  const page       = filteredClients.slice(start, end);
 
-  $('stat-showing').textContent = total;
-  $('pagination-info').textContent = total===0 ? 'No records found' : `Showing ${start+1}–${end} of ${total} clients`;
+  $('stat-showing').textContent     = total;
+  $('pagination-info').textContent  = total === 0 ? 'No records found' : `Showing ${start + 1}–${end} of ${total} clients`;
 
   if (total === 0) {
-    $('clients-tbody').innerHTML = `<tr><td colspan="9"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>No clients found</h3><p>Try adjusting your search or filters, or add a new client.</p></div></td></tr>`;
+    $('clients-tbody').innerHTML = `<tr><td colspan="9"><div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <h3>No clients found</h3><p>Try adjusting your search or filters, or add a new client.</p>
+    </div></td></tr>`;
   } else {
     $('clients-tbody').innerHTML = page.map(c => `
       <tr>
-        <td class="mono">${c.customerNo||'—'}</td>
+        <td class="mono">${c.customerNo || '—'}</td>
         <td><span style="font-weight:600;cursor:pointer;color:var(--primary)" class="client-name-link" data-id="${c.id}">${cleanName(c.clientName)}</span></td>
-        <td>${c.contactPerson||'—'}</td>
-        <td class="muted">${c.contactNumber||'—'}</td>
-        <td class="muted" style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.email||'—'}</td>
-        <td>${c.city||'—'}</td>
-        <td>${c.province||'—'}</td>
-        <td>${c.salesAgent||'—'}</td>
+        <td>${c.contactPerson || '—'}</td>
+        <td class="muted">${c.contactNumber || '—'}</td>
+        <td class="muted" style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.email || '—'}</td>
+        <td>${c.city || '—'}</td>
+        <td>${c.province || '—'}</td>
+        <td>${c.salesAgent || '—'}</td>
         <td>
           <div class="actions-cell">
             <button class="btn btn-sm btn-secondary btn-view" data-id="${c.id}" title="View details">
@@ -838,29 +841,38 @@ function renderTable() {
 
   // Pagination
   const controls = $('pagination-controls');
-  if (totalPages <= 1) { controls.innerHTML=''; return; }
+  if (totalPages <= 1) { controls.innerHTML = ''; return; }
   const pages = [];
-  for (let i=1;i<=totalPages;i++) {
-    if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1)) pages.push(i);
-    else if(pages[pages.length-1]!=='…') pages.push('…');
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) pages.push(i);
+    else if (pages[pages.length - 1] !== '…') pages.push('…');
   }
   controls.innerHTML = `
-    <button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>
-    ${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}
-    <button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
-  controls.querySelectorAll('[data-p]').forEach(btn => btn.addEventListener('click', () => { currentPage=Number(btn.dataset.p); renderTable(); }));
+    <button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} data-p="${currentPage - 1}">‹</button>
+    ${pages.map(p => p === '…'
+      ? `<button class="page-btn" disabled>…</button>`
+      : `<button class="page-btn${p === currentPage ? ' active' : ''}" data-p="${p}">${p}</button>`
+    ).join('')}
+    <button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} data-p="${currentPage + 1}">›</button>`;
+  controls.querySelectorAll('[data-p]').forEach(btn =>
+    btn.addEventListener('click', () => { currentPage = Number(btn.dataset.p); renderTable(); })
+  );
 
   // Bind row actions
-  document.querySelectorAll('.btn-view,.client-name-link').forEach(btn => btn.addEventListener('click', () => openDetailModal(btn.dataset.id)));
-  document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
+  document.querySelectorAll('.btn-view, .client-name-link').forEach(btn =>
+    btn.addEventListener('click', () => openDetailModal(btn.dataset.id))
+  );
+  document.querySelectorAll('.btn-edit').forEach(btn =>
+    btn.addEventListener('click', () => openEditModal(btn.dataset.id))
+  );
 }
 
 /* ── Add client ── */
 $('btn-add-client').addEventListener('click', async () => {
   clearForm();
   $('form-modal-title').textContent = 'Add Client';
-  $('save-btn-text').textContent = 'Save Client';
-  $('form-client-id').value = '';
+  $('save-btn-text').textContent    = 'Save Client';
+  $('form-client-id').value         = '';
   const no = await getNextCustomerNo();
   $('form-customer-no').value = no;
   openModal('client-form-modal');
@@ -868,42 +880,44 @@ $('btn-add-client').addEventListener('click', async () => {
 
 /* ── Edit client ── */
 function openEditModal(id) {
-  const c = allClients.find(x=>x.id===id);
+  const c = allClients.find(x => x.id === id);
   if (!c) return;
   clearForm();
-  $('form-modal-title').textContent = 'Edit Client';
-  $('save-btn-text').textContent = 'Update Client';
-  $('form-client-id').value    = id;
-  $('form-customer-no').value  = c.customerNo||'';
-  $('form-client-name').value  = c.clientName||'';
-  $('form-contact-person').value= c.contactPerson||'';
-  $('form-contact-number').value= c.contactNumber||'';
-  $('form-email').value        = c.email||'';
-  $('form-address').value      = c.address||'';
-  $('form-city').value         = c.city||'';
-  $('form-province').value     = c.province||'';
-  $('form-sales-agent').value  = c.salesAgent||'';
-  $('form-comm-source').value  = c.communicationSource||'';
-  $('form-notes').value        = c.notes||'';
+  $('form-modal-title').textContent  = 'Edit Client';
+  $('save-btn-text').textContent     = 'Update Client';
+  $('form-client-id').value          = id;
+  $('form-customer-no').value        = c.customerNo || '';
+  $('form-client-name').value        = c.clientName || '';
+  $('form-contact-person').value     = c.contactPerson || '';
+  $('form-contact-number').value     = c.contactNumber || '';
+  $('form-email').value              = c.email || '';
+  $('form-address').value            = c.address || '';
+  $('form-city').value               = c.city || '';
+  $('form-province').value           = c.province || '';
+  $('form-sales-agent').value        = c.salesAgent || '';
+  $('form-comm-source').value        = c.communicationSource || '';
+  $('form-notes').value              = c.notes || '';
   openModal('client-form-modal');
 }
 
 function clearForm() {
   ['form-client-id','form-customer-no','form-client-name','form-contact-person',
    'form-contact-number','form-email','form-address','form-city','form-province','form-notes']
-    .forEach(id => $(id).value='');
-  $('form-sales-agent').value='';
-  $('form-comm-source').value='';
+    .forEach(id => $(id).value = '');
+  $('form-sales-agent').value = '';
+  $('form-comm-source').value = '';
 }
 
 /* ── Save client ── */
 $('btn-save-client').addEventListener('click', async () => {
   const name = $('form-client-name').value.trim();
   const city = $('form-city').value.trim();
-  if (!name) { showToast('Client name is required.','error'); return; }
-  if (!city) { showToast('City is required.','error'); return; }
+  if (!name) { showToast('Client name is required.', 'error'); return; }
+  if (!city) { showToast('City is required.', 'error'); return; }
 
-  const btn = $('btn-save-client'); btn.disabled=true; $('save-btn-text').textContent='Saving…';
+  const btn = $('btn-save-client');
+  btn.disabled = true;
+  $('save-btn-text').textContent = 'Saving…';
 
   const data = {
     customerNo:          $('form-customer-no').value.trim(),
@@ -923,42 +937,42 @@ $('btn-save-client').addEventListener('click', async () => {
   const editId = $('form-client-id').value;
   try {
     if (editId) {
-      await updateDoc(doc(db,'clients',editId), data);
-      await logAction('updated','client',editId,`Updated client: ${name}`);
+      await updateDoc(doc(db, 'clients', editId), data);
+      await logAction('updated', 'client', editId, `Updated client: ${name}`);
       showToast(`Client "${name}" updated successfully.`);
     } else {
       data.createdAt = serverTimestamp();
-      const ref = await addDoc(collection(db,'clients'), data);
-      await logAction('created','client',ref.id,`Created client: ${name} (${data.customerNo})`);
+      const ref = await addDoc(collection(db, 'clients'), data);
+      await logAction('created', 'client', ref.id, `Created client: ${name} (${data.customerNo})`);
       showToast(`Client "${name}" added successfully.`);
     }
     closeModal('client-form-modal');
     await loadClients();
-  } catch(err) {
-    dismissLoadingScreen();console.error(err); showToast('Failed to save client: '+err.message,'error');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to save client: ' + err.message, 'error');
   }
-  btn.disabled=false; $('save-btn-text').textContent=editId?'Update Client':'Save Client';
+  btn.disabled = false;
+  $('save-btn-text').textContent = editId ? 'Update Client' : 'Save Client';
 });
 
 /* ── Detail Modal ── */
 async function openDetailModal(id) {
-  const c = allClients.find(x=>x.id===id);
+  const c = allClients.find(x => x.id === id);
   if (!c) return;
   activeDetailClientId = id;
-  $('detail-title').textContent = cleanName(c.clientName);
+  $('detail-title').textContent    = cleanName(c.clientName);
   $('detail-subtitle').textContent = c.customerNo || '';
   $('btn-edit-from-detail').onclick = () => { closeModal('client-detail-modal'); openEditModal(id); };
 
-  // Reset tabs
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelector('.tab[data-tab="info"]').classList.add('active');
-  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
-  $('tab-info').style.display='';
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  $('tab-info').style.display = '';
 
-  // Populate info tab
   $('detail-info-grid').innerHTML = [
-    ['Customer No', c.customerNo],
-    ['Client Name', cleanName(c.clientName)],
+    ['Customer No',  c.customerNo],
+    ['Client Name',  cleanName(c.clientName)],
     ['Contact Person', c.contactPerson],
     ['Contact Number', c.contactNumber],
     ['Email', c.email ? `<a href="mailto:${c.email}" style="color:var(--primary)">${c.email}</a>` : '—'],
@@ -967,14 +981,13 @@ async function openDetailModal(id) {
     ['Sales Agent', c.salesAgent],
     ['Comm. Source', c.communicationSource],
     ['Address', c.address, true],
-    ['Notes', c.notes||'—', true],
-  ].map(([label, val, full=false]) => `
-    <div class="detail-field${full?' full':''}">
+    ['Notes', c.notes || '—', true],
+  ].map(([label, val, full = false]) => `
+    <div class="detail-field${full ? ' full' : ''}">
       <label>${label}</label>
-      <span>${val||'—'}</span>
+      <span>${val || '—'}</span>
     </div>`).join('');
 
-  // Load documents
   loadDocuments(c);
   openModal('client-detail-modal');
 }
@@ -982,17 +995,16 @@ async function openDetailModal(id) {
 /* ── Tabs in detail modal ── */
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', async () => {
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
-    $(`tab-${tab.dataset.tab}`).style.display='';
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    $(`tab-${tab.dataset.tab}`).style.display = '';
 
-    const c = allClients.find(x=>x.id===activeDetailClientId);
+    const c = allClients.find(x => x.id === activeDetailClientId);
     if (!c) return;
-
-    if (tab.dataset.tab === 'contracts') await loadDetailContracts(c);
+    if (tab.dataset.tab === 'contracts')  await loadDetailContracts(c);
     if (tab.dataset.tab === 'complaints') await loadDetailComplaints(c);
-    if (tab.dataset.tab === 'documents') loadDocuments(c);
+    if (tab.dataset.tab === 'documents')  loadDocuments(c);
   });
 });
 
@@ -1000,60 +1012,93 @@ async function loadDetailContracts(c) {
   const body = $('detail-contracts-body');
   body.innerHTML = `<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></div>`;
   try {
-    const snap = await getDocs(query(collection(db,'contracts'), where('customerNo','==',c.customerNo)));
-    if (snap.empty) { body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><h3>No contracts</h3><p>No contracts linked to this client.</p></div>`; return; }
+    const snap = await getDocs(query(collection(db, 'contracts'), where('customerNo', '==', c.customerNo)));
+    if (snap.empty) {
+      body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><h3>No contracts</h3><p>No contracts linked to this client.</p></div>`;
+      return;
+    }
     const today = new Date(); today.setHours(0,0,0,0);
-    body.innerHTML = `<div style="overflow-x:auto"><table class="mini-table"><thead><tr><th>Contract #</th><th>Type</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th></tr></thead><tbody>${
-      snap.docs.map(d => {
-        const ct = d.data();
-        const endDate = ct.contractEndDate?.toDate?ct.contractEndDate.toDate():new Date(ct.contractEndDate||0);
-        const dispStatus = (ct.status==='active'&&endDate<today)?'expired':ct.status;
-        return `<tr><td class="mono" style="font-size:11.5px">${ct.contractNumber||d.id.slice(0,8)}</td><td style="font-size:12px">${ct.contractType||'—'}</td><td class="muted">${fmtDate(ct.contractStartDate)}</td><td class="muted">${fmtDate(ct.contractEndDate)}</td><td style="font-variant-numeric:tabular-nums">₱${Number(ct.totalAmount||0).toLocaleString('en-PH',{minimumFractionDigits:2})}</td><td>${statusBadge(dispStatus)}</td></tr>`;
-      }).join('')
-    }</tbody></table></div>`;
-  } catch(e) { body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load contracts.</p>`; }
+    body.innerHTML = `<div style="overflow-x:auto"><table class="mini-table"><thead><tr>
+      <th>Contract #</th><th>Type</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th>
+    </tr></thead><tbody>${snap.docs.map(d => {
+      const ct = d.data();
+      const endDate = ct.contractEndDate?.toDate ? ct.contractEndDate.toDate() : new Date(ct.contractEndDate || 0);
+      const dispStatus = (ct.status === 'active' && endDate < today) ? 'expired' : ct.status;
+      return `<tr>
+        <td class="mono" style="font-size:11.5px">${ct.contractNumber || d.id.slice(0,8)}</td>
+        <td style="font-size:12px">${ct.contractType || '—'}</td>
+        <td class="muted">${fmtDate(ct.contractStartDate)}</td>
+        <td class="muted">${fmtDate(ct.contractEndDate)}</td>
+        <td style="font-variant-numeric:tabular-nums">₱${Number(ct.totalAmount || 0).toLocaleString('en-PH', {minimumFractionDigits:2})}</td>
+        <td>${statusBadge(dispStatus)}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+  } catch (e) {
+    body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load contracts.</p>`;
+  }
 }
 
 async function loadDetailComplaints(c) {
   const body = $('detail-complaints-body');
   body.innerHTML = `<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></div>`;
   try {
-    const snap = await getDocs(query(collection(db,'complaints'), where('customerNo','==',c.customerNo)));
-    if (snap.empty) { body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><h3>No complaints</h3><p>No complaints linked to this client.</p></div>`; return; }
-    const priorityBadge = p => { const m={high:'red',medium:'amber',low:'blue'}; return `<span class="badge badge-${m[(p||'').toLowerCase()]||'gray'}">${p||'—'}</span>`; };
-    body.innerHTML = `<div style="overflow-x:auto"><table class="mini-table"><thead><tr><th>Date</th><th>Contract Type</th><th>Priority</th><th>Status</th><th>Assigned To</th></tr></thead><tbody>${
-      snap.docs.map(d=>{const cc=d.data();return `<tr><td class="muted">${fmtDate(cc.dateReported)}</td><td style="font-size:12px">${cc.contractType||'—'}</td><td>${priorityBadge(cc.priority)}</td><td>${statusBadge(cc.status)}</td><td class="muted">${cc.assignedTo||'—'}</td></tr>`;}).join('')
-    }</tbody></table></div>`;
-  } catch(e) { body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load complaints.</p>`; }
+    const snap = await getDocs(query(collection(db, 'complaints'), where('customerNo', '==', c.customerNo)));
+    if (snap.empty) {
+      body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><h3>No complaints</h3><p>No complaints linked to this client.</p></div>`;
+      return;
+    }
+    const priorityBadge = p => {
+      const m = { high: 'red', medium: 'amber', low: 'blue' };
+      return `<span class="badge badge-${m[(p || '').toLowerCase()] || 'gray'}">${p || '—'}</span>`;
+    };
+    body.innerHTML = `<div style="overflow-x:auto"><table class="mini-table"><thead><tr>
+      <th>Date</th><th>Contract Type</th><th>Priority</th><th>Status</th><th>Assigned To</th>
+    </tr></thead><tbody>${snap.docs.map(d => {
+      const cc = d.data();
+      return `<tr>
+        <td class="muted">${fmtDate(cc.dateReported)}</td>
+        <td style="font-size:12px">${cc.contractType || '—'}</td>
+        <td>${priorityBadge(cc.priority)}</td>
+        <td>${statusBadge(cc.status)}</td>
+        <td class="muted">${cc.assignedTo || '—'}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+  } catch (e) {
+    body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load complaints.</p>`;
+  }
 }
 
 /* ── Documents ── */
 function loadDocuments(c) {
   const docs = c.documents || [];
-  $('doc-count-label').textContent = docs.length ? `${docs.length} document link${docs.length===1?'':'s'}` : 'No documents yet';
+  $('doc-count-label').textContent = docs.length
+    ? `${docs.length} document link${docs.length === 1 ? '' : 's'}`
+    : 'No documents yet';
   $('doc-list').innerHTML = docs.length === 0
     ? `<div class="empty-state" style="padding:28px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No document links added yet</p></div>`
-    : docs.map((d,i) => `
-        <div class="doc-item">
-          <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-          <div style="flex:1;min-width:0">
-            <div class="doc-name">${d.name||'Document'}</div>
-            <div class="doc-url">${d.url||''}</div>
-          </div>
-          <a href="${d.url}" target="_blank" rel="noopener" class="btn-icon" title="Open link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
-          <button class="btn-icon" style="color:var(--red-text);border-color:#fca5a5" title="Remove" data-doc-idx="${i}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-          </button>
-        </div>`).join('');
+    : docs.map((d, i) => `
+      <div class="doc-item">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div style="flex:1;min-width:0">
+          <div class="doc-name">${d.name || 'Document'}</div>
+          <div class="doc-url">${d.url || ''}</div>
+        </div>
+        <a href="${d.url}" target="_blank" rel="noopener" class="btn-icon" title="Open link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <button class="btn-icon" style="color:var(--red-text);border-color:#fca5a5" title="Remove" data-doc-idx="${i}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>`).join('');
 
   document.querySelectorAll('[data-doc-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const idx = Number(btn.dataset.docIdx);
-      const c2 = allClients.find(x=>x.id===activeDetailClientId);
+      const c2  = allClients.find(x => x.id === activeDetailClientId);
       if (!c2) return;
-      const newDocs = [...(c2.documents||[])];
-      newDocs.splice(idx,1);
-      await updateDoc(doc(db,'clients',activeDetailClientId),{documents:newDocs});
+      const newDocs = [...(c2.documents || [])];
+      newDocs.splice(idx, 1);
+      await updateDoc(doc(db, 'clients', activeDetailClientId), { documents: newDocs });
       c2.documents = newDocs;
       loadDocuments(c2);
       showToast('Document removed.');
@@ -1061,19 +1106,27 @@ function loadDocuments(c) {
   });
 }
 
-$('btn-add-doc').addEventListener('click', () => { $('add-doc-form').style.display=''; $('btn-add-doc').style.display='none'; });
-$('btn-cancel-doc').addEventListener('click', () => { $('add-doc-form').style.display='none'; $('btn-add-doc').style.display=''; });
+$('btn-add-doc').addEventListener('click', () => {
+  $('add-doc-form').style.display = '';
+  $('btn-add-doc').style.display  = 'none';
+});
+$('btn-cancel-doc').addEventListener('click', () => {
+  $('add-doc-form').style.display = 'none';
+  $('btn-add-doc').style.display  = '';
+});
 $('btn-save-doc').addEventListener('click', async () => {
   const name = $('doc-name-input').value.trim();
   const url  = $('doc-url-input').value.trim();
-  if (!name || !url) { showToast('Name and URL are required.','error'); return; }
-  const c = allClients.find(x=>x.id===activeDetailClientId);
+  if (!name || !url) { showToast('Name and URL are required.', 'error'); return; }
+  const c = allClients.find(x => x.id === activeDetailClientId);
   if (!c) return;
-  const newDocs = [...(c.documents||[]), { name, url }];
-  await updateDoc(doc(db,'clients',activeDetailClientId), { documents: newDocs });
+  const newDocs = [...(c.documents || []), { name, url }];
+  await updateDoc(doc(db, 'clients', activeDetailClientId), { documents: newDocs });
   c.documents = newDocs;
-  $('doc-name-input').value=''; $('doc-url-input').value='';
-  $('add-doc-form').style.display='none'; $('btn-add-doc').style.display='';
+  $('doc-name-input').value = '';
+  $('doc-url-input').value  = '';
+  $('add-doc-form').style.display = 'none';
+  $('btn-add-doc').style.display  = '';
   loadDocuments(c);
   showToast('Document link saved.');
 });
@@ -1081,25 +1134,28 @@ $('btn-save-doc').addEventListener('click', async () => {
 /* ── Stats with contracts ── */
 async function loadStatsWithContracts() {
   try {
-    const snap = await getDocs(collection(db,'contracts'));
+    const snap = await getDocs(collection(db, 'contracts'));
     const today = new Date(); today.setHours(0,0,0,0);
     const activeNos = new Set();
     snap.forEach(d => {
-      const ct = d.data();
-      const end = ct.contractEndDate?.toDate?ct.contractEndDate.toDate():new Date(ct.contractEndDate||0);
-      if (ct.status==='active' && end>=today) activeNos.add(ct.customerNo);
+      const ct  = d.data();
+      const end = ct.contractEndDate?.toDate ? ct.contractEndDate.toDate() : new Date(ct.contractEndDate || 0);
+      if (ct.status === 'active' && end >= today) activeNos.add(ct.customerNo);
     });
     $('stat-with-contracts').textContent = activeNos.size;
-    $('stat-no-contract').textContent    = allClients.filter(c=>!activeNos.has(c.customerNo)).length;
+    $('stat-no-contract').textContent    = allClients.filter(c => !activeNos.has(c.customerNo)).length;
   } catch {}
 }
 
 /* ── Export CSV ── */
 $('btn-export-csv').addEventListener('click', () => {
   const headers = ['customerNo','clientName','contactPerson','contactNumber','email','address','city','province','salesAgent','communicationSource','notes'];
-  const rows = filteredClients.map(c => headers.map(h => c[h]||''));
-  const csv  = [headers, ...rows].map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = Object.assign(document.createElement('a'),{ href: URL.createObjectURL(new Blob([csv],{type:'text/csv'})), download:`pestastic_clients_${Date.now()}.csv` });
+  const rows    = filteredClients.map(c => headers.map(h => c[h] || ''));
+  const csv     = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: `pestastic_clients_${Date.now()}.csv`
+  });
   a.click();
   showToast(`Exported ${filteredClients.length} client records.`);
 });
@@ -1108,56 +1164,67 @@ $('btn-export-csv').addEventListener('click', () => {
 $('btn-download-template').addEventListener('click', () => {
   const headers = 'customerNo,clientName,contactPerson,contactNumber,email,address,city,province,salesAgent,communicationSource,notes';
   const example = ',Juan dela Cruz,Maria Cruz,09171234567,juan@email.com,123 Sample St,Bacoor,Cavite,Agent Name,Referral,Sample notes';
-  const a = Object.assign(document.createElement('a'),{ href: URL.createObjectURL(new Blob([headers+'\n'+example],{type:'text/csv'})), download:'pestastic_clients_template.csv' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([headers + '\n' + example], { type: 'text/csv' })),
+    download: 'pestastic_clients_template.csv'
+  });
   a.click();
 });
 
 /* ── CSV Import ── */
 $('btn-import-csv').addEventListener('click', () => {
-  csvRows = []; $('upload-preview').style.display='none'; $('btn-confirm-import').disabled=true; $('csv-file-input').value='';
+  csvRows = [];
+  $('upload-preview').style.display  = 'none';
+  $('btn-confirm-import').disabled   = true;
+  $('csv-file-input').value          = '';
   openModal('csv-import-modal');
 });
 
 const uploadZone = $('upload-zone');
 uploadZone.addEventListener('click', () => $('csv-file-input').click());
-uploadZone.addEventListener('dragover', e=>{ e.preventDefault(); uploadZone.classList.add('drag'); });
-uploadZone.addEventListener('dragleave', ()=>uploadZone.classList.remove('drag'));
-uploadZone.addEventListener('drop', e=>{ e.preventDefault(); uploadZone.classList.remove('drag'); handleCSVFile(e.dataTransfer.files[0]); });
-$('csv-file-input').addEventListener('change', e=>handleCSVFile(e.target.files[0]));
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', ()  => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag'); handleCSVFile(e.dataTransfer.files[0]); });
+$('csv-file-input').addEventListener('change', e => handleCSVFile(e.target.files[0]));
 
 function handleCSVFile(file) {
-  if (!file || !file.name.endsWith('.csv')) { showToast('Please upload a .csv file.','error'); return; }
+  if (!file || !file.name.endsWith('.csv')) { showToast('Please upload a .csv file.', 'error'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    const lines = e.target.result.split(/\r?\n/).filter(l=>l.trim());
-    const headers = lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase().replace(/\s+/g,''));
+    const lines   = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase().replace(/\s+/g, ''));
     csvRows = lines.slice(1).map(line => {
-      const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||[];
-      const row = {};
-      headers.forEach((h,i) => { row[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+      const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
+      const row  = {};
+      headers.forEach((h, i) => { row[h] = (vals[i] || '').replace(/^"|"$/g, '').trim(); });
       return row;
     }).filter(r => r.clientname || r.clientName);
+
     $('preview-filename').textContent = file.name;
     $('preview-count').textContent    = `${csvRows.length} records`;
     $('preview-table-wrap').innerHTML = `<table style="width:100%;border-collapse:collapse">${
-      [headers.slice(0,6), ...csvRows.slice(0,5).map(r=>headers.slice(0,6).map(h=>r[h]||''))].map((row,i)=>`<tr style="${i===0?'background:var(--bg-secondary);font-weight:700':''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${row.slice(0,6).map(v=>`<span>${v}</span>`).join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)")}</td></tr>`).join('')
+      [headers.slice(0,6), ...csvRows.slice(0,5).map(r => headers.slice(0,6).map(h => r[h] || ''))].map((row, i) =>
+        `<tr style="${i === 0 ? 'background:var(--bg-secondary);font-weight:700' : ''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${
+          row.slice(0,6).join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)">')
+        }</td></tr>`
+      ).join('')
     }</table>`;
-    $('upload-preview').style.display='';
-    $('btn-confirm-import').disabled = csvRows.length === 0;
-    $('import-btn-text').textContent = `Import ${csvRows.length} Records`;
+    $('upload-preview').style.display  = '';
+    $('btn-confirm-import').disabled   = csvRows.length === 0;
+    $('import-btn-text').textContent   = `Import ${csvRows.length} Records`;
   };
   reader.readAsText(file);
 }
 
 $('btn-confirm-import').addEventListener('click', async () => {
   if (!csvRows.length) return;
-  $('btn-confirm-import').disabled=true; $('import-btn-text').textContent='Importing…';
+  $('btn-confirm-import').disabled = true;
+  $('import-btn-text').textContent = 'Importing…';
 
-  // Get next counter value
   let nextNum = 1;
   try {
-    const cfg = await getDoc(doc(db,'config','counters'));
-    if(cfg.exists()) nextNum = (cfg.data().clientCounter||0)+1;
+    const cfg = await getDoc(doc(db, 'config', 'counters'));
+    if (cfg.exists()) nextNum = (cfg.data().clientCounter || 0) + 1;
   } catch {}
 
   const batch = writeBatch(db);
@@ -1165,82 +1232,115 @@ $('btn-confirm-import').addEventListener('click', async () => {
   for (const row of csvRows) {
     const name = row.clientname || row['clientName'] || '';
     if (!name) continue;
-    const customerNo = row.customerno || row.customerNo || `PC-${String(nextNum).padStart(5,'0')}`;
+    const customerNo = row.customerno || row.customerNo || `PC-${String(nextNum).padStart(5, '0')}`;
     nextNum++;
-    const ref = doc(collection(db,'clients'));
+    const ref = doc(collection(db, 'clients'));
     batch.set(ref, {
-      customerNo, clientName:name,
-      contactPerson: row.contactperson||row.contactPerson||'',
-      contactNumber: row.contactnumber||row.contactNumber||'',
-      email: row.email||'',
-      address: row.address||'',
-      city: row.city||'',
-      province: row.province||'',
-      salesAgent: row.salesagent||row.salesAgent||'',
-      communicationSource: row.communicationsource||row.communicationSource||'',
-      notes: row.notes||'',
+      customerNo, clientName: name,
+      contactPerson:       row.contactperson || row.contactPerson || '',
+      contactNumber:       row.contactnumber || row.contactNumber || '',
+      email:               row.email || '',
+      address:             row.address || '',
+      city:                row.city || '',
+      province:            row.province || '',
+      salesAgent:          row.salesagent || row.salesAgent || '',
+      communicationSource: row.communicationsource || row.communicationSource || '',
+      notes:               row.notes || '',
       createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });
     count++;
   }
-  // Update counter
-  batch.set(doc(db,'config','counters'),{clientCounter:nextNum-1},{merge:true});
+  batch.set(doc(db, 'config', 'counters'), { clientCounter: nextNum - 1 }, { merge: true });
   await batch.commit();
-  await logAction('bulk_import','client','batch',`Imported ${count} clients via CSV`);
+  await logAction('bulk_import', 'client', 'batch', `Imported ${count} clients via CSV`);
   closeModal('csv-import-modal');
   showToast(`Successfully imported ${count} client records.`);
   await loadClients();
-  $('import-btn-text').textContent='Import Records';
+  $('import-btn-text').textContent = 'Import Records';
 });
 
 /* ── Auth ── */
 onAuthStateChanged(auth, async user => {
-  if (!user) { $('auth-screen').style.display='flex'; $('app-shell').style.display='none'; return; }
+  if (!user) {
+    $('auth-screen').style.display = 'flex';
+    $('app-shell').style.display   = 'none';
+    dismissLoadingScreen();
+    return;
+  }
   currentUser = user;
   try {
-    const snap = await getDoc(doc(db,'users',user.uid));
+    const snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists()) {
-      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
-      $('auth-screen').style.display='flex'; $('login-card').style.display='none'; $('pending-card').style.display='block'; return;
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid, email: user.email,
+        displayName: user.displayName || '', photoURL: user.photoURL || '',
+        role: 'user', status: 'pending',
+        createdAt: serverTimestamp(), lastLogin: serverTimestamp()
+      });
+      dismissLoadingScreen();
+      $('auth-screen').style.display = 'flex';
+      $('login-card').style.display  = 'none';
+      $('pending-card').style.display = 'block';
+      return;
     }
     const data = snap.data();
-    updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
-    if (data.status!=='approved') {
-      $('auth-screen').style.display='flex'; $('login-card').style.display='none'; $('pending-card').style.display='block'; return;
+    updateDoc(doc(db, 'users', user.uid), { lastLogin: serverTimestamp() }).catch(() => {});
+    if (data.status !== 'approved') {
+      dismissLoadingScreen();
+      $('auth-screen').style.display  = 'flex';
+      $('login-card').style.display   = 'none';
+      $('pending-card').style.display = 'block';
+      return;
     }
     currentRole = data.role;
+
     // Init shell
-    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
-    const name = user.displayName||user.email;
+    dismissLoadingScreen();
+    $('auth-screen').style.display   = 'none';
+    $('app-shell').style.cssText     = 'display:flex;height:100vh;overflow:hidden;width:100vw;';
+    const name = user.displayName || user.email;
     $('user-display-name').textContent = name;
-    $('user-role-label').textContent   = (data.role||'user').replace('_',' ');
-    if (user.photoURL) $('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
-    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-    if (data.role==='admin'||data.role==='super_admin') { $('admin-nav-label').style.display=''; $('nav-users').style.display=''; }
-    if (data.role==='super_admin') $('nav-settings').style.display='';
+    $('user-role-label').textContent   = (data.role || 'user').replace('_', ' ');
+    if (user.photoURL) {
+      $('user-avatar').innerHTML = `<img src="${user.photoURL}" alt="${name}"/>`;
+    } else {
+      $('user-initials').textContent = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (data.role === 'admin' || data.role === 'super_admin') {
+      $('admin-nav-label').style.display = '';
+      $('nav-users').style.display       = '';
+    }
+    if (data.role === 'super_admin') $('nav-settings').style.display = '';
+
     await loadClients();
     loadStatsWithContracts();
-  } catch(err) { dismissLoadingScreen();console.error(err); }
+
+  } catch (err) {
+    console.error(err);
+    dismissLoadingScreen();
+  }
 });
 
 $('btn-google-signin').addEventListener('click', async () => {
   try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  catch(e) { $('login-error').style.display='block'; $('login-error').textContent='Sign-in failed.'; }
+  catch (e) { $('login-error').style.display = 'block'; $('login-error').textContent = 'Sign-in failed. Please try again.'; }
 });
-$('btn-signout-pending').addEventListener('click', ()=>signOut(auth));
-$('btn-check-status').addEventListener('click', async ()=>{
+$('btn-signout-pending').addEventListener('click', () => signOut(auth));
+$('btn-check-status').addEventListener('click', async () => {
   if (!currentUser) return;
-  const s=await getDoc(doc(db,'users',currentUser.uid));
-  if(s.exists()&&s.data().status==='approved') location.reload();
+  const s = await getDoc(doc(db, 'users', currentUser.uid));
+  if (s.exists() && s.data().status === 'approved') location.reload();
 });
-$('btn-signout').addEventListener('click', ()=>{ if(confirm('Sign out?')) signOut(auth); });
+$('btn-signout').addEventListener('click', () => { if (confirm('Sign out?')) signOut(auth); });
 
 // Mobile sidebar
-const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
-const openSB=()=>{sidebar.classList.add('open');overlay.classList.add('open')};
-const closeSB=()=>{sidebar.classList.remove('open');overlay.classList.remove('open')};
-hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?closeSB():openSB());
-overlay.addEventListener('click',closeSB);
+const sidebar   = $('sidebar');
+const overlay   = $('sidebar-overlay');
+const hamburger = $('hamburger');
+const openSB  = () => { sidebar.classList.add('open');    overlay.classList.add('open'); };
+const closeSB = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? closeSB() : openSB());
+overlay.addEventListener('click', closeSB);
 </script>
 </body>
 </html>
