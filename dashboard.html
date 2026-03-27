@@ -62,7 +62,7 @@
     .btn-signout-pending { width:100%;padding:12px;background:transparent;color:var(--text-secondary);border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;transition:all .15s;cursor:pointer; }
 
     /* ── APP SHELL ── */
-    #app-shell { display:none; height:100vh; overflow:hidden; }
+    #app-shell{display:none;height:100vh;overflow:hidden;width:100vw;}
 
     /* ── SIDEBAR ── */
     .sidebar { position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;z-index:200;transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden; }
@@ -97,7 +97,7 @@
     .sidebar-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199; }
 
     /* ── MAIN ── */
-    .main-wrapper { margin-left:var(--sidebar-width);height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s; }
+    .main-wrapper{ margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s}
     .topbar { height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0; }
     .hamburger { display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);transition:background .15s;cursor:pointer; }
     .hamburger:hover { background:var(--bg-secondary); }
@@ -575,7 +575,7 @@
       .sidebar { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
       .sidebar-overlay.open { display: block; }
-      .main-wrapper { margin-left: 0; }
+      .main-wrapper { margin-left:0;width:100vw; }
       .hamburger { display: flex; }
       .dash-bottom { grid-template-columns: 1fr; }
       .quick-stats { grid-template-columns: 1fr 1fr; }
@@ -1409,7 +1409,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
 
     function initShell(user, userData) {
       dismissLoadingScreen();dismissLoadingScreen();dismissLoadingScreen();document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-shell').style.display   = 'flex';
+      document.getElementById('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
       const name = user.displayName || user.email;
       document.getElementById('user-display-name').textContent = name;
       document.getElementById('user-role-label').textContent = (userData.role||'user').replace('_',' ');
