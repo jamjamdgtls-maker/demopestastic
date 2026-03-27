@@ -80,7 +80,7 @@
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
 
     /* MAIN */
-    .main-wrapper{margin-left:var(--sidebar-width);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .main-wrapper{margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;height:100vh;display:flex;flex-direction:column;overflow:hidden}
     .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
     .hamburger{display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}
     .hamburger svg{width:20px;height:20px}
@@ -1051,7 +1051,7 @@ onAuthStateChanged(auth, async user=>{
     updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
     if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
     currentRole=data.role;
-    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.display='flex';
+    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
     const name=user.displayName||user.email;
     $('user-display-name').textContent=name;
     $('user-role-label').textContent=(data.role||'user').replace('_',' ');
