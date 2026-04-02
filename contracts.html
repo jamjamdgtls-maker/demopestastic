@@ -918,12 +918,16 @@ function applyFilters() {
 ['search-input','filter-status','filter-type'].forEach(id=>{$(id).addEventListener('input',applyFilters);$(id).addEventListener('change',applyFilters);});
 $('btn-clear-filters').addEventListener('click',()=>{ $('search-input').value='';$('filter-status').value='';$('filter-type').value=''; applyFilters(); });
 
-/* ── Event delegation for table row actions (handles re-renders without rebinding) ── */
-$('contracts-tbody').addEventListener('click', e=>{
+/* Button bindings moved into renderTable() for reliability */
+
+
+/* ── Event delegation for table action buttons (works regardless of filter/pagination) ── */
+document.getElementById('contracts-tbody').addEventListener('click', function(e) {
+  // Walk up from clicked element to find a button with data-id
   const viewBtn = e.target.closest('.btn-view, .contract-no-link');
   const editBtn = e.target.closest('.btn-edit');
-  if(viewBtn && viewBtn.dataset.id) openDetailModal(viewBtn.dataset.id);
-  if(editBtn && editBtn.dataset.id) openEditModal(editBtn.dataset.id);
+  if (viewBtn && viewBtn.dataset.id) { openDetailModal(viewBtn.dataset.id); return; }
+  if (editBtn && editBtn.dataset.id) { openEditModal(editBtn.dataset.id); return; }
 });
 
 /* ── Render table ── */
