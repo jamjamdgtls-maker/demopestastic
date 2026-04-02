@@ -1212,8 +1212,9 @@ async function loadDetailTreatments(c) {
   const panel=$('tab-treatments');
   panel.innerHTML=`<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div>`;
   try {
-    const snap=await getDocs(query(collection(db,'treatments'),where('contractId','==',c.id),orderBy('treatmentDate','asc')));
-    const treatments=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const snap=await getDocs(query(collection(db,'treatments'),where('contractId','==',c.id)));
+    const treatments=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>{const da=a.treatmentDate?.toDate?a.treatmentDate.toDate():new Date(a.treatmentDate||0);const db2=b.treatmentDate?.toDate?b.treatmentDate.toDate():new Date(b.treatmentDate||0);return da-db2;});
     const total=treatments.length, completed=treatments.filter(t=>t.status==='completed').length;
     const today=new Date(); today.setHours(0,0,0,0);
     const next=treatments.find(t=>t.status==='scheduled'&&toLocalDate(t.treatmentDate)>=today);
@@ -1249,8 +1250,9 @@ async function loadDetailPayments(c) {
   const panel=$('tab-payments');
   panel.innerHTML=`<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div>`;
   try {
-    const snap=await getDocs(query(collection(db,'payments'),where('contractId','==',c.id),orderBy('dueDate','asc')));
-    const payments=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const snap=await getDocs(query(collection(db,'payments'),where('contractId','==',c.id)));
+    const payments=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>{const da=a.dueDate?.toDate?a.dueDate.toDate():new Date(a.dueDate||0);const db2=b.dueDate?.toDate?b.dueDate.toDate():new Date(b.dueDate||0);return da-db2;});
     const totalAmt=payments.reduce((s,p)=>s+Number(p.amount||0),0);
     const collected=payments.filter(p=>['Received','Deposited','Remitted','Collected'].includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
     const balance=Math.max(0,totalAmt-collected);
