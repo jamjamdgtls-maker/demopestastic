@@ -616,17 +616,17 @@
 <!-- ════════════════════════════════════
      FIREBASE + APP LOGIC
 ════════════════════════════════════ -->
-<script type="module">
-
+<script>
 function dismissLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
   ls.classList.add('fade-out');
   setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
 }
-// Failsafe: force-dismiss after 6 seconds no matter what
-setTimeout(()=>dismissLoadingScreen(), 6000);
-
+// Failsafe: force-dismiss loading screen after 6 seconds
+setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+</script>
+<script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -634,7 +634,6 @@ import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc,
   updateDoc, query, where, orderBy, serverTimestamp, writeBatch, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
 const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
 const auth = getAuth(app);
 const db   = getFirestore(app);
@@ -910,6 +909,10 @@ function renderTable() {
     </tr>`;
   }).join('');
 
+  // ── Bind action buttons (MUST be before pagination return) ──
+  document.querySelectorAll('.btn-update-status').forEach(b=>b.addEventListener('click',()=>openStatusModal(b.dataset.id)));
+  document.querySelectorAll('.btn-renew').forEach(b=>b.addEventListener('click',()=>openRenewModal(b.dataset.id)));
+
   // Pagination
   const ctrl=$('pagination-controls');
   if(totalPages<=1){ctrl.innerHTML='';return;}
@@ -917,9 +920,6 @@ function renderTable() {
   for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
   ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
-
-  document.querySelectorAll('.btn-update-status').forEach(b=>b.addEventListener('click',()=>openStatusModal(b.dataset.id)));
-  document.querySelectorAll('.btn-renew').forEach(b=>b.addEventListener('click',()=>openRenewModal(b.dataset.id)));
 }
 
 /* ── Update Status Modal ── */
