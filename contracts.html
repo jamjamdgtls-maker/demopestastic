@@ -673,17 +673,17 @@
 <!-- ══════════════════════════════════════════════════
      FIREBASE + APP LOGIC
 ══════════════════════════════════════════════════ -->
-<script type="module">
-
+<script>
 function dismissLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
   ls.classList.add('fade-out');
   setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
 }
-// Failsafe: force-dismiss after 6 seconds no matter what
-setTimeout(()=>dismissLoadingScreen(), 6000);
-
+// Failsafe: force-dismiss loading screen after 6 seconds
+setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+</script>
+<script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -692,6 +692,9 @@ import {
   query, where, orderBy, serverTimestamp, writeBatch, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+
+,280);
+}
 const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
 const auth = getAuth(app);
 const db   = getFirestore(app);
@@ -915,6 +918,14 @@ function applyFilters() {
 ['search-input','filter-status','filter-type'].forEach(id=>{$(id).addEventListener('input',applyFilters);$(id).addEventListener('change',applyFilters);});
 $('btn-clear-filters').addEventListener('click',()=>{ $('search-input').value='';$('filter-status').value='';$('filter-type').value=''; applyFilters(); });
 
+/* ── Event delegation for table row actions (handles re-renders without rebinding) ── */
+$('contracts-tbody').addEventListener('click', e=>{
+  const viewBtn = e.target.closest('.btn-view, .contract-no-link');
+  const editBtn = e.target.closest('.btn-edit');
+  if(viewBtn && viewBtn.dataset.id) openDetailModal(viewBtn.dataset.id);
+  if(editBtn && editBtn.dataset.id) openEditModal(editBtn.dataset.id);
+});
+
 /* ── Render table ── */
 function renderTable() {
   const total=filteredContracts.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
@@ -965,10 +976,6 @@ function renderTable() {
   for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
   ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
-
-  // Row actions
-  document.querySelectorAll('.btn-view,.contract-no-link').forEach(b=>b.addEventListener('click',()=>openDetailModal(b.dataset.id)));
-  document.querySelectorAll('.btn-edit').forEach(b=>b.addEventListener('click',()=>openEditModal(b.dataset.id)));
 }
 
 /* ── Form: auto end-date & schedule preview ── */
