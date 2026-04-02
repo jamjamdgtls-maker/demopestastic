@@ -582,17 +582,17 @@
 <!-- ════════════════════════════════════════
      FIREBASE + APP LOGIC
 ════════════════════════════════════════ -->
-<script type="module">
-
+<script>
 function dismissLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
   ls.classList.add('fade-out');
   setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
 }
-// Failsafe: force-dismiss after 6 seconds no matter what
-setTimeout(()=>dismissLoadingScreen(), 6000);
-
+// Failsafe: force-dismiss loading screen after 6 seconds
+setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+</script>
+<script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -740,6 +740,17 @@ window.filterByStatus=function(s){$('filter-status').value=s;applyFilters();};
 window.clearAllFilters=function(){$('search-input').value='';$('filter-status').value='';$('filter-team').value='';$('filter-date-from').value='';$('filter-date-to').value='';applyFilters();};
 $('btn-clear-filters').addEventListener('click',clearAllFilters);
 
+
+/* ── Event delegation for treatments table — survives all re-renders ── */
+document.getElementById('treatments-tbody').addEventListener('click', function(e) {
+  const completeBtn  = e.target.closest('.btn-complete');
+  const cancelBtn    = e.target.closest('.btn-cancel');
+  const rescheduleBtn= e.target.closest('.btn-reschedule');
+  if (completeBtn   && completeBtn.dataset.id)   { openCompleteModal(completeBtn.dataset.id);   return; }
+  if (cancelBtn     && cancelBtn.dataset.id)     { openCancelModal(cancelBtn.dataset.id);       return; }
+  if (rescheduleBtn && rescheduleBtn.dataset.id) { openRescheduleModal(rescheduleBtn.dataset.id); return; }
+});
+
 /* ── Render table ── */
 function renderTable() {
   const total=filteredTreatments.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
@@ -799,11 +810,7 @@ function renderTable() {
   ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
 
-  // Bind action buttons
-  document.querySelectorAll('.btn-complete').forEach(b=>b.addEventListener('click',()=>openCompleteModal(b.dataset.id)));
-  document.querySelectorAll('.btn-cancel').forEach(b=>b.addEventListener('click',()=>openCancelModal(b.dataset.id)));
-  document.querySelectorAll('.btn-reschedule').forEach(b=>b.addEventListener('click',()=>openRescheduleModal(b.dataset.id)));
-}
+}  // button bindings handled by event delegation below
 
 /* ── Context banner helper ── */
 function contextBanner(t) {
