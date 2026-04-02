@@ -949,13 +949,17 @@ $('btn-save-status').addEventListener('click', async()=>{
     const data={contractId, status, proposalAmount, notes, updatedAt:serverTimestamp()};
     if(renewalId){
       await updateDoc(doc(db,'renewals',renewalId),data);
-      renewalMap[contractId]={id:renewalId,data:()=>({...renewalMap[contractId].data(),...data})};
+      // Capture previous fields first, then merge — do NOT self-reference renewalMap[contractId].data()
+      const prevData = renewalMap[contractId] ? {...renewalMap[contractId].data()} : {};
+      const merged = {...prevData, ...data};
+      renewalMap[contractId]={id:renewalId, data:()=>merged};
     } else {
       const c=allContracts.find(x=>x.id===contractId);
       data.customerNo=c?.customerNo||'';
       data.createdAt=serverTimestamp();
       const ref=await addDoc(collection(db,'renewals'),data);
-      renewalMap[contractId]={id:ref.id,data:()=>data};
+      const snapshot={...data};
+      renewalMap[contractId]={id:ref.id, data:()=>snapshot};
       $('status-renewal-id').value=ref.id;
     }
     await logAction('updated','renewal',contractId,`Updated renewal status to "${status}" for contract ${contractId}`);
