@@ -1137,9 +1137,13 @@ $('btn-confirm-renew').addEventListener('click', async()=>{
     await logAction('created','renewal',newContractRef.id,
       `Renewed contract ${oldContract.contractNumber||oldContractId} → ${contractNo} for ${oldContract.customerNo}. ${sessions} treatments + ${sessions} payments generated.`);
 
-    // Update local state
+    // Update local state — remove old, add new contract
     oldContract.status='renewed';
     allContracts=allContracts.filter(x=>x.id!==oldContractId);
+    allContracts.push({
+      id:newContractRef.id, ...newContractData,
+      contractStartDate:startDate, contractEndDate:endDate
+    });
 
     closeModal('renew-modal');
     showToast(`Contract renewed! New contract ${contractNo} created with ${sessions} treatments & payments.`, 'success', 'Contract Renewed');
