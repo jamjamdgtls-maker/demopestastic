@@ -768,6 +768,7 @@ onAuthStateChanged(auth, async user=>{
     if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
     currentRole=data.role;
     dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
+    loadSidebarBadges();
     const name=user.displayName||user.email;
     $('user-display-name').textContent=name;
     $('user-role-label').textContent=(data.role||'user').replace('_',' ');
