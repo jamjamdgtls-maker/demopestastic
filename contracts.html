@@ -1123,6 +1123,85 @@ async function openRenewalMode(params) {
   if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
 }
 
+/* ── Open Inspection Convert Mode (called when coming from inspections page) ── */
+async function openInspectionMode(params) {
+  clearForm();
+  const no = await getNextContractNo();
+  $('form-contract-no').value = no;
+  $('form-contract-id').value = '';
+  $('form-old-contract-id').value = '';
+
+  // Store inspection ID on the hidden field (reuse old-contract field for the back-reference)
+  const inspId = params.get('fromInspectionId') || '';
+  if(inspId) $('form-old-contract-id').value = 'INSP:' + inspId;
+
+  // Show inspection-sourced banner (reuse renewal banner with different text)
+  const banner = $('renewal-banner');
+  banner.style.display = 'flex';
+  banner.style.background = 'var(--purple-bg)';
+  banner.style.borderColor = 'hsl(262,83%,70%)';
+  banner.querySelector('svg').style.stroke = 'var(--purple)';
+  banner.querySelector('div').querySelector('div:first-child').style.color = 'var(--purple-text)';
+  banner.querySelector('div').querySelector('div:first-child').textContent = '🔍 Converting Inspection to Contract';
+  banner.querySelector('div').querySelector('div:last-child').style.color = 'var(--purple-text)';
+
+  const clientName   = params.get('clientName')    || '';
+  const contactNo    = params.get('contactNumber') || '';
+  const address      = params.get('address')       || '';
+  const inspectedBy  = params.get('inspectedBy')   || '';
+  const pestProblems = params.get('pestProblems')  || '';
+  const inspDate     = params.get('inspectionDate')|| '';
+
+  $('renewal-ref-text').textContent = clientName
+    ? `Inspection for "${clientName}"${inspDate?' on '+inspDate:''}${pestProblems?' · Pests: '+pestProblems:''}`
+    : 'Pre-filled from inspection record — complete contract details to proceed';
+
+  // Pre-fill client by looking up via clientName match in clientMap
+  // Try to find customerNo from clientMap by name
+  let foundCustomerNo = '';
+  for(const [cno, cdata] of Object.entries(clientMap)) {
+    const name = (cdata.name || '').replace(/\s*\(.*?\)\s*/g,'').trim().toLowerCase();
+    if(clientName && name.includes(clientName.toLowerCase().split('(')[0].trim())) {
+      foundCustomerNo = cno;
+      break;
+    }
+  }
+  if(foundCustomerNo) {
+    $('form-customer-no').value = foundCustomerNo;
+    const client = clientMap[foundCustomerNo];
+    $('client-name-hint').textContent = client ? '✓ ' + (client.name||'').replace(/\s*\(.*?\)\s*/g,'').trim() : '';
+  } else if(clientName) {
+    // Not found in clients — show name as hint so user knows who to link
+    $('client-name-hint').textContent = '⚠ Client "'+clientName+'" not in system — please select or add first';
+    $('client-name-hint').style.color = 'var(--amber-text)';
+  }
+
+  // Pre-fill contract details from inspection
+  if(params.get('contractType')) $('form-contract-type').value = params.get('contractType');
+  if(params.get('assignedTeam')) $('form-team').value          = params.get('assignedTeam');
+  if(params.get('salesAgent'))   $('form-sales-agent').value   = params.get('salesAgent');
+
+  // Build notes combining inspection data
+  const notesParts = [];
+  if(pestProblems) notesParts.push('Pest problems observed: ' + pestProblems);
+  if(address)      notesParts.push('Inspection address: ' + address);
+  if(contactNo)    notesParts.push('Contact: ' + contactNo);
+  if(inspectedBy)  notesParts.push('Inspected by: ' + inspectedBy);
+  if(params.get('notes')) notesParts.push('Inspection notes: ' + params.get('notes'));
+  if(inspId)       notesParts.push('Source inspection ID: ' + inspId);
+  $('form-notes').value = notesParts.join(' | ');
+
+  $('form-modal-title').textContent = '🔍 Convert Inspection to Contract';
+  $('save-btn-text').textContent = 'Save Contract & Generate Schedule';
+  $('form-status').value = 'active';
+
+  updateEndDateAndPreview();
+  openModal('contract-form-modal');
+
+  if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
+}
+
+
 /* ── Edit Contract ── */
 function openEditModal(id) {
   const c=allContracts.find(x=>x.id===id);
@@ -1211,12 +1290,18 @@ $('btn-save-contract').addEventListener('click', async ()=>{
       await logAction('updated','contract',editId,`Updated contract ${data.contractNumber} for ${customerNo}`);
       showToast('Contract updated successfully.');
     } else {
-      const oldContractId = $('form-old-contract-id').value.trim();
+      const _oldVal = $('form-old-contract-id').value.trim();
+      const isInspectionConvert = _oldVal.startsWith('INSP:');
+      const oldContractId = isInspectionConvert ? '' : _oldVal;
+      const inspectionSourceId = isInspectionConvert ? _oldVal.replace('INSP:','') : '';
       const isRenewal = !!oldContractId;
 
       if(isRenewal) {
         data.renewedFromContractId = oldContractId;
-        data.notes = (data.notes?data.notes+' | ':'') + `Renewal of contract ${oldContractId}`;
+        data.notes = (data.notes?data.notes+' | ':'') + 'Renewal of contract ' + oldContractId;
+      }
+      if(inspectionSourceId) {
+        data.fromInspectionId = inspectionSourceId;
       }
       data.createdAt=serverTimestamp();
       const ref=await addDoc(collection(db,'contracts'),data);
@@ -1566,9 +1651,10 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadAll();
-    // Check for renewal redirect from renewals page
+    // Check for redirect from renewals or inspections pages
     const _rp = new URLSearchParams(window.location.search);
-    if(_rp.get('mode')==='renewal') { openRenewalMode(_rp); }
+    if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
+    else if(_rp.get('mode')==='inspection') { openInspectionMode(_rp); }
   } catch(err){ dismissLoadingScreen();console.error(err); }
 });
 
