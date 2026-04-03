@@ -613,52 +613,61 @@ $('filter-days').addEventListener('change',()=>{loadAll();});
 /* ── Sidebar & topbar notification badges ── */
 async function loadSidebarBadges() {
   try {
-    // Overdue treatments
     const today = new Date(); today.setHours(0,0,0,0);
+    let notifCount = 0;
     const trSnap = await getDocs(collection(db,'treatments'));
-    let overdueCount = 0;
+    let overdueT = 0;
     trSnap.forEach(d => {
       const t = d.data();
       if(t.status === 'scheduled') {
         const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
-        if(td < today) overdueCount++;
+        if(td < today) { overdueT++; notifCount++; }
       }
     });
+    const pySnap = await getDocs(collection(db,'payments'));
+    let overdueP = 0;
+    pySnap.forEach(d => {
+      const p = d.data();
+      if(p.status === 'Pending') {
+        const dd = p.dueDate?.toDate ? p.dueDate.toDate() : new Date(p.dueDate||0);
+        if(dd < today) { overdueP++; notifCount++; }
+      }
+    });
+    const overdueTotal = overdueT + overdueP;
     const bdOverdue = document.getElementById('badge-overdue');
-    if(bdOverdue && overdueCount > 0) {
-      bdOverdue.textContent = overdueCount;
-      bdOverdue.style.display = '';
-    }
-
-    // Open complaints
+    if(bdOverdue && overdueTotal > 0) { bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal; bdOverdue.style.display = ''; }
+    const coSnap = await getDocs(collection(db,'contracts'));
+    coSnap.forEach(d => {
+      const c = d.data(); if(c.status !== 'active') return;
+      const ed = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
+      if(Math.round((ed - today) / 86400000) <= 7 && Math.round((ed - today) / 86400000) >= 0) notifCount++;
+    });
     const cmpSnap = await getDocs(collection(db,'complaints'));
     let openComplaints = 0;
     cmpSnap.forEach(d => {
-      const s = d.data().status||'';
-      if(['Open','In Progress','Scheduled'].includes(s)) openComplaints++;
+      const c = d.data(); const s = c.status || '';
+      if(['Open','In Progress','Scheduled'].includes(s)) {
+        openComplaints++;
+        const rd = c.dateReported?.toDate ? c.dateReported.toDate() : new Date(c.dateReported||0);
+        if(Math.abs(Math.round((today - rd) / 86400000)) >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
+      }
     });
     const bdComplaints = document.getElementById('badge-complaints');
-    if(bdComplaints && openComplaints > 0) {
-      bdComplaints.textContent = openComplaints;
-      bdComplaints.style.display = '';
-    }
-
-    // Notification dot on topbar bell — show if anything needs attention
+    if(bdComplaints && openComplaints > 0) { bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints; bdComplaints.style.display = ''; }
+    const inSnap = await getDocs(collection(db,'inspections'));
+    let scheduledI = 0;
+    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledI++; });
+    const bdI = document.getElementById('badge-inspections');
+    if(bdI && scheduledI > 0) { bdI.textContent = scheduledI > 99 ? '99+' : scheduledI; bdI.style.display = ''; }
+    const bdNotif = document.getElementById('badge-notifications');
+    if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
     const notifDot = document.getElementById('notif-dot');
-    if(notifDot && (overdueCount > 0 || openComplaints > 0)) {
-      notifDot.style.display = '';
-    }
-
-    // Pending users (admin/super_admin only)
+    if(notifDot && notifCount > 0) notifDot.style.display = '';
     if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
       const usrSnap = await getDocs(collection(db,'users'));
-      let pendingUsers = 0;
-      usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
-      const bdUsers = document.getElementById('badge-pending-users');
-      if(bdUsers && pendingUsers > 0) {
-        bdUsers.textContent = pendingUsers;
-        bdUsers.style.display = '';
-      }
+      let pu = 0; usrSnap.forEach(d => { if(d.data().status === 'pending') pu++; });
+      const bdU = document.getElementById('badge-pending-users');
+      if(bdU && pu > 0) { bdU.textContent = pu > 99 ? '99+' : pu; bdU.style.display = ''; }
     }
   } catch(e) { console.warn('[badges] Failed:', e.message); }
 }
