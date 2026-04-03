@@ -1065,22 +1065,50 @@ $('btn-add-comment').addEventListener('click', async()=>{
 });
 
 /* ── Convert to Contract ── */
-$('btn-convert-contract').addEventListener('click',()=>{
-  const i=allInspections.find(x=>x.id===activeInspectionId);if(!i)return;
-  // Build URL params to pre-fill contracts.html new-contract form
-  const params=new URLSearchParams({
-    prefill:'1',
-    clientName: i.clientName||'',
-    contactNumber: i.contactNumber||'',
-    address: i.address||'',
-    inspectedBy: i.inspectedBy||'',
-    assignedTeam: i.assignedTeam||'',
-    fromInspectionId: activeInspectionId
+$('btn-convert-contract').addEventListener('click', async ()=>{
+  const i=allInspections.find(x=>x.id===activeInspectionId); if(!i) return;
+
+  // Map pest problems to suggested contract type
+  const pestProblems = i.pestProblems||[];
+  let suggestedType = '';
+  if(pestProblems.some(p=>/termite/i.test(p)))                suggestedType='Termite Control';
+  else if(pestProblems.some(p=>/rodent|rat|mouse/i.test(p)))  suggestedType='Rodents Control';
+  else if(pestProblems.some(p=>/mosquito|fly|flies|flying/i.test(p))) suggestedType='Flying Insects Control';
+  else if(pestProblems.some(p=>/cockroach|ant|crawl/i.test(p))) suggestedType='Crawling Insects Control';
+  else if(pestProblems.length>0)                               suggestedType='General Pest Control';
+
+  // Build URL params for contracts.html
+  const params = new URLSearchParams({
+    mode:             'inspection',
+    fromInspectionId: activeInspectionId,
+    clientName:       i.clientName    || '',
+    contactNumber:    i.contactNumber || '',
+    address:          i.address       || '',
+    inspectedBy:      i.inspectedBy   || '',
+    assignedTeam:     i.assignedTeam  || '',
+    salesAgent:       i.inspectedBy   || '',
+    pestProblems:     pestProblems.join(', '),
+    contractType:     suggestedType,
+    notes:            i.notes         || '',
+    inspectionDate:   i.inspectionDate
+      ? (i.inspectionDate.toDate
+          ? i.inspectionDate.toDate().toISOString().slice(0,10)
+          : String(i.inspectionDate).slice(0,10))
+      : '',
   });
+
+  // Mark inspection as Converted
+  try {
+    await updateDoc(doc(db,'inspections',activeInspectionId),{status:'Converted',updatedAt:serverTimestamp()});
+    const idx = allInspections.findIndex(x=>x.id===activeInspectionId);
+    if(idx>=0) allInspections[idx].status='Converted';
+    await logAction('updated','inspection',activeInspectionId,
+      `Converted inspection for ${i.clientName||'—'} to contract`);
+    computeStats(); applyFilters();
+  } catch(err) { console.warn('Could not mark as converted:',err.message); }
+
   closeModal('inspection-detail-modal');
-  showToast('Opening contract form with inspection data…');
-  // Navigate to contracts page (which can read URL params to pre-fill)
-  setTimeout(()=>{ window.location.href=`contracts.html?${params.toString()}`; },600);
+  window.location.href = 'contracts.html?' + params.toString();
 });
 
 /* ── Delete ── */
