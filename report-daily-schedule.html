@@ -205,42 +205,68 @@
        PRINT CSS — hides everything except report
     ══════════════════════════════════════════ */
     @media print{
-      @page{margin:18mm 16mm;size:A4}
+      @page{margin:12mm 10mm;size:A4}
 
-      /* Hide all shell chrome */
-      .sidebar,.sidebar-overlay,.topbar,.controls-bar,.summary-row,
-      #toast-container,.btn-print,.btn-secondary,
+      /* ── Hide all shell chrome ── */
+      .sidebar,.sidebar-overlay,.topbar,.hamburger,
+      .controls-bar,.summary-row,.summary-pills,.summary-grid,
+      .filters-bar,.page-header,
+      #toast-container,.btn-print,.btn-secondary,.btn-ghost,
       .page-content > *:not(#report-area){display:none!important}
 
-      /* Full-width report */
-      html,body{height:auto;background:white!important}
-      #app-shell{display:block!important;height:auto;overflow:visible}
-      .main-wrapper{margin-left:0!important;height:auto;overflow:visible}
-      .page-content{padding:0!important;overflow:visible}
-      #report-area{border:none!important;border-radius:0!important;padding:0!important;box-shadow:none!important}
+      /* ── Reset ALL height/overflow that clips multi-page content ── */
+      *{box-sizing:border-box!important}
+      html,body{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        background:white!important;
+        margin:0!important;padding:0!important;
+      }
+      #app-shell{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        flex:none!important;
+      }
+      .main-wrapper{
+        display:block!important;
+        margin-left:0!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        flex:none!important;
+      }
+      .page-content{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        padding:0!important;
+        flex:none!important;
+      }
+      #report-area{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        border:none!important;border-radius:0!important;
+        padding:0!important;box-shadow:none!important;
+      }
 
-      /* Team sections break to new page */
-      .team-section{page-break-inside:avoid;break-inside:avoid;page-break-after:auto}
-      .team-section:not(:last-child){page-break-after:auto}
+      /* ── Tables fill full width ── */
+      table{width:100%!important;table-layout:auto!important}
 
-      /* Clean table for print */
-      .report-table th{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .report-table tbody tr:nth-child(even){background:#fafafa!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .team-section-header{background:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .status-dot{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .report-summary{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-
-      /* Signature area never breaks */
-      .sig-block{page-break-inside:avoid}
-    
-      /* ── Full-width print maximization ── */
-      html,body{width:100%!important;max-width:100%!important}
-      #app-shell{display:block!important;width:100%!important;max-width:100%!important}
-      .main-wrapper{margin-left:0!important;width:100%!important;max-width:100%!important;height:auto!important;overflow:visible!important}
-      .page-content{width:100%!important;max-width:100%!important;padding:0!important;overflow:visible!important}
-      #report-area{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
-      table{width:100%!important}
-      * {box-sizing:border-box!important}
+            /* Team sections */
+      .team-section{{page-break-inside:avoid;break-inside:avoid}}
+      .sig-block{{page-break-inside:avoid}}
+      /* Preserve colors */
+      .report-table th{{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .report-table tbody tr:nth-child(even){{background:#fafafa!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .team-section-header{{background:#111!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .status-dot,.report-summary{{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
     }
   
     /* ── PAGE LOAD SCREEN ── */
@@ -734,6 +760,24 @@ $('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(a
 const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
 hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
 overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+
+/* ── Before/after print: strip height/overflow constraints ── */
+window.addEventListener('beforeprint', function() {
+  const shell = document.getElementById('app-shell');
+  const wrapper = document.querySelector('.main-wrapper');
+  const content = document.querySelector('.page-content');
+  if(shell)   { shell._savedStyle = shell.style.cssText; shell.style.cssText = 'display:block!important;height:auto!important;overflow:visible!important;width:100%!important'; }
+  if(wrapper) { wrapper._savedStyle = wrapper.style.cssText; wrapper.style.cssText = 'display:block!important;margin-left:0!important;width:100%!important;height:auto!important;overflow:visible!important'; }
+  if(content) { content._savedStyle = content.style.cssText; content.style.cssText = 'display:block!important;height:auto!important;overflow:visible!important;padding:0!important;width:100%!important;flex:none!important'; }
+});
+window.addEventListener('afterprint', function() {
+  const shell = document.getElementById('app-shell');
+  const wrapper = document.querySelector('.main-wrapper');
+  const content = document.querySelector('.page-content');
+  if(shell && shell._savedStyle !== undefined)   shell.style.cssText = shell._savedStyle;
+  if(wrapper && wrapper._savedStyle !== undefined) wrapper.style.cssText = wrapper._savedStyle;
+  if(content && content._savedStyle !== undefined) content.style.cssText = content._savedStyle;
+});
 </script>
 </body>
 </html>
