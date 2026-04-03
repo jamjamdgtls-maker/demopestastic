@@ -922,6 +922,31 @@ function renderTable() {
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
 }
 
+
+/* ── Build contracts page URL for renewal redirect ── */
+function buildRenewalUrl(contract) {
+  const p = new URLSearchParams({
+    mode:         'renewal',
+    oldId:        contract.id,
+    oldNo:        contract.contractNumber || '',
+    oldEnd:       contract.contractEndDate
+      ? (contract.contractEndDate.toDate
+          ? contract.contractEndDate.toDate().toISOString().slice(0,10)
+          : String(contract.contractEndDate).slice(0,10))
+      : '',
+    customerNo:   contract.customerNo   || '',
+    contractType: contract.contractType  || '',
+    method:       contract.treatmentMethod || '',
+    frequency:    contract.frequency    || '',
+    sessions:     contract.noOfSessions || '',
+    warranty:     contract.warrantyPeriod || '',
+    amount:       contract.totalAmount  || '',
+    team:         contract.assignedTeam || '',
+    agent:        contract.salesAgent   || '',
+  });
+  return 'contracts.html?' + p.toString();
+}
+
 /* ── Update Status Modal ── */
 function openStatusModal(contractId) {
   const c=allContracts.find(x=>x.id===contractId); if(!c) return;
@@ -945,6 +970,30 @@ $('btn-save-status').addEventListener('click', async()=>{
   const notes=$('status-notes').value.trim();
 
   const btn=$('btn-save-status'); btn.disabled=true; $('status-btn-text').textContent='Saving…';
+
+  // If marking as Renewed, redirect to contracts page to create the new contract properly
+  if(status === 'renewed') {
+    const c = allContracts.find(x=>x.id===contractId);
+    if(c) {
+      // Save the 'renewed' status first so it's recorded
+      try {
+        const renewData={contractId, status:'renewed', proposalAmount, notes, updatedAt:serverTimestamp()};
+        if(renewalId) {
+          await updateDoc(doc(db,'renewals',renewalId), renewData);
+        } else {
+          const c2=allContracts.find(x=>x.id===contractId);
+          renewData.customerNo=c2?.customerNo||'';
+          renewData.createdAt=serverTimestamp();
+          await addDoc(collection(db,'renewals'), renewData);
+        }
+      } catch {}
+      closeModal('status-modal');
+      // Navigate to contracts page to create the renewal contract
+      window.location.href = buildRenewalUrl(c);
+      return;
+    }
+  }
+
   try{
     const data={contractId, status, proposalAmount, notes, updatedAt:serverTimestamp()};
     if(renewalId){
@@ -972,6 +1021,12 @@ $('btn-save-status').addEventListener('click', async()=>{
 
 /* ── Renew Contract Modal ── */
 async function openRenewModal(contractId) {
+  const c=allContracts.find(x=>x.id===contractId); if(!c) return;
+  // Redirect to contracts page with pre-filled renewal data
+  window.location.href = buildRenewalUrl(c);
+}
+// (Legacy function kept for compatibility — actual renew modal no longer used)
+async function _openRenewModalLegacy(contractId) {
   const c=allContracts.find(x=>x.id===contractId); if(!c) return;
   const clientData=clientMap[c.customerNo];
   const clientName=cleanName(clientData?.clientName||c.customerNo||'—');
