@@ -696,17 +696,17 @@
 <!-- ════════════════════════════════════
      FIREBASE + APP LOGIC
 ════════════════════════════════════ -->
-<script type="module">
-
+<script>
 function dismissLoadingScreen(){
   const ls=document.getElementById('loading-screen');
   if(!ls)return;
   ls.classList.add('fade-out');
   setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
 }
-// Failsafe: force-dismiss after 6 seconds no matter what
-setTimeout(()=>dismissLoadingScreen(), 6000);
-
+// Failsafe: force-dismiss loading screen after 6 seconds
+setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+</script>
+<script type="module">
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -991,9 +991,16 @@ function renderTable(){
   ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
 
-  document.querySelectorAll('.btn-view').forEach(b=>b.addEventListener('click',()=>openDetail(b.dataset.id)));
-  document.querySelectorAll('.btn-edit-row').forEach(b=>b.addEventListener('click',()=>openEditModal(b.dataset.id)));
-}
+}  // handled by delegation
+
+/* ── Event delegation for complaints table buttons ── */
+document.getElementById('complaints-tbody').addEventListener('click', function(e) {
+  var viewBtn = e.target.closest('.btn-view');
+  var editBtn = e.target.closest('.btn-edit-row');
+  if (viewBtn && viewBtn.dataset.id) { openDetail(viewBtn.dataset.id); return; }
+  if (editBtn && editBtn.dataset.id) { openEditModal(editBtn.dataset.id); return; }
+});
+
 
 /* ── Customer selection → load contracts ── */
 $('form-customer-no').addEventListener('input',()=>{
