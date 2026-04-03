@@ -1326,11 +1326,15 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       const list = document.getElementById('activity-list');
 
       try {
-        const logSnap = await getDocs(query(
-          collection(db,'audit_log'),
-          orderBy('createdAt','desc'),
-          limit(8)
-        ));
+        const _allLogs = await getDocs(collection(db,'audit_log'));
+        const _sorted = _allLogs.docs
+          .map(d=>({...d.data(),_id:d.id}))
+          .sort((a,b)=>{
+            const da=a.createdAt?.toDate?a.createdAt.toDate():new Date(a.createdAt||0);
+            const db2=b.createdAt?.toDate?b.createdAt.toDate():new Date(b.createdAt||0);
+            return db2-da;
+          }).slice(0,8);
+        const logSnap = { empty: _sorted.length===0, docs: _sorted.map(d=>({data:()=>d})) };
 
         if (logSnap.empty) {
           list.innerHTML = `<li><div class="empty-mini"><p>No activity yet</p></div></li>`;

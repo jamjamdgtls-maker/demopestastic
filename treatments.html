@@ -299,10 +299,10 @@
       <a class="nav-item" href="payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</a>
       <a class="nav-item" href="renewals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Renewals</a>
       <div class="nav-section-label">Service</div>
-      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints</a>
+      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="nav-badge" id="badge-complaints" style="display:none"></span></a>
       <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections</a>
       <div class="nav-section-label">Monitoring</div>
-      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue</a>
+      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
       <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a>
       <div class="nav-section-label">Operations</div>
@@ -326,7 +326,7 @@
       <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <span class="topbar-title">Treatments</span>
       <div class="topbar-spacer"></div>
-      <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="topbar-notif-dot" id="notif-dot" style="display:none"></span></button>
     </header>
 
     <main class="page-content">
@@ -659,7 +659,7 @@ function statusBadge(s) {
 
 /* ── Audit log ── */
 async function logAction(action,entityType,entityId,description){
-  try{await addDoc(collection(db,'audit_log'),{action,entityType,entityId,description,performedBy:currentUser?.email||'',performedByUid:currentUser?.uid||'',createdAt:serverTimestamp()});}catch{}
+  try{await addDoc(collection(db,'audit_log'),{action,entityType,entityId,description,performedBy:currentUser?.email||'',performedByUid:currentUser?.uid||'',page:'treatments',createdAt:serverTimestamp()});}catch(e){console.warn('[audit_log] Failed:',e.message);}
 }
 
 /* ── Load data ── */
@@ -975,6 +975,59 @@ $('btn-export-csv').addEventListener('click',()=>{
 });
 
 /* ── Auth ── */
+
+/* ── Sidebar & topbar notification badges ── */
+async function loadSidebarBadges() {
+  try {
+    // Overdue treatments
+    const today = new Date(); today.setHours(0,0,0,0);
+    const trSnap = await getDocs(collection(db,'treatments'));
+    let overdueCount = 0;
+    trSnap.forEach(d => {
+      const t = d.data();
+      if(t.status === 'scheduled') {
+        const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
+        if(td < today) overdueCount++;
+      }
+    });
+    const bdOverdue = document.getElementById('badge-overdue');
+    if(bdOverdue && overdueCount > 0) {
+      bdOverdue.textContent = overdueCount;
+      bdOverdue.style.display = '';
+    }
+
+    // Open complaints
+    const cmpSnap = await getDocs(collection(db,'complaints'));
+    let openComplaints = 0;
+    cmpSnap.forEach(d => {
+      const s = d.data().status||'';
+      if(['Open','In Progress','Scheduled'].includes(s)) openComplaints++;
+    });
+    const bdComplaints = document.getElementById('badge-complaints');
+    if(bdComplaints && openComplaints > 0) {
+      bdComplaints.textContent = openComplaints;
+      bdComplaints.style.display = '';
+    }
+
+    // Notification dot on topbar bell — show if anything needs attention
+    const notifDot = document.getElementById('notif-dot');
+    if(notifDot && (overdueCount > 0 || openComplaints > 0)) {
+      notifDot.style.display = '';
+    }
+
+    // Pending users (admin/super_admin only)
+    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
+      const usrSnap = await getDocs(collection(db,'users'));
+      let pendingUsers = 0;
+      usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
+      const bdUsers = document.getElementById('badge-pending-users');
+      if(bdUsers && pendingUsers > 0) {
+        bdUsers.textContent = pendingUsers;
+        bdUsers.style.display = '';
+      }
+    }
+  } catch(e) { console.warn('[badges] Failed:', e.message); }
+}
 onAuthStateChanged(auth, async user=>{
   if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
   currentUser=user;
