@@ -283,7 +283,7 @@
       <div class="nav-section-label">Monitoring</div>
       <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="badge-notifications" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
             <div class="nav-section-label">Reports</div>
       <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
@@ -562,6 +562,43 @@ $('btn-clear-filters').addEventListener('click',()=>{$('search-input').value='';
 window.setFilter=s=>{$('filter-status').value=s;applyFilters();};
 
 /* ── Render table ── */
+
+/* ── Event delegation — works regardless of filter/page state ── */
+document.getElementById('users-tbody').addEventListener('click', async function(e) {
+  const approve = e.target.closest('.btn-approve');
+  const deny    = e.target.closest('.btn-deny');
+  const revoke  = e.target.closest('.btn-revoke');
+  const restore = e.target.closest('.btn-restore');
+  if(approve) { updateUserStatus(approve.dataset.uid, approve.dataset.name, 'approved'); return; }
+  if(deny)    { updateUserStatus(deny.dataset.uid, deny.dataset.name, 'denied'); return; }
+  if(revoke)  { if(confirm(`Revoke access for "${revoke.dataset.name}"?`)) updateUserStatus(revoke.dataset.uid, revoke.dataset.name, 'denied'); return; }
+  if(restore) { updateUserStatus(restore.dataset.uid, restore.dataset.name, 'approved'); return; }
+});
+
+/* ── Role-change delegation ── */
+document.getElementById('users-tbody').addEventListener('change', async function(e) {
+  const sel = e.target.closest('.role-change');
+  if(!sel) return;
+  const uid = sel.dataset.uid, name = sel.dataset.name;
+  const newRole = sel.value, oldRole = sel.dataset.oldrole || sel.dataset.oldRole;
+  const u = allUsers.find(x => x.id === uid || x.uid === uid);
+  if(!u || newRole === oldRole) return;
+  if(currentRole !== 'super_admin' && currentRole !== 'admin') return;
+  if(newRole === 'super_admin' && currentRole !== 'super_admin') {
+    showToast('Only Super Admins can assign the Super Admin role.', 'error');
+    sel.value = oldRole; return;
+  }
+  sel.disabled = true;
+  try {
+    await updateDoc(doc(db,'users',uid), {role:newRole, updatedAt:serverTimestamp()});
+    u.role = newRole;
+    await logAction('updated','user',uid,`Changed role for "${name}" from ${oldRole} → ${newRole}`);
+    showToast(`Role updated to ${newRole==='super_admin'?'Super Admin':newRole==='admin'?'Admin':'User'} for "${name}".`);
+    updateStats(); applyFilters();
+  } catch(err) { showToast('Failed: '+err.message,'error'); sel.value=oldRole; }
+  sel.disabled = false;
+});
+
 function renderTable() {
   const total=filteredUsers.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
   currentPage=Math.min(currentPage,totalPages);
@@ -604,7 +641,7 @@ function renderTable() {
       </td>
       <td>
         ${canChangeRole
-          ? `<select class="role-select role-change" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}">${roleOptions}</select>`
+          ? `<select class="role-select role-change" data-uid="${u.id}" data-name="${(u.displayName||u.email||'')" data-oldrole="${u.role}.replace(/"/g,'')}">${roleOptions}</select>`
           : roleBadge(u.role)
         }
       </td>
@@ -647,39 +684,7 @@ function renderTable() {
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
 
   /* ── Bind action buttons ── */
-  document.querySelectorAll('.btn-approve').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'approved')));
-  document.querySelectorAll('.btn-deny').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'denied')));
-  document.querySelectorAll('.btn-revoke').forEach(b=>b.addEventListener('click',()=>{if(confirm(`Revoke access for "${b.dataset.name}"?`))updateUserStatus(b.dataset.uid,b.dataset.name,'denied');}));
-  document.querySelectorAll('.btn-restore').forEach(b=>b.addEventListener('click',()=>updateUserStatus(b.dataset.uid,b.dataset.name,'approved')));
-
-  /* ── Role change ── */
-  document.querySelectorAll('.role-change').forEach(sel=>{
-    sel.addEventListener('change', async()=>{
-      const newRole=sel.value;
-      const uid=sel.dataset.uid;
-      const name=sel.dataset.name;
-      const u=allUsers.find(x=>x.id===uid); if(!u) return;
-      const oldRole=u.role;
-      if(newRole===oldRole) return;
-
-      // Guard: only super_admin can assign super_admin
-      if(newRole==='super_admin'&&currentRole!=='super_admin'){
-        showToast('Only Super Admins can assign the Super Admin role.','error');
-        sel.value=oldRole; return;
-      }
-
-      sel.disabled=true;
-      try{
-        await updateDoc(doc(db,'users',uid),{role:newRole,updatedAt:serverTimestamp()});
-        u.role=newRole;
-        await logAction('updated','user',uid,`Changed role for "${name}" from ${oldRole} → ${newRole}`);
-        showToast(`Role updated to ${newRole==='super_admin'?'Super Admin':newRole==='admin'?'Admin':'User'} for "${name}".`);
-        updateStats(); applyFilters();
-      }catch(err){showToast('Failed: '+err.message,'error');sel.value=oldRole;}
-      sel.disabled=false;
-    });
-  });
-}
+  }
 
 /* ── Approve / Deny / Revoke ── */
 async function updateUserStatus(uid, name, newStatus) {
@@ -774,7 +779,7 @@ async function loadSidebarBadges() {
     }
 
     // ── Notifications nav badge (total urgent items) ──
-    const bdNotif = document.getElementById('badge-notifications');
+    const bdNotif = document.getElementById('notif-count-badge');
     if(bdNotif && notifCount > 0) {
       bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
       bdNotif.style.display = '';
