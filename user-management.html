@@ -414,16 +414,17 @@
 <!-- ════════════════════════════════════
      FIREBASE + APP LOGIC
 ════════════════════════════════════ -->
-<script type="module">
+<script>
+  function dismissLoadingScreen(){
+    const ls=document.getElementById('loading-screen');
+    if(!ls)return;
+    ls.classList.add('fade-out');
+    setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
+  }
+  setTimeout(dismissLoadingScreen, 6000);
+</script>
 
-function dismissLoadingScreen(){
-  const ls=document.getElementById('loading-screen');
-  if(!ls)return;
-  ls.classList.add('fade-out');
-  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
-}
-// Failsafe: force-dismiss after 6 seconds no matter what
-setTimeout(()=>dismissLoadingScreen(), 6000);
+<script type="module">
 
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -507,8 +508,14 @@ async function logAction(action,entityType,entityId,description){
 
 /* ── Load users ── */
 async function loadUsers() {
-  const snap=await getDocs(query(collection(db,'users'),orderBy('createdAt','desc')));
+  const snap=await getDocs(collection(db,'users'));
   allUsers=snap.docs.map(d=>({id:d.id,...d.data()}));
+  // Sort client-side: pending first, then by createdAt desc
+  allUsers.sort((a,b)=>{
+    const aT=a.createdAt?.toDate?a.createdAt.toDate():new Date(a.createdAt||0);
+    const bT=b.createdAt?.toDate?b.createdAt.toDate():new Date(b.createdAt||0);
+    return bT-aT;
+  });
   updateStats();
   applyFilters();
 }
@@ -641,7 +648,7 @@ function renderTable() {
       </td>
       <td>
         ${canChangeRole
-          ? `<select class="role-select role-change" data-uid="${u.id}" data-name="${(u.displayName||u.email||'')" data-oldrole="${u.role}.replace(/"/g,'')}">${roleOptions}</select>`
+          ? `<select class="role-select role-change" data-uid="${u.id}" data-name="${(u.displayName||u.email||'').replace(/"/g,'')}" data-oldrole="${u.role}">${roleOptions}</select>`
           : roleBadge(u.role)
         }
       </td>
@@ -682,9 +689,7 @@ function renderTable() {
   for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
   ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
-
-  /* ── Bind action buttons ── */
-  }
+}
 
 /* ── Approve / Deny / Revoke ── */
 async function updateUserStatus(uid, name, newStatus) {
