@@ -677,26 +677,8 @@ onAuthStateChanged(auth, async user=>{
   try{
     const snap=await getDoc(doc(db,'users',user.uid));
     if(!snap.exists()){
-      // Check pre-approved email list
-      let autoApproved = false;
-      try {
-        const preSnap = await getDoc(doc(db,'config','preapproved'));
-        const entries = preSnap.exists() ? (preSnap.data().entries || []) : [];
-        autoApproved = entries.some(e => (e.email||'').toLowerCase() === (user.email||'').toLowerCase());
-      } catch(e) { /* proceed as pending if check fails */ }
-
-      await setDoc(doc(db,'users',user.uid),{
-        uid:user.uid, email:user.email,
-        displayName:user.displayName||'', photoURL:user.photoURL||'',
-        role:'user', status: autoApproved ? 'approved' : 'pending',
-        createdAt:serverTimestamp(), lastLogin:serverTimestamp()
-      });
-
-      if(!autoApproved){
-        dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
-      }
-      // Auto-approved — fall through to load the app normally
-      snap = { exists: ()=>true, data: ()=>({role:'user',status:'approved'}) };
+      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
+      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
     }
     const data=snap.data();
     updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
