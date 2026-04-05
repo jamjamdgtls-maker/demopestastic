@@ -225,6 +225,14 @@
     .ls-logo svg{width:34px;height:34px;color:white}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+
+    /* Pre-approve email list */
+    .preapprove-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--bg-secondary)}
+    .preapprove-item:last-child{margin-bottom:0}
+    .preapprove-email{font-size:13px;font-weight:500;color:var(--text)}
+    .preapprove-added{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+    .btn-remove-preapprove{background:none;border:1px solid #fca5a5;border-radius:var(--radius-sm);padding:4px 8px;color:var(--red-text);cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s}
+    .btn-remove-preapprove:hover{background:var(--red-bg)}
   </style>
 </head>
 <body>
@@ -405,6 +413,26 @@
           </div>
         </div>
       </div>
+
+        <!-- Pre-approved Emails -->
+        <div style="margin-top:28px">
+          <div style="margin-bottom:14px">
+            <h3 style="font-size:16px;font-weight:700;color:var(--text)">Pre-approved Emails</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:2px">Users who sign in with these emails are automatically approved — no manual review needed.</p>
+          </div>
+          <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+              <input type="email" id="preapprove-email-input" class="form-input" placeholder="Enter email address to pre-approve…" style="flex:1;min-width:240px" />
+              <button class="btn btn-primary" id="btn-add-preapprove">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Email
+              </button>
+            </div>
+            <div id="preapprove-list">
+              <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">Loading…</div>
+            </div>
+          </div>
+        </div>
     </main>
   </div>
 </div>
@@ -807,14 +835,120 @@ async function loadSidebarBadges() {
     }
   } catch(e) { console.warn('[badges] Failed:', e.message); }
 }
+
+/* ── Pre-approve Emails ── */
+const PREAPPROVE_DOC = doc(db, 'config', 'preapproved');
+
+async function loadPreapprovedEmails() {
+  const list = document.getElementById('preapprove-list');
+  if (!list) return;
+  try {
+    const snap = await getDoc(PREAPPROVE_DOC);
+    const entries = snap.exists() ? (snap.data().entries || []) : [];
+    if (!entries.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">No pre-approved emails yet. Add one above.</div>';
+      return;
+    }
+    list.innerHTML = entries.map((e, i) => `
+      <div class="preapprove-item">
+        <div>
+          <div class="preapprove-email">${e.email}</div>
+          <div class="preapprove-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'} by ${e.addedBy || '—'}</div>
+        </div>
+        <button class="btn-remove-preapprove" data-idx="${i}" data-email="${e.email}">Remove</button>
+      </div>`).join('');
+
+    list.querySelectorAll('.btn-remove-preapprove').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = Number(btn.dataset.idx);
+        const email = btn.dataset.email;
+        const snap2 = await getDoc(PREAPPROVE_DOC);
+        const current = snap2.exists() ? (snap2.data().entries || []) : [];
+        const updated = current.filter((_, i) => i !== idx);
+        await setDoc(PREAPPROVE_DOC, { entries: updated }, { merge: true });
+        await logAction('deleted', 'preapproved_email', email, `Removed pre-approved email: ${email}`);
+        showToast(`Removed ${email} from pre-approved list.`);
+        loadPreapprovedEmails();
+      });
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red-text);padding:12px;font-size:13px">Failed to load list.</div>';
+    console.error('[preapprove]', e);
+  }
+}
+
+document.getElementById('btn-add-preapprove').addEventListener('click', async () => {
+  const input = document.getElementById('preapprove-email-input');
+  const email = (input.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { showToast('Enter a valid email address.', 'error'); return; }
+
+  const btn = document.getElementById('btn-add-preapprove');
+  btn.disabled = true;
+  try {
+    const snap = await getDoc(PREAPPROVE_DOC);
+    const entries = snap.exists() ? (snap.data().entries || []) : [];
+
+    if (entries.some(e => (e.email || '').toLowerCase() === email)) {
+      showToast('This email is already pre-approved.', 'warning'); btn.disabled = false; return;
+    }
+
+    // Check if user already exists in system
+    const usersSnap = await getDocs(collection(db, 'users'));
+    const existingUser = usersSnap.docs.find(d => (d.data().email || '').toLowerCase() === email);
+
+    if (existingUser && existingUser.data().status === 'approved') {
+      showToast('This user is already approved.', 'warning'); btn.disabled = false; return;
+    }
+
+    if (existingUser && existingUser.data().status === 'pending') {
+      await updateDoc(doc(db, 'users', existingUser.id), {
+        status: 'approved', approvedAt: serverTimestamp(), approvedBy: currentUser.email
+      });
+      await logAction('updated', 'user', existingUser.id, `Auto-approved pending user: ${email}`);
+      showToast(`${email} was pending — approved immediately!`);
+      await loadUsers();
+      loadPreapprovedEmails();
+    } else {
+      entries.push({ email, addedAt: new Date().toISOString(), addedBy: currentUser.email || '' });
+      await setDoc(PREAPPROVE_DOC, { entries }, { merge: true });
+      await logAction('created', 'preapproved_email', email, `Added pre-approved email: ${email}`);
+      showToast(`${email} added to pre-approved list.`);
+    }
+    input.value = '';
+    loadPreapprovedEmails();
+  } catch(err) { showToast('Failed: ' + err.message, 'error'); }
+  btn.disabled = false;
+});
+
+document.getElementById('preapprove-email-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-add-preapprove').click();
+});
+
 onAuthStateChanged(auth, async user=>{
   if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
   currentUser=user;
   try{
     const snap=await getDoc(doc(db,'users',user.uid));
     if(!snap.exists()){
-      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
-      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
+      // Check pre-approved email list
+      let autoApproved = false;
+      try {
+        const preSnap = await getDoc(doc(db,'config','preapproved'));
+        const entries = preSnap.exists() ? (preSnap.data().entries || []) : [];
+        autoApproved = entries.some(e => (e.email||'').toLowerCase() === (user.email||'').toLowerCase());
+      } catch(e) { /* proceed as pending if check fails */ }
+
+      await setDoc(doc(db,'users',user.uid),{
+        uid:user.uid, email:user.email,
+        displayName:user.displayName||'', photoURL:user.photoURL||'',
+        role:'user', status: autoApproved ? 'approved' : 'pending',
+        createdAt:serverTimestamp(), lastLogin:serverTimestamp()
+      });
+
+      if(!autoApproved){
+        dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
+      }
+      snap = { exists: ()=>true, data: ()=>({role:'user',status:'approved'}) };
     }
     const data=snap.data();
     updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
