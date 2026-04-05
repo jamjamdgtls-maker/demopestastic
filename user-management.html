@@ -209,36 +209,61 @@
     .toast-close svg{width:14px;height:14px}
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
+    /* FORM INPUT — used in pre-approve section */
+    .form-input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;font-family:var(--font);background:white;outline:none;transition:border-color .15s,box-shadow .15s;color:var(--text)}
+    .form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .form-input::placeholder{color:var(--text-muted)}
+
+    /* PRE-APPROVE SECTION */
+    .preapprove-section{margin-top:28px}
+    .preapprove-section-header{margin-bottom:14px}
+    .preapprove-section-header h3{font-size:16px;font-weight:700;color:var(--text)}
+    .preapprove-section-header p{font-size:13px;color:var(--text-muted);margin-top:3px}
+    .preapprove-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+    .preapprove-add-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+    .preapprove-add-row .form-input{flex:1;min-width:240px}
+    .preapprove-divider{border:none;border-top:1px solid var(--border);margin:0 0 16px}
+    .preapprove-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .preapprove-list-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)}
+    .preapprove-count-badge{background:var(--primary-light);color:var(--green-text);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid var(--primary-border)}
+    .preapprove-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--bg-secondary);gap:12px;transition:border-color .15s}
+    .preapprove-item:last-child{margin-bottom:0}
+    .preapprove-item:hover{border-color:var(--border-hover)}
+    .preapprove-item-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .preapprove-icon{width:32px;height:32px;border-radius:50%;background:var(--primary-light);border:1.5px solid var(--primary-border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .preapprove-icon svg{width:15px;height:15px;color:var(--green-text)}
+    .preapprove-email{font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .preapprove-meta{font-size:11.5px;color:var(--text-muted);margin-top:1px}
+    .preapprove-item-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .preapprove-status-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green-text);border:1px solid var(--primary-border);white-space:nowrap}
+    .btn-remove-preapprove{background:none;border:1px solid #fca5a5;border-radius:var(--radius-sm);padding:5px 10px;color:var(--red-text);cursor:pointer;font-size:12px;font-family:var(--font);font-weight:500;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+    .btn-remove-preapprove:hover{background:var(--red-bg)}
+    .btn-remove-preapprove svg{width:12px;height:12px}
+    .preapprove-empty{text-align:center;padding:28px 20px;color:var(--text-muted);font-size:13px}
+    .preapprove-empty svg{width:32px;height:32px;margin:0 auto 10px;display:block;opacity:.35}
+    .preapprove-empty p{margin-top:4px;font-size:12px}
+
     /* RESPONSIVE */
     @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:1024px){
       .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
       .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
     }
-    @media(max-width:768px){.page-content{padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
+    @media(max-width:768px){.page-content{padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}.preapprove-add-row{flex-direction:column}}
     @media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
-  
-    /* ── PAGE LOAD SCREEN ── */
+
+    /* PAGE LOAD SCREEN */
     #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
     #loading-screen.fade-out{opacity:0;pointer-events:none}
     .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
     .ls-logo svg{width:34px;height:34px;color:white}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
-
-    /* Pre-approve email list */
-    .preapprove-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;background:var(--bg-secondary)}
-    .preapprove-item:last-child{margin-bottom:0}
-    .preapprove-email{font-size:13px;font-weight:500;color:var(--text)}
-    .preapprove-added{font-size:11.5px;color:var(--text-muted);margin-top:2px}
-    .btn-remove-preapprove{background:none;border:1px solid #fca5a5;border-radius:var(--radius-sm);padding:4px 8px;color:var(--red-text);cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s}
-    .btn-remove-preapprove:hover{background:var(--red-bg)}
   </style>
 </head>
 <body>
 
-
-<!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
+<!-- PAGE LOAD SCREEN -->
 <div id="loading-screen">
   <div class="ls-logo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -292,13 +317,13 @@
       <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
       <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
-            <div class="nav-section-label">Reports</div>
+      <div class="nav-section-label">Reports</div>
       <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
       <a class="nav-item" href="report-client-soa.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>Client SOA</a>
       <a class="nav-item" href="report-monthly-collection.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Monthly Collection</a>
       <a class="nav-item" href="report-overdue-treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue Report</a>
-<div class="nav-section-label">Operations</div>
+      <div class="nav-section-label">Operations</div>
       <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Teams</a>
       <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
       <div class="nav-section-label" id="admin-nav-label" style="display:none">Admin</div>
@@ -324,7 +349,7 @@
 
     <main class="page-content" id="main-content">
 
-      <!-- Access Denied (shown to non-admin users) -->
+      <!-- Access Denied -->
       <div id="access-denied">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
         <h2>Access Denied</h2>
@@ -332,8 +357,9 @@
         <a href="dashboard.html" style="margin-top:20px;display:inline-block;padding:10px 20px;background:var(--primary);color:white;border-radius:var(--radius);font-weight:600;font-size:14px">← Back to Dashboard</a>
       </div>
 
-      <!-- Actual content (shown to admin+) -->
+      <!-- Admin Content — everything below is gated to admin+ -->
       <div id="admin-content" style="display:none">
+
         <div class="page-header">
           <div class="page-header-left">
             <h2>User Management</h2>
@@ -412,27 +438,53 @@
             <div class="pagination-controls" id="pagination-controls"></div>
           </div>
         </div>
-      </div>
 
-        <!-- Pre-approved Emails -->
-        <div style="margin-top:28px">
-          <div style="margin-bottom:14px">
-            <h3 style="font-size:16px;font-weight:700;color:var(--text)">Pre-approved Emails</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin-top:2px">Users who sign in with these emails are automatically approved — no manual review needed.</p>
+        <!-- ══════════════════════════════════
+             PRE-REGISTERED EMAILS SECTION
+             (inside admin-content so it's gated)
+        ══════════════════════════════════ -->
+        <div class="preapprove-section">
+          <div class="preapprove-section-header">
+            <h3>Pre-registered Emails</h3>
+            <p>Users who sign in with a listed email are automatically approved — no manual review needed.</p>
           </div>
-          <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:20px">
-            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-              <input type="email" id="preapprove-email-input" class="form-input" placeholder="Enter email address to pre-approve…" style="flex:1;min-width:240px" />
+
+          <div class="preapprove-card">
+            <!-- Add row -->
+            <div class="preapprove-add-row">
+              <input
+                type="email"
+                id="preapprove-email-input"
+                class="form-input"
+                placeholder="Enter email address to pre-register…"
+              />
               <button class="btn btn-primary" id="btn-add-preapprove">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add Email
               </button>
             </div>
+
+            <hr class="preapprove-divider" />
+
+            <!-- List header -->
+            <div class="preapprove-list-header">
+              <span class="preapprove-list-label">Registered Emails</span>
+              <span class="preapprove-count-badge" id="preapprove-count" style="display:none">0</span>
+            </div>
+
+            <!-- List -->
             <div id="preapprove-list">
-              <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">Loading…</div>
+              <div class="preapprove-empty">
+                <div class="spinner" style="margin:0 auto"></div>
+              </div>
             </div>
           </div>
         </div>
+        <!-- end preapprove-section -->
+
+      </div>
+      <!-- end admin-content -->
+
     </main>
   </div>
 </div>
@@ -530,7 +582,7 @@ async function logAction(action,entityType,entityId,description){
   try{
     await addDoc(collection(db,'audit_log'),entry);
   }catch(err){
-    console.error('[audit_log] Write failed (',err.code,'):',err.message,'\nEntry:',JSON.stringify({action,entityType,entityId,description,page:'user-management'}));
+    console.error('[audit_log] Write failed (',err.code,'):',err.message);
   }
 }
 
@@ -538,7 +590,6 @@ async function logAction(action,entityType,entityId,description){
 async function loadUsers() {
   const snap=await getDocs(collection(db,'users'));
   allUsers=snap.docs.map(d=>({id:d.id,...d.data()}));
-  // Sort client-side: pending first, then by createdAt desc
   allUsers.sort((a,b)=>{
     const aT=a.createdAt?.toDate?a.createdAt.toDate():new Date(a.createdAt||0);
     const bT=b.createdAt?.toDate?b.createdAt.toDate():new Date(b.createdAt||0);
@@ -557,12 +608,9 @@ function updateStats() {
   $('sc-approved').textContent=approved;
   $('sc-pending').textContent=pending;
   $('sc-denied').textContent=denied;
-
-  // Pending alert banner
   if(pending>0){
     $('pending-alert').style.display='';
     $('pending-count').textContent=pending;
-    // Sidebar badge
     const b=$('badge-pending-users');
     if(b){b.textContent=pending;b.style.display='';}
   } else {
@@ -583,7 +631,6 @@ function applyFilters() {
     const matchR=!role||u.role===role;
     return matchQ&&matchS&&matchR;
   });
-  // Sort: pending first
   filteredUsers.sort((a,b)=>{
     if(a.status==='pending'&&b.status!=='pending') return -1;
     if(b.status==='pending'&&a.status!=='pending') return 1;
@@ -596,9 +643,7 @@ function applyFilters() {
 $('btn-clear-filters').addEventListener('click',()=>{$('search-input').value='';$('filter-status').value='';$('filter-role').value='';applyFilters();});
 window.setFilter=s=>{$('filter-status').value=s;applyFilters();};
 
-/* ── Render table ── */
-
-/* ── Event delegation — works regardless of filter/page state ── */
+/* ── Event delegation ── */
 document.getElementById('users-tbody').addEventListener('click', async function(e) {
   const approve = e.target.closest('.btn-approve');
   const deny    = e.target.closest('.btn-deny');
@@ -610,7 +655,6 @@ document.getElementById('users-tbody').addEventListener('click', async function(
   if(restore) { updateUserStatus(restore.dataset.uid, restore.dataset.name, 'approved'); return; }
 });
 
-/* ── Role-change delegation ── */
 document.getElementById('users-tbody').addEventListener('change', async function(e) {
   const sel = e.target.closest('.role-change');
   if(!sel) return;
@@ -650,8 +694,6 @@ function renderTable() {
   $('users-tbody').innerHTML=page.map(u=>{
     const isPending=u.status==='pending';
     const isCurrentUser=u.id===currentUser?.uid||u.uid===currentUser?.uid;
-    const isSuper=u.role==='super_admin';
-    // Only super_admin can assign super_admin; admin can assign admin/user
     const canChangeRole=!isCurrentUser&&(currentRole==='super_admin'||(currentRole==='admin'&&u.role!=='super_admin'));
     const canAssignSuper=currentRole==='super_admin';
 
@@ -710,7 +752,6 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  // Pagination
   const ctrl=$('pagination-controls');
   if(totalPages<=1){ctrl.innerHTML='';return;}
   const pages=[];
@@ -722,27 +763,21 @@ function renderTable() {
 /* ── Approve / Deny / Revoke ── */
 async function updateUserStatus(uid, name, newStatus) {
   const u=allUsers.find(x=>x.id===uid); if(!u) return;
-  const oldStatus=u.status;
   try{
     await updateDoc(doc(db,'users',uid),{status:newStatus,updatedAt:serverTimestamp()});
     u.status=newStatus;
-    const actionMap={approved:'approved',denied:'denied'};
-    await logAction(actionMap[newStatus]||'updated','user',uid,`${newStatus==='approved'?'Approved':'Denied'} access for "${name}"`);
-    const msgs={approved:`✓ Access approved for "${name}".`,denied:`Access denied for "${name}".`};
-    showToast(msgs[newStatus]||`Status updated for "${name}".`, newStatus==='denied'?'warning':'success');
+    await logAction(newStatus==='approved'?'approved':'denied','user',uid,`${newStatus==='approved'?'Approved':'Denied'} access for "${name}"`);
+    showToast(newStatus==='approved'?`✓ Access approved for "${name}".`:`Access denied for "${name}".`, newStatus==='denied'?'warning':'success');
     updateStats(); applyFilters();
   }catch(err){showToast('Failed: '+err.message,'error');}
 }
 
-/* ── Auth ── */
-
-/* ── Sidebar & topbar notification badges ── */
+/* ── Sidebar badges ── */
 async function loadSidebarBadges() {
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     let notifCount = 0;
 
-    // ── Overdue treatments ──
     const trSnap = await getDocs(collection(db,'treatments'));
     let overdueT = 0;
     trSnap.forEach(d => {
@@ -753,7 +788,6 @@ async function loadSidebarBadges() {
       }
     });
 
-    // ── Overdue payments ──
     const pySnap = await getDocs(collection(db,'payments'));
     let overdueP = 0;
     pySnap.forEach(d => {
@@ -764,15 +798,10 @@ async function loadSidebarBadges() {
       }
     });
 
-    // ── Overdue nav badge = overdue treatments + overdue payments ──
     const overdueTotal = overdueT + overdueP;
     const bdOverdue = document.getElementById('badge-overdue');
-    if(bdOverdue && overdueTotal > 0) {
-      bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal;
-      bdOverdue.style.display = '';
-    }
+    if(bdOverdue && overdueTotal > 0) { bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal; bdOverdue.style.display = ''; }
 
-    // ── Contracts expiring within 7 days ──
     const coSnap = await getDocs(collection(db,'contracts'));
     coSnap.forEach(d => {
       const c = d.data();
@@ -782,7 +811,6 @@ async function loadSidebarBadges() {
       if(daysLeft >= 0 && daysLeft <= 7) notifCount++;
     });
 
-    // ── Open complaints ──
     const cmpSnap = await getDocs(collection(db,'complaints'));
     let openComplaints = 0;
     cmpSnap.forEach(d => {
@@ -796,147 +824,192 @@ async function loadSidebarBadges() {
       }
     });
     const bdComplaints = document.getElementById('badge-complaints');
-    if(bdComplaints && openComplaints > 0) {
-      bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints;
-      bdComplaints.style.display = '';
-    }
+    if(bdComplaints && openComplaints > 0) { bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints; bdComplaints.style.display = ''; }
 
-    // ── Scheduled inspections ──
     const inSnap = await getDocs(collection(db,'inspections'));
     let scheduledInspections = 0;
     inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledInspections++; });
     const bdInspections = document.getElementById('badge-inspections');
-    if(bdInspections && scheduledInspections > 0) {
-      bdInspections.textContent = scheduledInspections > 99 ? '99+' : scheduledInspections;
-      bdInspections.style.display = '';
-    }
+    if(bdInspections && scheduledInspections > 0) { bdInspections.textContent = scheduledInspections > 99 ? '99+' : scheduledInspections; bdInspections.style.display = ''; }
 
-    // ── Notifications nav badge (total urgent items) ──
     const bdNotif = document.getElementById('notif-count-badge');
-    if(bdNotif && notifCount > 0) {
-      bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
-      bdNotif.style.display = '';
-    }
-
-    // ── Topbar bell dot ──
+    if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
     const notifDot = document.getElementById('notif-dot');
     if(notifDot && notifCount > 0) notifDot.style.display = '';
 
-    // ── Pending users (admin/super_admin only) ──
-    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
+    if(currentRole === 'admin' || currentRole === 'super_admin') {
       const usrSnap = await getDocs(collection(db,'users'));
       let pendingUsers = 0;
       usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
       const bdUsers = document.getElementById('badge-pending-users');
-      if(bdUsers && pendingUsers > 0) {
-        bdUsers.textContent = pendingUsers > 99 ? '99+' : pendingUsers;
-        bdUsers.style.display = '';
-      }
+      if(bdUsers && pendingUsers > 0) { bdUsers.textContent = pendingUsers > 99 ? '99+' : pendingUsers; bdUsers.style.display = ''; }
     }
   } catch(e) { console.warn('[badges] Failed:', e.message); }
 }
 
-/* ── Pre-approve Emails ── */
+/* ══════════════════════════════════════
+   PRE-REGISTERED EMAILS
+══════════════════════════════════════ */
 const PREAPPROVE_DOC = doc(db, 'config', 'preapproved');
 
 async function loadPreapprovedEmails() {
-  const list = document.getElementById('preapprove-list');
+  const list = $('preapprove-list');
+  const countBadge = $('preapprove-count');
   if (!list) return;
+
   try {
     const snap = await getDoc(PREAPPROVE_DOC);
     const entries = snap.exists() ? (snap.data().entries || []) : [];
+
+    // Update count badge
+    if (countBadge) {
+      if (entries.length > 0) {
+        countBadge.textContent = entries.length;
+        countBadge.style.display = '';
+      } else {
+        countBadge.style.display = 'none';
+      }
+    }
+
     if (!entries.length) {
-      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">No pre-approved emails yet. Add one above.</div>';
+      list.innerHTML = `
+        <div class="preapprove-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="8" width="18" height="13" rx="2"/>
+            <path d="M8 8V6a4 4 0 0 1 8 0v2"/>
+            <line x1="12" y1="13" x2="12" y2="16"/>
+          </svg>
+          No pre-registered emails yet.
+          <p>Add an email above to let that user bypass the approval queue.</p>
+        </div>`;
       return;
     }
-    list.innerHTML = entries.map((e, i) => `
-      <div class="preapprove-item">
-        <div>
-          <div class="preapprove-email">${e.email}</div>
-          <div class="preapprove-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'} by ${e.addedBy || '—'}</div>
-        </div>
-        <button class="btn-remove-preapprove" data-idx="${i}" data-email="${e.email}">Remove</button>
-      </div>`).join('');
+
+    list.innerHTML = entries.map((e, i) => {
+      const addedDate = e.addedAt
+        ? new Date(e.addedAt).toLocaleDateString('en-PH', {year:'numeric',month:'short',day:'numeric'})
+        : '—';
+      return `
+        <div class="preapprove-item">
+          <div class="preapprove-item-left">
+            <div class="preapprove-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div>
+              <div class="preapprove-email">${e.email}</div>
+              <div class="preapprove-meta">Added ${addedDate} by ${e.addedBy || '—'}</div>
+            </div>
+          </div>
+          <div class="preapprove-item-right">
+            <span class="preapprove-status-badge">Auto-approved</span>
+            <button class="btn-remove-preapprove" data-idx="${i}" data-email="${e.email}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>`;
+    }).join('');
 
     list.querySelectorAll('.btn-remove-preapprove').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const idx = Number(btn.dataset.idx);
-        const email = btn.dataset.email;
-        const snap2 = await getDoc(PREAPPROVE_DOC);
-        const current = snap2.exists() ? (snap2.data().entries || []) : [];
-        const updated = current.filter((_, i) => i !== idx);
-        await setDoc(PREAPPROVE_DOC, { entries: updated }, { merge: true });
-        await logAction('deleted', 'preapproved_email', email, `Removed pre-approved email: ${email}`);
-        showToast(`Removed ${email} from pre-approved list.`);
-        loadPreapprovedEmails();
+        if (!confirm(`Remove "${btn.dataset.email}" from the pre-registered list?`)) return;
+        btn.disabled = true;
+        btn.textContent = 'Removing…';
+        try {
+          const snap2 = await getDoc(PREAPPROVE_DOC);
+          const current = snap2.exists() ? (snap2.data().entries || []) : [];
+          const updated = current.filter((_, i) => i !== Number(btn.dataset.idx));
+          await setDoc(PREAPPROVE_DOC, { entries: updated }, { merge: true });
+          await logAction('deleted', 'preapproved_email', btn.dataset.email, `Removed pre-registered email: ${btn.dataset.email}`);
+          showToast(`Removed ${btn.dataset.email} from pre-registered list.`);
+          loadPreapprovedEmails();
+        } catch(err) {
+          showToast('Failed: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Remove';
+        }
       });
     });
+
   } catch(e) {
     list.innerHTML = '<div style="color:var(--red-text);padding:12px;font-size:13px">Failed to load list.</div>';
     console.error('[preapprove]', e);
   }
 }
 
-document.getElementById('btn-add-preapprove').addEventListener('click', async () => {
-  const input = document.getElementById('preapprove-email-input');
+$('btn-add-preapprove').addEventListener('click', async () => {
+  const input = $('preapprove-email-input');
   const email = (input.value || '').trim().toLowerCase();
   if (!email || !email.includes('@')) { showToast('Enter a valid email address.', 'error'); return; }
 
-  const btn = document.getElementById('btn-add-preapprove');
+  const btn = $('btn-add-preapprove');
   btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Adding…';
+
   try {
     const snap = await getDoc(PREAPPROVE_DOC);
     const entries = snap.exists() ? (snap.data().entries || []) : [];
 
     if (entries.some(e => (e.email || '').toLowerCase() === email)) {
-      showToast('This email is already pre-approved.', 'warning'); btn.disabled = false; return;
+      showToast('This email is already pre-registered.', 'warning');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Email';
+      return;
     }
 
-    // Check if user already exists in system
+    // Check if user already exists
     const usersSnap = await getDocs(collection(db, 'users'));
     const existingUser = usersSnap.docs.find(d => (d.data().email || '').toLowerCase() === email);
 
     if (existingUser && existingUser.data().status === 'approved') {
-      showToast('This user is already approved.', 'warning'); btn.disabled = false; return;
-    }
-
-    if (existingUser && existingUser.data().status === 'pending') {
+      showToast('This user is already approved.', 'warning');
+    } else if (existingUser && existingUser.data().status === 'pending') {
       await updateDoc(doc(db, 'users', existingUser.id), {
         status: 'approved', approvedAt: serverTimestamp(), approvedBy: currentUser.email
       });
-      await logAction('updated', 'user', existingUser.id, `Auto-approved pending user: ${email}`);
+      await logAction('updated', 'user', existingUser.id, `Auto-approved pending user via pre-registration: ${email}`);
       showToast(`${email} was pending — approved immediately!`);
+      // Also add to list so future sign-ins are auto-approved
+      entries.push({ email, addedAt: new Date().toISOString(), addedBy: currentUser.email || '' });
+      await setDoc(PREAPPROVE_DOC, { entries }, { merge: true });
       await loadUsers();
-      loadPreapprovedEmails();
     } else {
       entries.push({ email, addedAt: new Date().toISOString(), addedBy: currentUser.email || '' });
       await setDoc(PREAPPROVE_DOC, { entries }, { merge: true });
-      await logAction('created', 'preapproved_email', email, `Added pre-approved email: ${email}`);
-      showToast(`${email} added to pre-approved list.`);
+      await logAction('created', 'preapproved_email', email, `Added pre-registered email: ${email}`);
+      showToast(`${email} added to pre-registered list.`);
     }
+
     input.value = '';
     loadPreapprovedEmails();
-  } catch(err) { showToast('Failed: ' + err.message, 'error'); }
+  } catch(err) {
+    showToast('Failed: ' + err.message, 'error');
+  }
+
   btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Email';
 });
 
-document.getElementById('preapprove-email-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('btn-add-preapprove').click();
+$('preapprove-email-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('btn-add-preapprove').click();
 });
 
+/* ── Auth ── */
 onAuthStateChanged(auth, async user=>{
   if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
   currentUser=user;
   try{
-    const snap=await getDoc(doc(db,'users',user.uid));
+    let snap=await getDoc(doc(db,'users',user.uid));
     if(!snap.exists()){
-      // Check pre-approved email list
       let autoApproved = false;
       try {
         const preSnap = await getDoc(doc(db,'config','preapproved'));
         const entries = preSnap.exists() ? (preSnap.data().entries || []) : [];
         autoApproved = entries.some(e => (e.email||'').toLowerCase() === (user.email||'').toLowerCase());
-      } catch(e) { /* proceed as pending if check fails */ }
+      } catch(e) { /* proceed as pending */ }
 
       await setDoc(doc(db,'users',user.uid),{
         uid:user.uid, email:user.email,
@@ -954,7 +1027,9 @@ onAuthStateChanged(auth, async user=>{
     updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
     if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
     currentRole=data.role;
-    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
+    dismissLoadingScreen();
+    $('auth-screen').style.display='none';
+    $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
     loadSidebarBadges();
     const name=user.displayName||user.email;
     $('user-display-name').textContent=name;
@@ -962,19 +1037,18 @@ onAuthStateChanged(auth, async user=>{
     if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
     else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
 
-    // Show nav items based on role
     if(data.role==='admin'||data.role==='super_admin'){
       $('admin-nav-label').style.display=''; $('nav-users').style.display='';
     }
     if(data.role==='super_admin') $('nav-settings').style.display='';
 
-    // Access check — only admin+ can view this page
     if(data.role==='admin'||data.role==='super_admin'){
-      dismissLoadingScreen();$('access-denied').style.display='none';
+      $('access-denied').style.display='none';
       $('admin-content').style.display='block';
       await loadUsers();
+      await loadPreapprovedEmails();   // ← load list after admin confirmed
     } else {
-      dismissLoadingScreen();$('access-denied').style.display='block';
+      $('access-denied').style.display='block';
       $('admin-content').style.display='none';
     }
   }catch(err){dismissLoadingScreen();console.error(err);}
