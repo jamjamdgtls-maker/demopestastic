@@ -218,6 +218,23 @@
     .toast-close svg{width:14px;height:14px}
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
+
+    /* TOPBAR NOTIF DOT */
+    .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
+
+    /* CONFIGURABLE CHIP LISTS (treatment types, statuses) */
+    .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:40px}
+    .chip{display:flex;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500}
+    .chip-green{background:var(--primary-light);border:1px solid var(--primary-border);color:var(--green-text)}
+    .chip-blue{background:var(--blue-bg);border:1px solid #93c5fd;color:var(--blue-text)}
+    .chip-amber{background:var(--amber-bg);border:1px solid #fcd34d;color:var(--amber-text)}
+    .chip button{background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;opacity:.7;transition:opacity .15s}
+    .chip button:hover{opacity:1}
+    .chip button svg{width:13px;height:13px}
+    .chip.system-chip{opacity:.6;cursor:default}
+    .chip.system-chip button{display:none}
+    .chip-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px}
+
     /* RESPONSIVE */
     @media(max-width:1024px){
       .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
@@ -286,12 +303,18 @@
       <a class="nav-item" href="payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</a>
       <a class="nav-item" href="renewals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Renewals</a>
       <div class="nav-section-label">Service</div>
-      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints</a>
-      <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections</a>
+      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="nav-badge" id="badge-complaints" style="display:none"></span></a>
+      <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections<span class="nav-badge amber" id="badge-inspections" style="display:none"></span></a>
       <div class="nav-section-label">Monitoring</div>
-      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue</a>
+      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
+            <div class="nav-section-label">Reports</div>
+      <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
+      <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
+      <a class="nav-item" href="report-client-soa.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>Client SOA</a>
+      <a class="nav-item" href="report-monthly-collection.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Monthly Collection</a>
+      <a class="nav-item" href="report-overdue-treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue Report</a>
       <div class="nav-section-label">Operations</div>
       <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Teams</a>
       <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
@@ -313,7 +336,7 @@
       <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <span class="topbar-title">Settings</span>
       <div class="topbar-spacer"></div>
-      <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="topbar-notif-dot" id="notif-dot" style="display:none"></span></button>
     </header>
 
     <main class="page-content" id="main-content">
@@ -540,6 +563,95 @@
             </div>
           </div>
 
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payment Plan Defaults</div>
+                <div class="settings-card-subtitle">Controls how contract payment schedules are generated</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Default Downpayment %</label>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <input type="number" class="form-input" id="default-downpayment-pct" min="0" max="100" step="1" placeholder="e.g. 60" style="max-width:140px" />
+                    <span style="font-size:13px;color:var(--text-secondary)">% of total contract value</span>
+                  </div>
+                  <div class="form-hint">The 1st session will be billed at this percentage. The remaining balance is split equally across the remaining sessions.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Payment Plan Type</label>
+                  <select class="form-select" id="default-payment-plan-type">
+                    <option value="downpayment-then-equal">Downpayment + Equal Installments</option>
+                    <option value="equal">Equal Installments (no downpayment)</option>
+                  </select>
+                  <div class="form-hint">Downpayment + Equal: 1st session = downpayment %, rest = equal split. Equal: all sessions same amount.</div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Receivable Generation</label>
+                  <select class="form-select" id="default-receivable-generation">
+                    <option value="on-schedule">Generate receivables on treatment schedule</option>
+                    <option value="on-contract">Generate all receivables on contract creation</option>
+                    <option value="manual">Manual only</option>
+                  </select>
+                  <div class="form-hint">When set to "on-contract", payment records are created immediately even if no treatment is yet scheduled.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Days Before Treatment to Notify</label>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <input type="number" class="form-input" id="default-payment-notify-days" min="0" max="60" placeholder="e.g. 30" style="max-width:140px" />
+                    <span style="font-size:13px;color:var(--text-secondary)">days before due</span>
+                  </div>
+                  <div class="form-hint">How far in advance to flag a payment as "upcoming" on the Notifications page.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Treatment Configuration</div>
+                <div class="settings-card-subtitle">Configure treatment types and scheduling statuses used across all modules</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+
+              <!-- Treatment Types -->
+              <div class="form-group" style="margin-bottom:20px">
+                <label class="form-label">Treatment Types</label>
+                <div class="chip-hint" style="margin-bottom:8px">System defaults (QT, MT, etc.) cannot be removed. You can add custom types for your operations.</div>
+                <div class="chip-list" id="treatment-types-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-treatment-type-input" placeholder="Add custom treatment type (e.g. Soil Poisoning)" />
+                  <button class="btn btn-primary" id="btn-add-treatment-type">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Type
+                  </button>
+                </div>
+              </div>
+
+              <!-- Treatment Statuses -->
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Treatment / Booking Statuses</label>
+                <div class="chip-hint" style="margin-bottom:8px">System statuses (Scheduled, Completed, Cancelled, Rescheduled) are always available. Add custom booking statuses below.</div>
+                <div class="chip-list" id="treatment-statuses-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-treatment-status-input" placeholder="Add custom status (e.g. On Hold)" />
+                  <button class="btn btn-primary" id="btn-add-treatment-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Status
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           <div style="text-align:right;margin-top:4px">
             <button class="btn btn-primary" id="btn-save-system">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -719,6 +831,10 @@ const db   = getFirestore(app);
 /* ── State ── */
 let currentUser = null, currentRole = null;
 let salesAgents = [];
+let treatmentTypes = [];
+let treatmentStatuses = [];
+const SYSTEM_TREATMENT_TYPES = ['QT','MT','INS','FU','AGS','CIT','OTCIT','Fogging','GT','Mound Demolition','GPC','OTGPC','PRECON','Other'];
+const SYSTEM_TREATMENT_STATUSES = ['Scheduled','Completed','Cancelled','Rescheduled'];
 let settings = {};
 
 /* ── Helpers ── */
@@ -781,7 +897,21 @@ async function loadSettings() {
   /* Agents */
   salesAgents=[...(settings.salesAgents||[])];
   renderAgents();
+
+  /* Payment Plan Defaults */
+  $('default-downpayment-pct').value = settings.defaultDownpaymentPct ?? 60;
+  $('default-payment-plan-type').value = settings.defaultPaymentPlanType || 'downpayment-then-equal';
+  $('default-receivable-generation').value = settings.defaultReceivableGeneration || 'on-contract';
+  $('default-payment-notify-days').value = settings.defaultPaymentNotifyDays ?? 30;
+
+  /* Treatment Configuration */
+  treatmentTypes = [...(settings.treatmentTypes || SYSTEM_TREATMENT_TYPES)];
+  treatmentStatuses = [...(settings.treatmentStatuses || DEFAULT_TREATMENT_STATUSES)];
+  renderTreatmentTypes();
+  renderTreatmentStatuses();
 }
+
+const DEFAULT_TREATMENT_STATUSES_DEFAULT = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking'];
 
 /* ── Render agents ── */
 function renderAgents(){
@@ -789,6 +919,74 @@ function renderAgents(){
     ? salesAgents.map(a=>`<div class="agent-chip">${a}<button onclick="removeAgent('${encodeURIComponent(a)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('')
     : '<span style="font-size:13px;color:var(--text-muted)">No agents added yet</span>';
 }
+
+/* ── Render Treatment Types ── */
+function renderTreatmentTypes(){
+  const list=$('treatment-types-list');
+  if(!list)return;
+  list.innerHTML=treatmentTypes.map(t=>{
+    const isSystem=SYSTEM_TREATMENT_TYPES.includes(t);
+    return `<div class="chip chip-green${isSystem?' system-chip':''}" title="${isSystem?'System default — cannot be removed':''}">
+      ${t}
+      ${!isSystem?`<button onclick="removeTreatmentType('${encodeURIComponent(t)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+    </div>`;
+  }).join('') || '<span style="font-size:13px;color:var(--text-muted)">No types configured</span>';
+}
+
+/* ── Render Treatment Statuses ── */
+function renderTreatmentStatuses(){
+  const list=$('treatment-statuses-list');
+  if(!list)return;
+  const allStatuses=[...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses.filter(s=>!SYSTEM_TREATMENT_STATUSES.includes(s))];
+  list.innerHTML=allStatuses.map(s=>{
+    const isSystem=SYSTEM_TREATMENT_STATUSES.includes(s);
+    return `<div class="chip ${isSystem?'chip-blue system-chip':'chip-amber'}" title="${isSystem?'System status — cannot be removed':''}">
+      ${s}
+      ${!isSystem?`<button onclick="removeTreatmentStatus('${encodeURIComponent(s)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+    </div>`;
+  }).join('') || '<span style="font-size:13px;color:var(--text-muted)">No custom statuses yet</span>';
+}
+
+window.removeTreatmentType=function(encoded){
+  const name=decodeURIComponent(encoded);
+  if(SYSTEM_TREATMENT_TYPES.includes(name)){showToast('System defaults cannot be removed.','warning');return;}
+  treatmentTypes=treatmentTypes.filter(t=>t!==name);
+  renderTreatmentTypes();
+};
+
+window.removeTreatmentStatus=function(encoded){
+  const name=decodeURIComponent(encoded);
+  if(SYSTEM_TREATMENT_STATUSES.includes(name)){showToast('System statuses cannot be removed.','warning');return;}
+  treatmentStatuses=treatmentStatuses.filter(s=>s!==name);
+  renderTreatmentStatuses();
+};
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const ttInput=$('new-treatment-type-input');
+  const tsInput=$('new-treatment-status-input');
+  const ttBtn=$('btn-add-treatment-type');
+  const tsBtn=$('btn-add-treatment-status');
+
+  if(ttBtn) ttBtn.addEventListener('click',()=>{
+    const val=ttInput.value.trim();
+    if(!val)return;
+    if(treatmentTypes.includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
+    treatmentTypes.push(val);
+    ttInput.value='';
+    renderTreatmentTypes();
+  });
+  if(ttInput) ttInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(ttBtn)ttBtn.click();}});
+
+  if(tsBtn) tsBtn.addEventListener('click',()=>{
+    const val=tsInput.value.trim();
+    if(!val)return;
+    if([...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses].includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
+    treatmentStatuses.push(val);
+    tsInput.value='';
+    renderTreatmentStatuses();
+  });
+  if(tsInput) tsInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(tsBtn)tsBtn.click();}});
+});
 
 window.removeAgent=function(encoded){
   const name=decodeURIComponent(encoded);
@@ -851,6 +1049,14 @@ $('btn-save-system').addEventListener('click', async()=>{
     defaultPaymentTerms:$('default-payment-terms').value,
     currencySymbol:$('currency-symbol').value,
     salesAgents,
+    /* Payment Plan Defaults */
+    defaultDownpaymentPct:Number($('default-downpayment-pct').value)||60,
+    defaultPaymentPlanType:$('default-payment-plan-type').value,
+    defaultReceivableGeneration:$('default-receivable-generation').value,
+    defaultPaymentNotifyDays:Number($('default-payment-notify-days').value)||30,
+    /* Treatment Configuration */
+    treatmentTypes,
+    treatmentStatuses:[...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses.filter(s=>!SYSTEM_TREATMENT_STATUSES.includes(s))],
     updatedAt:serverTimestamp()
   };
   try{
@@ -958,6 +1164,68 @@ function parseCSV(text) {
 }
 
 /* ── Auth ── */
+/* ── Sidebar & topbar notification badges ── */
+async function loadSidebarBadges() {
+  try {
+    const today = new Date(); today.setHours(0,0,0,0);
+    let notifCount = 0;
+    const trSnap = await getDocs(collection(db,'treatments'));
+    let overdueT = 0;
+    trSnap.forEach(d => {
+      const t = d.data();
+      if(t.status === 'scheduled') {
+        const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
+        if(td < today) { overdueT++; notifCount++; }
+      }
+    });
+    const pySnap = await getDocs(collection(db,'payments'));
+    let overdueP = 0;
+    pySnap.forEach(d => {
+      const p = d.data();
+      if(p.status === 'Pending') {
+        const dd = p.dueDate?.toDate ? p.dueDate.toDate() : new Date(p.dueDate||0);
+        if(dd < today) { overdueP++; notifCount++; }
+      }
+    });
+    const overdueTotal = overdueT + overdueP;
+    const bdOverdue = document.getElementById('badge-overdue');
+    if(bdOverdue && overdueTotal > 0) { bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal; bdOverdue.style.display = ''; }
+    const coSnap = await getDocs(collection(db,'contracts'));
+    coSnap.forEach(d => {
+      const c = d.data(); if(c.status !== 'active') return;
+      const ed = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
+      if(Math.round((ed - today) / 86400000) <= 7 && Math.round((ed - today) / 86400000) >= 0) notifCount++;
+    });
+    const cmpSnap = await getDocs(collection(db,'complaints'));
+    let openComplaints = 0;
+    cmpSnap.forEach(d => {
+      const c = d.data(); const s = c.status || '';
+      if(['Open','In Progress','Scheduled'].includes(s)) {
+        openComplaints++;
+        const rd = c.dateReported?.toDate ? c.dateReported.toDate() : new Date(c.dateReported||0);
+        if(Math.abs(Math.round((today - rd) / 86400000)) >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
+      }
+    });
+    const bdComplaints = document.getElementById('badge-complaints');
+    if(bdComplaints && openComplaints > 0) { bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints; bdComplaints.style.display = ''; }
+    const inSnap = await getDocs(collection(db,'inspections'));
+    let scheduledI = 0;
+    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledI++; });
+    const bdI = document.getElementById('badge-inspections');
+    if(bdI && scheduledI > 0) { bdI.textContent = scheduledI > 99 ? '99+' : scheduledI; bdI.style.display = ''; }
+    const bdNotif = document.getElementById('notif-count-badge');
+    if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
+    const notifDot = document.getElementById('notif-dot');
+    if(notifDot && notifCount > 0) notifDot.style.display = '';
+    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
+      const usrSnap = await getDocs(collection(db,'users'));
+      let pu = 0; usrSnap.forEach(d => { if(d.data().status === 'pending') pu++; });
+      const bdU = document.getElementById('badge-pending-users');
+      if(bdU && pu > 0) { bdU.textContent = pu > 99 ? '99+' : pu; bdU.style.display = ''; }
+    }
+  } catch(e) { console.warn('[badges] Failed:', e.message); }
+}
+
 onAuthStateChanged(auth, async user=>{
   if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
   currentUser=user;
@@ -972,6 +1240,7 @@ onAuthStateChanged(auth, async user=>{
     if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
     currentRole=data.role;
     dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
+    loadSidebarBadges();
     const name=user.displayName||user.email;
     $('user-display-name').textContent=name;
     $('user-role-label').textContent=(data.role||'user').replace('_',' ');
