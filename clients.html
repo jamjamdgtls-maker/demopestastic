@@ -29,7 +29,7 @@
     input,select,textarea{font-family:var(--font);font-size:14px}
 
     /* ── AUTH ── */
-    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
+    #auth-screen{display:none;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
     .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
     .auth-logo{width:64px;height:64px;background:var(--primary-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
     .auth-logo svg{width:36px;height:36px}
@@ -269,9 +269,19 @@
     .ls-logo svg{width:34px;height:34px;color:white}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+
+    /* ── DOMAIN WARNING BANNER ── */
+    #domain-warning{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#7c2d12;color:#fed7aa;padding:10px 20px;font-size:13px;text-align:center;border-bottom:2px solid #c2410c}
+    #domain-warning a{color:#fdba74;text-decoration:underline;cursor:pointer}
   </style>
 </head>
 <body>
+
+<!-- DOMAIN WARNING BANNER (shown only if auth/unauthorized-domain error) -->
+<div id="domain-warning">
+  ⚠️ This domain is not authorized in Firebase. Go to Firebase Console → Authentication → Settings → Authorized Domains and add this domain: <strong id="current-domain"></strong>
+  — <a onclick="document.getElementById('domain-warning').style.display='none'">Dismiss</a>
+</div>
 
 <!-- PAGE LOAD SCREEN -->
 <div id="loading-screen">
@@ -288,7 +298,7 @@
 </div>
 
 <!-- AUTH SCREEN -->
-<div id="auth-screen" style="display:none">
+<div id="auth-screen">
   <div id="login-card" class="auth-card">
     <div class="auth-logo"><svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/><circle cx="9.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/><circle cx="14.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/></svg></div>
     <h1>Pestastic</h1><p>Sign in to continue</p>
@@ -644,15 +654,32 @@
      SCRIPTS
 ═══════════════════════════════════════════ -->
 <script>
-  /* Dismiss loading screen helper — defined in plain script so it's always available */
+  /*
+   * FIX 1: dismissLoadingScreen now has a fallback — if neither app-shell
+   * nor auth-screen is visible after the timeout, it forces the auth screen
+   * to show so the page is never blank.
+   */
   function dismissLoadingScreen() {
     const ls = document.getElementById('loading-screen');
     if (!ls) return;
     ls.classList.add('fade-out');
-    setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 280);
+    setTimeout(() => {
+      if (ls.parentNode) ls.parentNode.removeChild(ls);
+      // Fallback: if nothing is showing, reveal auth screen
+      const appShell  = document.getElementById('app-shell');
+      const authScreen = document.getElementById('auth-screen');
+      const appVisible  = appShell  && getComputedStyle(appShell).display  !== 'none';
+      const authVisible = authScreen && getComputedStyle(authScreen).display !== 'none';
+      if (!appVisible && !authVisible && authScreen) {
+        authScreen.style.display = 'flex';
+      }
+    }, 280);
   }
-  /* Failsafe: force-dismiss after 6 seconds */
-  setTimeout(dismissLoadingScreen, 6000);
+  /* Failsafe: force-dismiss after 8 seconds (increased from 6) */
+  setTimeout(dismissLoadingScreen, 8000);
+
+  /* Show current domain in the warning banner for easy copy */
+  document.getElementById('current-domain').textContent = location.hostname;
 </script>
 
 <script type="module">
@@ -699,7 +726,7 @@ function showToast(msg, type = 'success', title = '') {
   const titles = { success: 'Saved', error: 'Error', warning: 'Warning' };
   el.innerHTML = `<div class="toast-icon">${icons[type] || icons.success}</div><div class="toast-body"><div class="toast-title">${title || titles[type] || 'Done'}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   c.appendChild(el);
-  setTimeout(() => el.remove(), 5000);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 5000);
 }
 
 function openModal(id)  { $(id).classList.add('open'); }
@@ -784,9 +811,9 @@ function populateFilters() {
   const provinces = [...new Set(allClients.map(c => c.province).filter(Boolean))].sort();
   const agents    = [...new Set(allClients.map(c => c.salesAgent).filter(Boolean))].sort();
 
-  $('filter-city').innerHTML     = '<option value="">All Cities</option>'     + cities.map(c => `<option>${c}</option>`).join('');
-  $('filter-province').innerHTML = '<option value="">All Provinces</option>'  + provinces.map(p => `<option>${p}</option>`).join('');
-  $('filter-agent').innerHTML    = '<option value="">All Agents</option>'     + agents.map(a => `<option>${a}</option>`).join('');
+  $('filter-city').innerHTML     = '<option value="">All Cities</option>'    + cities.map(c => `<option>${c}</option>`).join('');
+  $('filter-province').innerHTML = '<option value="">All Provinces</option>' + provinces.map(p => `<option>${p}</option>`).join('');
+  $('filter-agent').innerHTML    = '<option value="">All Agents</option>'    + agents.map(a => `<option>${a}</option>`).join('');
 
   $('city-datalist').innerHTML     = cities.map(c => `<option value="${c}">`).join('');
   $('province-datalist').innerHTML = provinces.map(p => `<option value="${p}">`).join('');
@@ -826,8 +853,7 @@ $('btn-clear-filters').addEventListener('click', () => {
   applyFilters();
 });
 
-
-/* ── Event delegation — works regardless of filter/page state ── */
+/* ── Event delegation on tbody — handles view/edit regardless of pagination ── */
 document.getElementById('clients-tbody').addEventListener('click', function(e) {
   const viewBtn = e.target.closest('.btn-view, .client-name-link');
   const editBtn = e.target.closest('.btn-edit');
@@ -844,8 +870,8 @@ function renderTable() {
   const end        = Math.min(start + PER_PAGE, total);
   const page       = filteredClients.slice(start, end);
 
-  $('stat-showing').textContent     = total;
-  $('pagination-info').textContent  = total === 0 ? 'No records found' : `Showing ${start + 1}–${end} of ${total} clients`;
+  $('stat-showing').textContent    = total;
+  $('pagination-info').textContent = total === 0 ? 'No records found' : `Showing ${start + 1}–${end} of ${total} clients`;
 
   if (total === 0) {
     $('clients-tbody').innerHTML = `<tr><td colspan="9"><div class="empty-state">
@@ -895,8 +921,7 @@ function renderTable() {
   controls.querySelectorAll('[data-p]').forEach(btn =>
     btn.addEventListener('click', () => { currentPage = Number(btn.dataset.p); renderTable(); })
   );
-
-}  /* clicks handled by event delegation on #clients-tbody */
+}
 
 /* ── Add client ── */
 $('btn-add-client').addEventListener('click', async () => {
@@ -941,9 +966,9 @@ function clearForm() {
    'form-address-line1','form-address-line2','form-barangay',
    'form-city','form-province','form-postal-code','form-notes']
     .forEach(id => $(id).value = '');
-  $('form-country').value = 'Philippines';
-  $('form-sales-agent').value = '';
-  $('form-comm-source').value = '';
+  $('form-country').value      = 'Philippines';
+  $('form-sales-agent').value  = '';
+  $('form-comm-source').value  = '';
 }
 
 /* ── Save client ── */
@@ -957,15 +982,13 @@ $('btn-save-client').addEventListener('click', async () => {
   btn.disabled = true;
   $('save-btn-text').textContent = 'Saving…';
 
-  const addrLine1 = $('form-address-line1').value.trim();
-  const addrLine2 = $('form-address-line2').value.trim();
-  const barangay  = $('form-barangay').value.trim();
-  const province  = $('form-province').value.trim();
-  const postalCode= $('form-postal-code').value.trim();
-  const country   = $('form-country').value.trim() || 'Philippines';
-  // Build legacy address string for backward compatibility
-  const addressParts = [addrLine1, addrLine2, barangay].filter(Boolean);
-  const legacyAddress = addressParts.join(', ');
+  const addrLine1  = $('form-address-line1').value.trim();
+  const addrLine2  = $('form-address-line2').value.trim();
+  const barangay   = $('form-barangay').value.trim();
+  const province   = $('form-province').value.trim();
+  const postalCode = $('form-postal-code').value.trim();
+  const country    = $('form-country').value.trim() || 'Philippines';
+  const legacyAddress = [addrLine1, addrLine2, barangay].filter(Boolean).join(', ');
 
   const data = {
     customerNo:          $('form-customer-no').value.trim(),
@@ -973,15 +996,13 @@ $('btn-save-client').addEventListener('click', async () => {
     contactPerson:       $('form-contact-person').value.trim(),
     contactNumber:       $('form-contact-number').value.trim(),
     email:               $('form-email').value.trim(),
-    // Structured address fields
     addressLine1:        addrLine1,
     addressLine2:        addrLine2,
-    barangay:            barangay,
+    barangay,
     city,
     province,
     postalCode,
     country,
-    // Legacy single address field for backward compatibility
     address:             legacyAddress,
     salesAgent:          $('form-sales-agent').value,
     communicationSource: $('form-comm-source').value,
@@ -1004,7 +1025,7 @@ $('btn-save-client').addEventListener('click', async () => {
     closeModal('client-form-modal');
     await loadClients();
   } catch (err) {
-    console.error(err);
+    console.error('Save client error:', err);
     showToast('Failed to save client: ' + err.message, 'error');
   }
   btn.disabled = false;
@@ -1025,20 +1046,9 @@ async function openDetailModal(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
   $('tab-info').style.display = '';
 
-  // Build full address display
-  const addrParts = [
-    c.addressLine1 || c.address || '',
-    c.addressLine2 || '',
-    c.barangay || '',
-  ].filter(Boolean).join(', ');
-  const addrLower = [
-    c.city || '',
-    c.province || '',
-    c.postalCode ? c.postalCode : '',
-    c.country || '',
-  ].filter(Boolean).join(', ');
-  const fullAddress = [addrParts, addrLower].filter(Boolean).join('
-') || '—';
+  const addrParts = [c.addressLine1 || c.address || '', c.addressLine2 || '', c.barangay || ''].filter(Boolean).join(', ');
+  const addrLower = [c.city || '', c.province || '', c.postalCode || '', c.country || ''].filter(Boolean).join(', ');
+  const fullAddress = [addrParts, addrLower].filter(Boolean).join('\n') || '—';
 
   $('detail-info-grid').innerHTML = [
     ['Customer No',    c.customerNo],
@@ -1052,8 +1062,7 @@ async function openDetailModal(id) {
     ['Province',       c.province],
     ['Postal / ZIP',   c.postalCode],
     ['Country',        c.country || 'Philippines'],
-    ['Full Address',   fullAddress.replace(/
-/g,'<br>'), true],
+    ['Full Address',   fullAddress.replace(/\n/g, '<br>'), true],
     ['Notes',          c.notes || '—', true],
   ].map(([label, val, full = false]) => `
     <div class="detail-field${full ? ' full' : ''}">
@@ -1095,7 +1104,7 @@ async function loadDetailContracts(c) {
       <th>Contract #</th><th>Type</th><th>Start</th><th>End</th><th>Amount</th><th>Status</th>
     </tr></thead><tbody>${snap.docs.map(d => {
       const ct = d.data();
-      const endDate = ct.contractEndDate?.toDate ? ct.contractEndDate.toDate() : new Date(ct.contractEndDate || 0);
+      const endDate    = ct.contractEndDate?.toDate ? ct.contractEndDate.toDate() : new Date(ct.contractEndDate || 0);
       const dispStatus = (ct.status === 'active' && endDate < today) ? 'expired' : ct.status;
       return `<tr>
         <td class="mono" style="font-size:11.5px">${ct.contractNumber || d.id.slice(0,8)}</td>
@@ -1107,6 +1116,7 @@ async function loadDetailContracts(c) {
       </tr>`;
     }).join('')}</tbody></table></div>`;
   } catch (e) {
+    console.error('Load contracts error:', e);
     body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load contracts.</p>`;
   }
 }
@@ -1122,7 +1132,7 @@ async function loadDetailComplaints(c) {
     }
     const priorityBadge = p => {
       const m = { high: 'red', medium: 'amber', low: 'blue' };
-      return `<span class="badge badge-${m[(p || '').toLowerCase()] || 'gray'}">${p || '—'}</span>`;
+      return `<span class="badge badge-${m[(p||'').toLowerCase()] || 'gray'}">${p || '—'}</span>`;
     };
     body.innerHTML = `<div style="overflow-x:auto"><table class="mini-table"><thead><tr>
       <th>Date</th><th>Contract Type</th><th>Priority</th><th>Status</th><th>Assigned To</th>
@@ -1137,6 +1147,7 @@ async function loadDetailComplaints(c) {
       </tr>`;
     }).join('')}</tbody></table></div>`;
   } catch (e) {
+    console.error('Load complaints error:', e);
     body.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load complaints.</p>`;
   }
 }
@@ -1217,7 +1228,9 @@ async function loadStatsWithContracts() {
     });
     $('stat-with-contracts').textContent = activeNos.size;
     $('stat-no-contract').textContent    = allClients.filter(c => !activeNos.has(c.customerNo)).length;
-  } catch {}
+  } catch (e) {
+    console.error('Stats error:', e);
+  }
 }
 
 /* ── Export CSV ── */
@@ -1231,7 +1244,7 @@ $('btn-export-csv').addEventListener('click', () => {
     c.city||'', c.province||'', c.postalCode||'', c.country||'Philippines',
     c.salesAgent||'', c.communicationSource||'', c.notes||''
   ]);
-  const csv     = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
     download: `pestastic_clients_${Date.now()}.csv`
@@ -1254,9 +1267,9 @@ $('btn-download-template').addEventListener('click', () => {
 /* ── CSV Import ── */
 $('btn-import-csv').addEventListener('click', () => {
   csvRows = [];
-  $('upload-preview').style.display  = 'none';
-  $('btn-confirm-import').disabled   = true;
-  $('csv-file-input').value          = '';
+  $('upload-preview').style.display = 'none';
+  $('btn-confirm-import').disabled  = true;
+  $('csv-file-input').value         = '';
   openModal('csv-import-modal');
 });
 
@@ -1280,18 +1293,18 @@ function handleCSVFile(file) {
       return row;
     }).filter(r => r.clientname || r.clientName);
 
-    $('preview-filename').textContent = file.name;
-    $('preview-count').textContent    = `${csvRows.length} records`;
-    $('preview-table-wrap').innerHTML = `<table style="width:100%;border-collapse:collapse">${
+    $('preview-filename').textContent  = file.name;
+    $('preview-count').textContent     = `${csvRows.length} records`;
+    $('preview-table-wrap').innerHTML  = `<table style="width:100%;border-collapse:collapse">${
       [headers.slice(0,6), ...csvRows.slice(0,5).map(r => headers.slice(0,6).map(h => r[h] || ''))].map((row, i) =>
         `<tr style="${i === 0 ? 'background:var(--bg-secondary);font-weight:700' : ''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${
           row.slice(0,6).join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)">')
         }</td></tr>`
       ).join('')
     }</table>`;
-    $('upload-preview').style.display  = '';
-    $('btn-confirm-import').disabled   = csvRows.length === 0;
-    $('import-btn-text').textContent   = `Import ${csvRows.length} Records`;
+    $('upload-preview').style.display = '';
+    $('btn-confirm-import').disabled  = csvRows.length === 0;
+    $('import-btn-text').textContent  = `Import ${csvRows.length} Records`;
   };
   reader.readAsText(file);
 }
@@ -1312,9 +1325,9 @@ $('btn-confirm-import').addEventListener('click', async () => {
   for (const row of csvRows) {
     const name = row.clientname || row['clientName'] || '';
     if (!name) continue;
-    const customerNo = row.customerno || row.customerNo || `PC-${String(nextNum).padStart(5, '0')}`;
+    const customerNo   = row.customerno || row.customerNo || `PC-${String(nextNum).padStart(5, '0')}`;
     nextNum++;
-    const ref = doc(collection(db, 'clients'));
+    const ref          = doc(collection(db, 'clients'));
     const imp_line1    = row.addressline1 || row.addressLine1 || row.address || '';
     const imp_line2    = row.addressline2 || row.addressLine2 || '';
     const imp_barangay = row.barangay || '';
@@ -1344,19 +1357,43 @@ $('btn-confirm-import').addEventListener('click', async () => {
     count++;
   }
   batch.set(doc(db, 'config', 'counters'), { clientCounter: nextNum - 1 }, { merge: true });
-  await batch.commit();
-  await logAction('bulk_import', 'client', 'batch', `Imported ${count} clients via CSV`);
-  closeModal('csv-import-modal');
-  showToast(`Successfully imported ${count} client records.`);
-  await loadClients();
+  try {
+    await batch.commit();
+    await logAction('bulk_import', 'client', 'batch', `Imported ${count} clients via CSV`);
+    closeModal('csv-import-modal');
+    showToast(`Successfully imported ${count} client records.`);
+    await loadClients();
+  } catch (err) {
+    console.error('Import error:', err);
+    showToast('Import failed: ' + err.message, 'error');
+  }
   $('import-btn-text').textContent = 'Import Records';
+  $('btn-confirm-import').disabled = false;
 });
 
-/* ── Auth ── */
+/* ────────────────────────────────────────────
+   FIX 2: Auth state handler
+   - Removed style.cssText (replaced with style.display)
+   - auth-screen now starts display:none in CSS and
+     is shown explicitly only when needed
+   - Proper error detection for unauthorized-domain
+──────────────────────────────────────────── */
+function showAuth(card = 'login') {
+  const authScreen = $('auth-screen');
+  authScreen.style.display = 'flex';
+  $('login-card').style.display   = card === 'login'   ? '' : 'none';
+  $('pending-card').style.display = card === 'pending' ? 'block' : 'none';
+}
+
+function showApp() {
+  /* FIX: use display:flex directly instead of clobbering all styles with cssText */
+  $('app-shell').style.display = 'flex';
+  $('auth-screen').style.display = 'none';
+}
+
 onAuthStateChanged(auth, async user => {
   if (!user) {
-    $('auth-screen').style.display = 'flex';
-    $('app-shell').style.display   = 'none';
+    showAuth('login');
     dismissLoadingScreen();
     return;
   }
@@ -1371,26 +1408,21 @@ onAuthStateChanged(auth, async user => {
         createdAt: serverTimestamp(), lastLogin: serverTimestamp()
       });
       dismissLoadingScreen();
-      $('auth-screen').style.display = 'flex';
-      $('login-card').style.display  = 'none';
-      $('pending-card').style.display = 'block';
+      showAuth('pending');
       return;
     }
     const data = snap.data();
     updateDoc(doc(db, 'users', user.uid), { lastLogin: serverTimestamp() }).catch(() => {});
     if (data.status !== 'approved') {
       dismissLoadingScreen();
-      $('auth-screen').style.display  = 'flex';
-      $('login-card').style.display   = 'none';
-      $('pending-card').style.display = 'block';
+      showAuth('pending');
       return;
     }
     currentRole = data.role;
 
-    // Init shell
+    showApp();
     dismissLoadingScreen();
-    $('auth-screen').style.display   = 'none';
-    $('app-shell').style.cssText     = 'display:flex;height:100vh;overflow:hidden;width:100vw;';
+
     const name = user.displayName || user.email;
     $('user-display-name').textContent = name;
     $('user-role-label').textContent   = (data.role || 'user').replace('_', ' ');
@@ -1409,24 +1441,50 @@ onAuthStateChanged(auth, async user => {
     loadStatsWithContracts();
 
   } catch (err) {
-    console.error(err);
+    console.error('Auth state error:', err);
     dismissLoadingScreen();
+    showAuth('login');
+    showToast('An error occurred loading the app. Please refresh.', 'error', 'Load Error');
   }
 });
 
+/* FIX 3: Better sign-in error handling with domain warning detection */
 $('btn-google-signin').addEventListener('click', async () => {
-  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  catch (e) { $('login-error').style.display = 'block'; $('login-error').textContent = 'Sign-in failed. Please try again.'; }
+  const errEl = $('login-error');
+  errEl.style.display = 'none';
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    console.error('Sign-in error:', e.code, e.message);
+    if (e.code === 'auth/unauthorized-domain') {
+      /* Show the domain warning banner so dev knows exactly what to fix */
+      $('domain-warning').style.display = 'block';
+      errEl.style.display = 'block';
+      errEl.textContent   = `This domain (${location.hostname}) is not authorized in Firebase. See the orange banner at the top.`;
+    } else if (e.code === 'auth/popup-blocked') {
+      errEl.style.display = 'block';
+      errEl.textContent   = 'Popup was blocked by your browser. Please allow popups for this site.';
+    } else if (e.code === 'auth/popup-closed-by-user') {
+      /* User closed popup — not an error, do nothing */
+    } else {
+      errEl.style.display = 'block';
+      errEl.textContent   = `Sign-in failed: ${e.message}`;
+    }
+  }
 });
+
 $('btn-signout-pending').addEventListener('click', () => signOut(auth));
 $('btn-check-status').addEventListener('click', async () => {
   if (!currentUser) return;
   const s = await getDoc(doc(db, 'users', currentUser.uid));
   if (s.exists() && s.data().status === 'approved') location.reload();
+  else showToast('Still pending approval. Please wait for an admin to approve your account.', 'warning');
 });
-$('btn-signout').addEventListener('click', () => { if (confirm('Sign out?')) signOut(auth); });
+$('btn-signout').addEventListener('click', () => {
+  if (confirm('Sign out?')) signOut(auth);
+});
 
-// Mobile sidebar
+/* ── Mobile sidebar ── */
 const sidebar   = $('sidebar');
 const overlay   = $('sidebar-overlay');
 const hamburger = $('hamburger');
