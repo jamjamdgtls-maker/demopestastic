@@ -335,7 +335,7 @@
       <div class="nav-section-label">Monitoring</div>
       <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="badge-notifications" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
             <div class="nav-section-label">Reports</div>
       <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
@@ -537,13 +537,31 @@
             <input type="date" class="form-input" id="form-start-date" />
           </div>
           <div class="form-group">
-            <label class="form-label">End Date</label>
+            <label class="form-label">End / Expiry Date</label>
             <input type="date" class="form-input" id="form-end-date" readonly />
-            <div class="form-hint">Auto-calculated from start date &amp; frequency</div>
+            <div class="form-hint">Calculated from warranty period (or last session if no warranty)</div>
           </div>
           <div class="form-group">
             <label class="form-label">Total Amount (₱) <span class="req">*</span></label>
             <input type="number" class="form-input" id="form-amount" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Downpayment %</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" class="form-input" id="form-downpayment-pct" min="0" max="100" step="1" placeholder="e.g. 60" style="max-width:120px" />
+              <span style="font-size:13px;color:var(--text-secondary)">% (leave blank to use system default)</span>
+            </div>
+            <div class="form-hint" id="downpayment-hint">System default: loading…</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Plan Type</label>
+            <select class="form-select" id="form-payment-plan-type">
+              <option value="">Use system default</option>
+              <option value="downpayment-then-equal">Downpayment + Equal Installments</option>
+              <option value="equal">Equal Installments (no downpayment)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -735,6 +753,7 @@ let allContracts = [], clientMap = {}, paymentMap = {}, filteredContracts = [];
 let currentPage = 1; const PER_PAGE = 20;
 let teamsData = [], salesAgents = [];
 let activeDetailId = null, csvRows = [];
+let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -808,7 +827,10 @@ function getIntervalMonths(freq) {
   return {monthly:1,'bi-monthly':2,quarterly:3,'semi-annual':6,annual:12,'one-time':null}[freq]||1;
 }
 
-function computeEndDate(startDate, freq, sessions) {
+function computeEndDate(startDate, freq, sessions, warrantyMonths) {
+  // If warranty period is provided, end date = start + warranty months (correct)
+  if(warrantyMonths && warrantyMonths > 0) return addMonths(startDate, warrantyMonths);
+  // Fallback: for one-time, same day; otherwise last session date
   if(freq==='one-time') return new Date(startDate);
   const interval = getIntervalMonths(freq);
   return addMonths(startDate, interval*(sessions-1));
@@ -848,15 +870,41 @@ function generateTreatmentDates(startDate, freq, sessions, contractId, customerN
 }
 
 /* ── Generate payment schedule ── */
-function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contractId, customerNo) {
+function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contractId, customerNo, downpaymentPct, planType) {
   const entries = [];
   const interval = getIntervalMonths(freq);
-  const perPayment = totalAmount / sessions;
+  const usePlanType = planType || systemSettings.defaultPaymentPlanType;
+  const dpPct = (downpaymentPct !== undefined && downpaymentPct !== null)
+    ? downpaymentPct
+    : systemSettings.defaultDownpaymentPct;
+
+  let amounts = [];
+  if(usePlanType === 'equal' || sessions <= 1) {
+    // Equal split across all sessions
+    const perPayment = totalAmount / sessions;
+    amounts = Array(sessions).fill(parseFloat(perPayment.toFixed(2)));
+    // Fix rounding: last session absorbs remainder
+    const sumSoFar = amounts.slice(0,-1).reduce((a,b)=>a+b,0);
+    amounts[amounts.length-1] = parseFloat((totalAmount - sumSoFar).toFixed(2));
+  } else {
+    // Downpayment + equal installments
+    const dpAmt = parseFloat((totalAmount * dpPct / 100).toFixed(2));
+    const remaining = parseFloat((totalAmount - dpAmt).toFixed(2));
+    const perInstallment = sessions > 1 ? parseFloat((remaining / (sessions - 1)).toFixed(2)) : 0;
+    amounts = [dpAmt];
+    for(let i=1;i<sessions-1;i++) amounts.push(perInstallment);
+    if(sessions > 1) {
+      // Last session absorbs rounding difference
+      const sumSoFar = amounts.reduce((a,b)=>a+b,0);
+      amounts.push(parseFloat((totalAmount - sumSoFar).toFixed(2)));
+    }
+  }
+
   for(let i=0;i<sessions;i++) {
     const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
     entries.push({
       contractId, customerNo,
-      amount: parseFloat(perPayment.toFixed(2)),
+      amount: amounts[i] || 0,
       dueDate: d,
       paymentDate: null,
       status: 'Pending',
@@ -864,6 +912,8 @@ function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contrac
       orNumber: '',
       receivedBy: '',
       remarks: '',
+      sessionNo: i + 1,
+      isDownpayment: i === 0 && usePlanType !== 'equal',
       createdAt: serverTimestamp()
     });
   }
@@ -891,7 +941,12 @@ async function loadAll() {
   // Sales agents
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
-    salesAgents = cfg.exists()?(cfg.data().salesAgents||[]):[];
+    if(cfg.exists()) {
+      const s = cfg.data();
+      salesAgents = s.salesAgents || [];
+      systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
+      systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
+    }
   } catch { salesAgents=[]; }
   // Also collect from clients
   const agentSet=new Set(salesAgents);
@@ -1022,46 +1077,103 @@ function renderTable() {
 
 /* ── Form: auto end-date & schedule preview ── */
 function updateEndDateAndPreview() {
-  const startStr = $('form-start-date').value;
-  const freq     = $('form-frequency').value;
-  const sessions = parseInt($('form-sessions').value)||0;
-  const amount   = parseFloat($('form-amount').value)||0;
+  const startStr   = $('form-start-date').value;
+  const freq       = $('form-frequency').value;
+  const sessions   = parseInt($('form-sessions').value)||0;
+  const amount     = parseFloat($('form-amount').value)||0;
+  const warranty   = parseInt($('form-warranty').value)||0;
   if(!startStr||!freq||!sessions) { $('form-end-date').value=''; $('schedule-preview').style.display='none'; return; }
 
   const [y,m,d] = startStr.split('-').map(Number);
   const startDate = new Date(y,m-1,d);
-  const endDate   = computeEndDate(startDate,freq,sessions);
-  const interval  = getIntervalMonths(freq);
-  const perTreatment = amount && sessions ? parseFloat((amount/sessions).toFixed(2)) : 0;
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-  // Format end date without UTC shift
+  // ── End date: warranty-based (FIXED BUG) ──
+  // If warranty period is set → end = startDate + warrantyMonths
+  // Otherwise fall back to last session date
+  const endDate   = computeEndDate(startDate, freq, sessions, warranty);
+  const interval  = getIntervalMonths(freq);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const ed = endDate;
   $('form-end-date').value = `${ed.getFullYear()}-${String(ed.getMonth()+1).padStart(2,'0')}-${String(ed.getDate()).padStart(2,'0')}`;
 
-  // Build full schedule table rows
+  // ── Payment amounts: downpayment-aware ──
+  const dpPctInput = parseFloat($('form-downpayment-pct').value);
+  const dpPct = !isNaN(dpPctInput) ? dpPctInput : systemSettings.defaultDownpaymentPct;
+  const planType = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
+
+  // Update hint to show what will be used
+  $('downpayment-hint').textContent = !isNaN(dpPctInput)
+    ? `Using ${dpPct}% downpayment on 1st session`
+    : `Using system default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
+
+  let sessionAmounts = [];
+  if(amount && sessions) {
+    if(planType === 'equal' || sessions <= 1) {
+      const per = parseFloat((amount / sessions).toFixed(2));
+      sessionAmounts = Array(sessions).fill(per);
+      sessionAmounts[sessions-1] = parseFloat((amount - per*(sessions-1)).toFixed(2));
+    } else {
+      const dpAmt = parseFloat((amount * dpPct / 100).toFixed(2));
+      const remaining = parseFloat((amount - dpAmt).toFixed(2));
+      const perInstall = sessions > 1 ? parseFloat((remaining / (sessions-1)).toFixed(2)) : 0;
+      sessionAmounts = [dpAmt];
+      for(let i=1;i<sessions-1;i++) sessionAmounts.push(perInstall);
+      if(sessions > 1) {
+        const sumSoFar = sessionAmounts.reduce((a,b)=>a+b,0);
+        sessionAmounts.push(parseFloat((amount - sumSoFar).toFixed(2)));
+      }
+    }
+  }
+
+  // ── Build schedule preview rows ──
   let rows = '';
   for(let i=0;i<sessions;i++){
     const td = freq==='one-time'?startDate:addMonths(startDate,interval*i);
     const dateStr = td.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
     const dayStr  = days[td.getDay()];
     const rowBg   = i%2===0?'#fff':'var(--bg-secondary)';
-    rows += `<tr style="background:${rowBg}">
-      <td style="padding:6px 12px;color:var(--text-muted);font-size:11.5px;border-bottom:1px solid var(--border)">${i+1}</td>
+    const sessionAmt = sessionAmounts[i];
+    const isDP = planType !== 'equal' && i === 0 && sessions > 1;
+    const amtLabel = sessionAmt
+      ? `₱${sessionAmt.toLocaleString('en-PH',{minimumFractionDigits:2})}`
+      : '—';
+    const sessionLabel = i === 0 ? (isDP ? '1st (Downpayment)' : '1') : String(i+1);
+    rows += `<tr style="background:${rowBg}${isDP?';border-left:3px solid var(--primary)':''}">
+      <td style="padding:6px 12px;color:${isDP?'var(--primary)':'var(--text-muted)'};font-size:11.5px;font-weight:${isDP?'700':'400'};border-bottom:1px solid var(--border)">${sessionLabel}</td>
       <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid var(--border)">${dateStr}</td>
       <td style="padding:6px 12px;color:var(--text-muted);border-bottom:1px solid var(--border)">${dayStr}</td>
-      <td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--border)">${perTreatment?'₱'+perTreatment.toLocaleString('en-PH',{minimumFractionDigits:2}):'—'}</td>
+      <td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:${isDP?'700':'400'};color:${isDP?'var(--primary)':'inherit'};border-bottom:1px solid var(--border)">${amtLabel}</td>
     </tr>`;
   }
   $('schedule-preview-text').innerHTML = rows;
-  $('schedule-preview-count').textContent = `${sessions} treatment${sessions===1?'':'s'}`;
-  $('schedule-preview-total').innerHTML = amount
-    ? `Total Contract Value: <strong>₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong> · Per Treatment: <strong>₱${perTreatment.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>`
-    : 'Enter Total Amount to see per-treatment breakdown';
+  $('schedule-preview-count').textContent = `${sessions} session${sessions===1?'':'s'}`;
+
+  if(amount) {
+    const dpAmt = sessionAmounts[0] || 0;
+    const remaining = parseFloat((amount - dpAmt).toFixed(2));
+    const remainSessions = sessions - 1;
+    const perRemain = remainSessions > 0 ? parseFloat((remaining/remainSessions).toFixed(2)) : 0;
+    const warrantyLine = warranty > 0 ? ` · Warranty: <strong>${warranty} months</strong> (expires ${ed.toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})})` : '';
+    if(planType !== 'equal' && sessions > 1) {
+      $('schedule-preview-total').innerHTML =
+        `Total: <strong>₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        ` · Downpayment: <strong>₱${dpAmt.toLocaleString('en-PH',{minimumFractionDigits:2})} (${dpPct}%)</strong>` +
+        (remainSessions > 0 ? ` · Remaining ${remainSessions} sessions: <strong>₱${perRemain.toLocaleString('en-PH',{minimumFractionDigits:2})} each</strong>` : '') +
+        warrantyLine;
+    } else {
+      const per = sessionAmounts[0] || 0;
+      $('schedule-preview-total').innerHTML =
+        `Total: <strong>₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        ` · Per session: <strong>₱${per.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        warrantyLine;
+    }
+  } else {
+    $('schedule-preview-total').innerHTML = 'Enter Total Amount to see payment breakdown';
+  }
   $('schedule-preview').style.display='';
 }
 
-['form-start-date','form-frequency','form-sessions','form-amount'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
+['form-start-date','form-frequency','form-sessions','form-amount','form-warranty','form-downpayment-pct','form-payment-plan-type'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
 
 /* ── Customer No hint ── */
 $('form-customer-no').addEventListener('input',()=>{
@@ -1080,6 +1192,7 @@ $('btn-new-contract').addEventListener('click', async ()=>{
   $('form-old-contract-id').value='';
   const no = await getNextContractNo();
   $('form-contract-no').value = no;
+  if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
   openModal('contract-form-modal');
 });
 
@@ -1242,19 +1355,25 @@ function openEditModal(id) {
   $('form-comm-source').value=c.communicationSource||'';
   $('form-status').value=c.status||'active';
   $('form-notes').value=c.notes||'';
+  // Restore downpayment settings if they were saved with the contract
+  if(c.downpaymentPct !== undefined) $('form-downpayment-pct').value = c.downpaymentPct;
+  if(c.paymentPlanType) $('form-payment-plan-type').value = c.paymentPlanType;
   $('schedule-preview').style.display='none';
   openModal('contract-form-modal');
 }
 
 function clearForm() {
   ['form-contract-id','form-old-contract-id','form-customer-no','form-contract-no','form-treatment-method',
-   'form-sessions','form-warranty','form-start-date','form-end-date','form-amount','form-notes']
+   'form-sessions','form-warranty','form-start-date','form-end-date','form-amount','form-notes',
+   'form-downpayment-pct']
     .forEach(id=>{$(id).value='';});
-  ['form-contract-type','form-frequency','form-team','form-sales-agent','form-comm-source'].forEach(id=>{$(id).value='';});
+  ['form-contract-type','form-frequency','form-team','form-sales-agent','form-comm-source','form-payment-plan-type'].forEach(id=>{$(id).value='';});
   $('form-status').value='active';
   $('client-name-hint').textContent='';
   $('schedule-preview').style.display='none';
   $('renewal-banner').style.display='none';
+  // Show default hint
+  if($('downpayment-hint')) $('downpayment-hint').textContent=`System default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
 }
 
 /* ── Save Contract ── */
@@ -1277,7 +1396,12 @@ $('btn-save-contract').addEventListener('click', async ()=>{
 
   const [y,m,d]=startStr.split('-').map(Number);
   const startDate = new Date(y,m-1,d);
-  const endDate   = computeEndDate(startDate,freq,sessions);
+  const endDate   = computeEndDate(startDate,freq,sessions,parseInt($('form-warranty').value)||0);
+
+  const warrantyPeriod = parseInt($('form-warranty').value)||0;
+  const dpPctInput     = parseFloat($('form-downpayment-pct').value);
+  const dpPct          = !isNaN(dpPctInput) ? dpPctInput : systemSettings.defaultDownpaymentPct;
+  const planType       = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
 
   const data = {
     customerNo, contractType,
@@ -1285,7 +1409,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
     treatmentMethod: $('form-treatment-method').value.trim(),
     frequency: freq,
     noOfSessions: sessions,
-    warrantyPeriod: parseInt($('form-warranty').value)||0,
+    warrantyPeriod,
     contractStartDate: startDate,
     contractEndDate: endDate,
     totalAmount: amount,
@@ -1294,6 +1418,8 @@ $('btn-save-contract').addEventListener('click', async ()=>{
     communicationSource: $('form-comm-source').value,
     status: $('form-status').value,
     notes: $('form-notes').value.trim(),
+    downpaymentPct: dpPct,
+    paymentPlanType: planType,
     updatedAt: serverTimestamp(),
   };
 
@@ -1322,7 +1448,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
 
       // Generate treatment + payment schedules
       const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value);
-      const payments=generatePaymentSchedule(startDate,amount,freq,sessions,ref.id,customerNo);
+      const payments=generatePaymentSchedule(startDate,amount,freq,sessions,ref.id,customerNo,dpPct,planType);
 
       const batch=writeBatch(db);
       treatments.forEach(t=>batch.set(doc(collection(db,'treatments')),t));
@@ -1720,7 +1846,7 @@ async function loadSidebarBadges() {
     }
 
     // ── Notifications nav badge (total urgent items) ──
-    const bdNotif = document.getElementById('badge-notifications');
+    const bdNotif = document.getElementById('notif-count-badge');
     if(bdNotif && notifCount > 0) {
       bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
       bdNotif.style.display = '';
