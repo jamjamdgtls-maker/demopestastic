@@ -161,63 +161,33 @@
       gap: 8px;
     }
 
-    .date-input {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      padding: 7px 12px;
+    .month-nav-btn {
+      width: 32px;
+      height: 32px;
       background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      outline: none;
-      transition: border-color .15s, box-shadow .15s;
-      cursor: pointer;
-      font-family: var(--font);
-    }
-    .date-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px hsl(142 76% 36% / .12); }
-    .date-input:hover { border-color: var(--border-hover); }
-    .date-filter-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-right: 2px;
-    }
-    .date-filter-separator {
-      font-size: 12px;
-      color: var(--text-muted);
-      padding: 0 2px;
-    }
-    .btn-apply-filter {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 13px;
-      font-weight: 600;
+      justify-content: center;
       cursor: pointer;
-      transition: background .15s;
-      font-family: var(--font);
+      transition: all .15s;
+      color: var(--text-secondary);
     }
-    .btn-apply-filter:hover { background: var(--primary-hover); }
-    .btn-apply-filter svg { width: 14px; height: 14px; }
-    .btn-preset {
+    .month-nav-btn:hover { background: var(--bg-secondary); color: var(--text); }
+    .month-nav-btn svg { width: 15px; height: 15px; }
+
+    .month-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 130px;
+      text-align: center;
       padding: 6px 12px;
       background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all .15s;
-      font-family: var(--font);
     }
-    .btn-preset:hover { background: var(--bg-secondary); color: var(--text); }
-    .btn-preset.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 600; }
 
     .btn-refresh {
       display: flex;
@@ -616,7 +586,6 @@
       .quick-stats { grid-template-columns: 1fr; }
       .page-content { padding: 16px; }
       .dash-filter-bar { flex-direction: column; align-items: flex-start; }
-      .date-filter-row { flex-wrap: wrap; }
       .greeting-date { display: none; }
     }
   
@@ -636,12 +605,7 @@
 <!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
 <div id="loading-screen">
   <div class="ls-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-      <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
-      <circle cx="9.5" cy="9" r="1" fill="white"/>
-      <circle cx="14.5" cy="9" r="1" fill="white"/>
-    </svg>
+    <img src="logo.jpg" alt="Pestastic" style="width:34px;height:34px;object-fit:contain" />
   </div>
   <div class="ls-spinner"></div>
   <div class="ls-text">Pestastic</div>
@@ -650,11 +614,7 @@
 <div id="auth-screen" style="display:none">
     <div id="login-card" class="auth-card">
       <div class="auth-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-          <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
-          <circle cx="9.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/><circle cx="14.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/>
-        </svg>
+        <img src="logo.jpg" alt="Pestastic" style="width:36px;height:36px;object-fit:contain" />
       </div>
       <h1>Pestastic</h1>
       <p>Sign in to access your dashboard</p>
@@ -681,11 +641,8 @@
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/><circle cx="9.5" cy="9" r="1" fill="white"/><circle cx="14.5" cy="9" r="1" fill="white"/></svg>
-        </div>
-        <div class="sidebar-logo-text"><span>Pestastic</span><small>Pest Control</small></div>
+      <div class="sidebar-logo" style="justify-content:center;padding:16px 20px">
+        <img src="logo.jpg" alt="Pestastic" style="width:200px;max-width:100%;height:auto;object-fit:contain;filter:brightness(0) invert(1)" />
       </div>
       <nav class="sidebar-nav">
         <div class="nav-section-label">Main</div>
@@ -754,27 +711,17 @@
             <p id="greeting-sub">Here's what's happening with your operations today.</p>
           </div>
           <div class="date-filter-row">
-            <span class="date-filter-label">From</span>
-            <input type="date" class="date-input" id="filter-date-from" title="Start date" />
-            <span class="date-filter-separator">→</span>
-            <span class="date-filter-label">To</span>
-            <input type="date" class="date-input" id="filter-date-to" title="End date" />
-            <button class="btn-apply-filter" id="btn-apply-filter" title="Apply date filter">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Apply
+            <button class="month-nav-btn" id="btn-prev-month" title="Previous month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="month-label" id="month-label">—</div>
+            <button class="month-nav-btn" id="btn-next-month" title="Next month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <button class="btn-refresh" id="btn-refresh">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Refresh
             </button>
-          </div>
-          <div class="date-filter-row" style="margin-top:8px;gap:6px;">
-            <button class="btn-preset" data-preset="today">Today</button>
-            <button class="btn-preset" data-preset="week">This Week</button>
-            <button class="btn-preset active" data-preset="month">This Month</button>
-            <button class="btn-preset" data-preset="quarter">This Quarter</button>
-            <button class="btn-preset" data-preset="year">This Year</button>
-            <button class="btn-preset" data-preset="all">All Time</button>
           </div>
         </div>
 
@@ -1039,18 +986,8 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     /* ── State ── */
     let currentUser = null;
     let currentRole = null;
-    let filterDateFrom = null; // Date object
-    let filterDateTo   = null; // Date object
-
-    // Initialize to current month
-    (function initDateFilters() {
-      const now = new Date();
-      filterDateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
-      filterDateTo   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      const fmt2 = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-      document.getElementById('filter-date-from').value = fmt2(filterDateFrom);
-      document.getElementById('filter-date-to').value = fmt2(filterDateTo);
-    })();
+    let filterYear  = new Date().getFullYear();
+    let filterMonth = new Date().getMonth(); // 0-indexed
 
     /* ── Helpers ── */
     function fmt(n) {
@@ -1092,84 +1029,28 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       setTimeout(() => t.remove(), 5000);
     }
 
-    /* ── Date filter label ── */
-    function updateFilterLabel() {
-      const opts = { year:'numeric', month:'short', day:'numeric' };
-      const from = filterDateFrom.toLocaleDateString('en-PH', opts);
-      const to   = filterDateTo.toLocaleDateString('en-PH', opts);
-      document.getElementById('financial-period-label').textContent = `${from} — ${to}`;
+    /* ── Month label ── */
+    function updateMonthLabel() {
+      const d = new Date(filterYear, filterMonth, 1);
+      document.getElementById('month-label').textContent =
+        d.toLocaleDateString('en-PH', { month:'long', year:'numeric' });
+      document.getElementById('financial-period-label').textContent =
+        d.toLocaleDateString('en-PH', { month:'long', year:'numeric' });
     }
 
-    function applyDateFilter() {
-      const fromVal = document.getElementById('filter-date-from').value;
-      const toVal   = document.getElementById('filter-date-to').value;
-      if (fromVal) {
-        const parts = fromVal.split('-');
-        filterDateFrom = new Date(+parts[0], +parts[1]-1, +parts[2], 0, 0, 0, 0);
-      }
-      if (toVal) {
-        const parts = toVal.split('-');
-        filterDateTo = new Date(+parts[0], +parts[1]-1, +parts[2], 23, 59, 59, 999);
-      }
-      if (filterDateFrom > filterDateTo) {
-        showToast('Start date must be before end date', 'warning');
-        return;
-      }
-      // Clear active preset
-      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-      updateFilterLabel();
+    /* ── Month nav ── */
+    document.getElementById('btn-prev-month').addEventListener('click', () => {
+      filterMonth--;
+      if (filterMonth < 0) { filterMonth = 11; filterYear--; }
+      updateMonthLabel();
       loadDashboard();
-    }
+    });
 
-    document.getElementById('btn-apply-filter').addEventListener('click', applyDateFilter);
-
-    // Enter key on date inputs
-    document.getElementById('filter-date-from').addEventListener('keydown', e => { if(e.key==='Enter') applyDateFilter(); });
-    document.getElementById('filter-date-to').addEventListener('keydown', e => { if(e.key==='Enter') applyDateFilter(); });
-
-    // Preset buttons
-    document.querySelectorAll('.btn-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const now = new Date();
-        const preset = btn.dataset.preset;
-        const fmtInput = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        switch(preset) {
-          case 'today':
-            filterDateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            filterDateTo   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
-            break;
-          case 'week': {
-            const day = now.getDay(); const diff = now.getDate() - day + (day===0?-6:1);
-            filterDateFrom = new Date(now.getFullYear(), now.getMonth(), diff);
-            filterDateTo   = new Date(filterDateFrom); filterDateTo.setDate(filterDateTo.getDate()+6); filterDateTo.setHours(23,59,59,999);
-            break;
-          }
-          case 'month':
-            filterDateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
-            filterDateTo   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23,59,59,999);
-            break;
-          case 'quarter': {
-            const q = Math.floor(now.getMonth()/3);
-            filterDateFrom = new Date(now.getFullYear(), q*3, 1);
-            filterDateTo   = new Date(now.getFullYear(), q*3+3, 0, 23,59,59,999);
-            break;
-          }
-          case 'year':
-            filterDateFrom = new Date(now.getFullYear(), 0, 1);
-            filterDateTo   = new Date(now.getFullYear(), 11, 31, 23,59,59,999);
-            break;
-          case 'all':
-            filterDateFrom = new Date(2000, 0, 1);
-            filterDateTo   = new Date(2099, 11, 31, 23,59,59,999);
-            break;
-        }
-        document.getElementById('filter-date-from').value = fmtInput(filterDateFrom);
-        document.getElementById('filter-date-to').value = fmtInput(filterDateTo);
-        updateFilterLabel();
-        loadDashboard();
-      });
+    document.getElementById('btn-next-month').addEventListener('click', () => {
+      filterMonth++;
+      if (filterMonth > 11) { filterMonth = 0; filterYear++; }
+      updateMonthLabel();
+      loadDashboard();
     });
 
     document.getElementById('btn-refresh').addEventListener('click', () => loadDashboard());
@@ -1201,18 +1082,17 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
        'kpi-contract-val','kpi-collected','kpi-outstanding','kpi-overdue-pay'
       ].forEach(id => { const el=document.getElementById(id); if(el)el.classList.add('loading'); });
 
-      const results = await Promise.allSettled([
-        loadOpsKPIs(),
-        loadFinancialKPIs(),
-        loadQuickStats(),
-        loadUpcomingTreatments(),
-        loadRecentActivity(),
-      ]);
-
-      const failed = results.filter(result => result.status === 'rejected');
-      if (failed.length) {
-        failed.forEach((result, index) => console.error(`Dashboard section ${index + 1} failed:`, result.reason));
-        showToast('Some dashboard sections failed to load.', 'warning');
+      try {
+        await Promise.all([
+          loadOpsKPIs(),
+          loadFinancialKPIs(),
+          loadQuickStats(),
+          loadUpcomingTreatments(),
+          loadRecentActivity(),
+        ]);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        showToast('Some data failed to load. Please refresh.', 'warning');
       }
 
       refreshBtn.classList.remove('spinning');
@@ -1221,14 +1101,14 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     /* ── Helper: today boundaries (local timezone) ── */
     function todayStart() { const d = new Date(); d.setHours(0,0,0,0); return d; }
     function todayEnd()   { const d = new Date(); d.setHours(23,59,59,999); return d; }
-    function filterStart() { return new Date(filterDateFrom); }
-    function filterEnd()   { return new Date(filterDateTo); }
+    function monthStart() { return new Date(filterYear, filterMonth, 1); }
+    function monthEnd()   { return new Date(filterYear, filterMonth+1, 0, 23, 59, 59, 999); }
 
     /* ── 1. Operations KPIs ── */
     async function loadOpsKPIs() {
       const today = todayStart();
-      const mStart = filterStart();
-      const mEnd   = filterEnd();
+      const mStart = monthStart();
+      const mEnd   = monthEnd();
 
       // Total clients
       const clientsSnap = await getDocs(collection(db, 'clients'));
@@ -1269,7 +1149,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       });
 
       document.getElementById('val-treatments').textContent = scheduledThisMonth;
-      document.getElementById('sub-treatments').textContent = `In selected period`;
+      document.getElementById('sub-treatments').textContent = `In ${new Date(filterYear,filterMonth).toLocaleDateString('en-PH',{month:'long',year:'numeric'})}`;
       doneLoading('kpi-treatments');
 
       document.getElementById('val-overdue-t').textContent = overdueCount;
@@ -1288,61 +1168,53 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     /* ── 2. Financial KPIs ── */
     async function loadFinancialKPIs() {
       const today = todayStart();
-      const mStart = filterStart();
-      const mEnd   = filterEnd();
-      const COLLECTED_STATUSES = ['Received','Deposited','Remitted','Collected'];
+      const mStart = monthStart();
+      const mEnd   = monthEnd();
 
-      // Contract value — sum of active contracts in period
+      // Contract value — sum of active contracts
       const contractsSnap = await getDocs(collection(db,'contracts'));
       let contractValue = 0;
-      let activeCount = 0;
       contractsSnap.forEach(d => {
         const data = d.data();
         const endDate = toDate(data.contractEndDate);
         if (data.status === 'active' || (endDate && endDate >= today)) {
           contractValue += Number(data.totalAmount) || 0;
-          activeCount++;
         }
       });
       document.getElementById('val-contract-value').textContent = fmt(contractValue);
-      document.getElementById('sub-contract-value').textContent = `${activeCount} active contract${activeCount===1?'':'s'}`;
       doneLoading('kpi-contract-val');
 
-      // Payments — filter by dueDate within selected period (matches payments page logic)
+      // Payments
       const paymentsSnap = await getDocs(collection(db,'payments'));
-      let receivable       = 0;
       let totalCollected   = 0;
       let overduePayAmount = 0;
       let overduePayCount  = 0;
-      let paymentCount     = 0;
+      const collectedStatuses = ['Received','Deposited','Remitted','Collected'];
 
       paymentsSnap.forEach(d => {
         const data = d.data();
-        const dueDate = toDate(data.dueDate);
-        // Filter by due date within selected range
-        const inRange = dueDate && dueDate >= mStart && dueDate <= mEnd;
-        if (!inRange) return;
+        // Scope to selected month if paymentDate exists
+        const payDate = toDate(data.paymentDate) || toDate(data.dueDate);
+        const inMonth = payDate && payDate >= mStart && payDate <= mEnd;
 
-        paymentCount++;
-        receivable += Number(data.amount) || 0;
-
-        if (COLLECTED_STATUSES.includes(data.status)) {
+        if (collectedStatuses.includes(data.status)) {
           totalCollected += Number(data.amount) || 0;
         }
-        // Overdue: Pending + due date in the past (matches isOverdue in payments page)
+        // Overdue: pending + past due date
+        const dueDate = toDate(data.dueDate);
         if (data.status === 'Pending' && dueDate && dueDate < today) {
           overduePayAmount += Number(data.amount) || 0;
           overduePayCount++;
         }
       });
 
-      const outstanding = Math.max(0, receivable - totalCollected);
+      const outstanding = Math.max(0, contractValue - totalCollected);
 
       document.getElementById('val-collected').textContent    = fmt(totalCollected);
-      document.getElementById('sub-collected').textContent    = `of ${fmt(receivable)} receivable (${paymentCount} record${paymentCount===1?'':'s'})`;
+      document.getElementById('sub-collected').textContent    = `Received, Deposited & Remitted`;
 
       document.getElementById('val-outstanding').textContent  = fmt(outstanding);
-      document.getElementById('sub-outstanding').textContent  = outstanding === 0 ? '✓ Fully collected' : 'Receivable − collected';
+      document.getElementById('sub-outstanding').textContent  = `Contract value − collected`;
       document.getElementById('sub-outstanding').className    = `kpi-sub ${outstanding > 0 ? 'negative' : 'positive'}`;
 
       document.getElementById('val-overdue-pay').textContent  = fmt(overduePayAmount);
@@ -1358,8 +1230,8 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     async function loadQuickStats() {
       const today  = todayStart();
       const tEnd   = todayEnd();
-      const mStart = filterStart();
-      const mEnd   = filterEnd();
+      const mStart = monthStart();
+      const mEnd   = monthEnd();
 
       // Treatments today
       const treatSnap = await getDocs(collection(db,'treatments'));
@@ -1597,7 +1469,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       }
       if (userData.role==='super_admin') document.getElementById('nav-settings').style.display='';
       setGreeting(name);
-      updateFilterLabel();
+      updateMonthLabel();
       loadDashboard();
       loadSidebarBadges();
     }
