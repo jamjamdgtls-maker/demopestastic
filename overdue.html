@@ -694,46 +694,65 @@ async function loadAll() {
   $('last-updated').textContent='';
   const today = todayLocal();
 
-  // Clients map
-  const cSnap=await getDocs(collection(db,'clients'));
-  clientMap={};
-  cSnap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c;});
+  // Show spinners while loading
+  const spinnerHTML='<div style="text-align:center;padding:32px;background:white;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:28px"><div class="spinner" style="margin:0 auto"></div></div>';
+  $('treatments-section').innerHTML=spinnerHTML;
+  $('payments-section').innerHTML=spinnerHTML;
 
-  // Contracts map
-  const coSnap=await getDocs(collection(db,'contracts'));
-  contractMap={};
-  coSnap.forEach(d=>{contractMap[d.id]=d.data();});
+  try {
+    // Clients map
+    const cSnap=await getDocs(collection(db,'clients'));
+    clientMap={};
+    cSnap.forEach(d=>{const c=d.data();if(c.customerNo)clientMap[c.customerNo]=c;});
 
-  // Teams for filter
-  const tSnap=await getDocs(collection(db,'teams'));
-  const teamNames=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
-  $('t-filter-team').innerHTML='<option value="">All Teams</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
+    // Contracts map
+    const coSnap=await getDocs(collection(db,'contracts'));
+    contractMap={};
+    coSnap.forEach(d=>{contractMap[d.id]=d.data();});
 
-  // Overdue treatments: status='scheduled' AND treatmentDate < today
-  const trSnap=await getDocs(query(collection(db,'treatments'),where('status','==','scheduled')));
-  overdueTreatments=[];
-  trSnap.forEach(d=>{
-    const t=d.data();
-    const tDate=toDate(t.treatmentDate);
-    if(tDate&&tDate<today) overdueTreatments.push({id:d.id,...t,_days:daysOverdue(t.treatmentDate)});
-  });
-  overdueTreatments.sort((a,b)=>b._days-a._days);
+    // Teams for filter
+    const tSnap=await getDocs(collection(db,'teams'));
+    const teamNames=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
+    $('t-filter-team').innerHTML='<option value="">All Teams</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
 
-  // Overdue payments: status='Pending' AND dueDate < today
-  const pSnap=await getDocs(query(collection(db,'payments'),where('status','==','Pending')));
-  overduePayments=[];
-  pSnap.forEach(d=>{
-    const p=d.data();
-    const dDate=toDate(p.dueDate);
-    if(dDate&&dDate<today) overduePayments.push({id:d.id,...p,_days:daysOverdue(p.dueDate)});
-  });
-  overduePayments.sort((a,b)=>b._days-a._days);
+    // Overdue treatments: fetch all scheduled, filter by date client-side
+    // (avoids needing a composite index for the range query)
+    const trSnap=await getDocs(query(collection(db,'treatments'),where('status','==','scheduled')));
+    overdueTreatments=[];
+    trSnap.forEach(d=>{
+      const t=d.data();
+      const tDate=toDate(t.treatmentDate);
+      if(tDate&&tDate<today) overdueTreatments.push({id:d.id,...t,_days:daysOverdue(t.treatmentDate)});
+    });
+    overdueTreatments.sort((a,b)=>b._days-a._days);
 
-  updateSummaryCards();
-  renderTreatments(overdueTreatments);
-  renderPayments(overduePayments);
+    // Overdue payments: fetch all Pending, filter by date client-side
+    const pSnap=await getDocs(query(collection(db,'payments'),where('status','==','Pending')));
+    overduePayments=[];
+    pSnap.forEach(d=>{
+      const p=d.data();
+      const dDate=toDate(p.dueDate);
+      if(dDate&&dDate<today) overduePayments.push({id:d.id,...p,_days:daysOverdue(p.dueDate)});
+    });
+    overduePayments.sort((a,b)=>b._days-a._days);
 
-  $('last-updated').textContent=`Last updated: ${new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}`;
+    updateSummaryCards();
+    renderTreatments(overdueTreatments);
+    renderPayments(overduePayments);
+
+    $('last-updated').textContent=`Last updated: ${new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}`;
+  } catch(err) {
+    console.error('[loadAll] Failed:', err);
+    const errHTML=`<div class="empty-section" style="margin-bottom:28px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h3>Failed to load data</h3>
+      <p>${err.message||'An unexpected error occurred. Check your connection and try refreshing.'}</p>
+    </div>`;
+    $('treatments-section').innerHTML=errHTML;
+    $('payments-section').innerHTML=errHTML;
+    $('last-updated').textContent='Failed to load — check console for details';
+    showToast(err.message||'Failed to load data','error','Load Error');
+  }
 }
 
 function updateSummaryCards() {
@@ -1134,7 +1153,16 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadAll();
-  }catch(err){dismissLoadingScreen();console.error(err);}
+  }catch(err){
+    dismissLoadingScreen();
+    console.error('[auth] Startup error:', err);
+    // Clear any lingering spinners so the user sees an error rather than infinite spin
+    const errHTML=`<div class="empty-section" style="margin-bottom:28px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <h3>Failed to load data</h3><p>${err.message||'An unexpected error occurred.'}</p></div>`;
+    if($('treatments-section'))$('treatments-section').innerHTML=errHTML;
+    if($('payments-section'))$('payments-section').innerHTML=errHTML;
+  }
 });
 
 $('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
