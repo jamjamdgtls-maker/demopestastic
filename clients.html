@@ -925,8 +925,7 @@ $('btn-add-client').addEventListener('click', async () => {
   $('form-modal-title').textContent = 'Add Client';
   $('save-btn-text').textContent    = 'Save Client';
   $('form-client-id').value         = '';
-  const no = await getNextCustomerNo();
-  $('form-customer-no').value = no;
+  $('form-customer-no').value = 'Auto-generated';
   openModal('client-form-modal');
 });
 
