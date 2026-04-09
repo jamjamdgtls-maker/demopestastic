@@ -994,7 +994,7 @@ function renderTable() {
 
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = ['scheduled','rescheduled','completed','cancelled',...treatmentStatusesList];
+    const allStatuses   = ['scheduled','overdue','rescheduled','completed','cancelled',...treatmentStatusesList];
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
@@ -1118,6 +1118,7 @@ $('btn-confirm-complete').addEventListener('click', async () => {
     showToast('Treatment marked as completed.');
     computeSummary();
     applyFilters();
+    loadSidebarBadges();
   } catch (err) {
     showToast('Failed: ' + err.message, 'error');
   }
@@ -1172,6 +1173,7 @@ $('btn-confirm-cancel').addEventListener('click', async () => {
     showToast('Treatment cancelled.', 'warning');
     computeSummary();
     applyFilters();
+    loadSidebarBadges();
   } catch (err) {
     showToast('Failed: ' + err.message, 'error');
   }
@@ -1332,6 +1334,8 @@ $('treatments-tbody').addEventListener('change', async e => {
   const newStatus = sel.value;
   const oldStatus = sel.dataset.current;
   if (!id || newStatus === oldStatus) return;
+  // 'overdue' is computed (stored as 'scheduled' in Firestore); don't save 'overdue' directly
+  if (newStatus === 'overdue') return;
 
   try {
     await updateDoc(doc(db, 'treatments', id), {
@@ -1346,6 +1350,7 @@ $('treatments-tbody').addEventListener('change', async e => {
     await logAction('updated', 'treatment', id, `Status changed from ${oldStatus} to ${newStatus}`);
     showToast(`Status updated to "${newStatus}".`);
     computeSummary();
+    loadSidebarBadges();
   } catch (err) {
     showToast('Failed to update status: ' + err.message, 'error');
     sel.value = oldStatus; // revert
