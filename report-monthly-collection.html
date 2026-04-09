@@ -434,8 +434,10 @@ function fmtCur(n) { return '₱'+Number(n||0).toLocaleString('en-PH',{minimumFr
 function cleanName(n){return(n||'').replace(/\s*\(.*?\)\s*/g,'').trim()||'—';}
 
 async function loadRefData() {
-  const snap=await getDocs(collection(db,'clients'));
-  clientMap={}; snap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c;});
+  try {
+    const snap=await getDocs(collection(db,'clients'));
+    clientMap={}; snap.forEach(d=>{const c=d.data();if(c.customerNo)clientMap[c.customerNo]=c;});
+  } catch(e) { console.warn('[loadRefData] clients failed:', e.message); clientMap={}; }
   try{const s=await getDoc(doc(db,'config','settings'));companySettings=s.exists()?s.data():{};}catch{}
 }
 
@@ -446,43 +448,55 @@ function updateMonthLabel() {
 
 async function generateReport() {
   updateMonthLabel();
-  $('report-area').innerHTML=`<div style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:var(--text-muted)">Loading collections for ${new Date(viewYear,viewMonth,1).toLocaleDateString('en-PH',{month:'long',year:'numeric'})}…</p></div>`;
-
-  // Month boundaries (local)
-  const monthStart = new Date(viewYear,viewMonth,1);
-  const monthEnd   = new Date(viewYear,viewMonth+1,0,23,59,59,999);
-
-  // Fetch ALL payments, filter by paymentDate in the month
-  const snap=await getDocs(query(collection(db,'payments'),orderBy('paymentDate','asc')));
-  let payments=[];
-  snap.forEach(d=>{
-    const p=d.data();
-    if(!COLLECTED.includes(p.status)) return;
-    const pd=toLocalDate(p.paymentDate||p.dueDate);
-    if(!pd||pd<monthStart||pd>monthEnd) return;
-    payments.push({id:d.id,...p,_date:pd});
-  });
-
-  // Build screen pills
-  const grandTotal=payments.reduce((s,p)=>s+Number(p.amount||0),0);
-  const collectors=new Set(payments.map(p=>p.receivedBy||'Unassigned'));
-  const modes=new Set(payments.map(p=>p.paymentMode||'—'));
-  $('sp-total').textContent=fmtCur(grandTotal);
-  $('sp-entries').textContent=payments.length;
-  $('sp-collectors').textContent=collectors.size;
-  $('sp-modes').textContent=[...modes].filter(Boolean).join(', ')||'—';
-
-  const companyName=companySettings.companyName||'Pestastic Pest Control Services';
-  const companyAddr=companySettings.companyAddress||'';
-  const companyPhone=companySettings.companyPhone||'';
   const monthLabel=new Date(viewYear,viewMonth,1).toLocaleDateString('en-PH',{month:'long',year:'numeric'});
-  const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  $('report-area').innerHTML=`<div style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:var(--text-muted)">Loading collections for ${monthLabel}…</p></div>`;
 
-  if(!payments.length) {
-    $('report-area').innerHTML=`
-      <div class="letterhead">
-        <div class="lh-logo">
-          <div class="lh-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
+  try {
+    // Month boundaries (local)
+    const monthStart = new Date(viewYear,viewMonth,1);
+    const monthEnd   = new Date(viewYear,viewMonth+1,0,23,59,59,999);
+
+    // Fetch ALL payments without orderBy so documents missing paymentDate are not excluded.
+    // Sort client-side instead.
+    const snap=await getDocs(collection(db,'payments'));
+    let payments=[];
+    snap.forEach(d=>{
+      const p=d.data();
+      if(!COLLECTED.includes(p.status)) return;
+      const pd=toLocalDate(p.paymentDate||p.dueDate);
+      if(!pd||pd<monthStart||pd>monthEnd) return;
+      payments.push({id:d.id,...p,_date:pd});
+    });
+    payments.sort((a,b)=>a._date-b._date);
+
+    // Build screen pills
+    const grandTotal=payments.reduce((s,p)=>s+Number(p.amount||0),0);
+    const collectorSet=new Set(payments.map(p=>p.receivedBy||'Unassigned'));
+    const modes=new Set(payments.map(p=>p.paymentMode||'—'));
+    $('sp-total').textContent=fmtCur(grandTotal);
+    $('sp-entries').textContent=payments.length;
+    $('sp-collectors').textContent=collectorSet.size;
+    $('sp-modes').textContent=[...modes].filter(m=>m&&m!=='—').join(', ')||'—';
+
+    const companyName=companySettings.companyName||'Pestastic Pest Control Services';
+    const companyAddr=companySettings.companyAddress||'';
+    const companyPhone=companySettings.companyPhone||'';
+    const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    // Group by collector — defined before the empty-state check so both branches can use them
+    const grouped={};
+    payments.forEach(p=>{
+      const key=p.receivedBy||'Unassigned';
+      if(!grouped[key])grouped[key]=[];
+      grouped[key].push(p);
+    });
+    const sortedCollectors=Object.keys(grouped).sort();
+
+    // Shared letterhead HTML
+    const letterheadHTML=`
+    <div class="letterhead">
+      <div class="lh-logo">
+        <div class="lh-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
         <div class="lh-company">
           <h1>${companyName}</h1>
           <p>${[companyAddr,companyPhone].filter(Boolean).join(' · ')}</p>
@@ -493,83 +507,107 @@ async function generateReport() {
         <div class="lh-doc-sub">${monthLabel}</div>
         <div class="lh-doc-meta">Generated: ${genTime}</div>
       </div>
-    </div>
-
-    <!-- GRAND TOTAL BANNER -->
-    <div class="grand-banner">
-      <div>
-        <div class="grand-banner-label">Grand Total Collected — ${monthLabel}</div>
-        <div class="grand-banner-amount">${fmtCur(grandTotal)}</div>
-        <div class="grand-banner-meta">${payments.length} transaction${payments.length===1?'':'s'} · ${sortedCollectors.length} collector${sortedCollectors.length===1?'':'s'}</div>
-      </div>
-      <div class="grand-stats">
-        ${sortedCollectors.map(c=>`<div class="grand-stat">
-          <div class="grand-stat-val">${fmtCur(grouped[c].reduce((s,p)=>s+Number(p.amount||0),0))}</div>
-          <div class="grand-stat-lbl">${c}</div>
-        </div>`).join('')}
-      </div>
     </div>`;
 
-  /* ── Collector sections ── */
-  sortedCollectors.forEach(collector=>{
-    const rows=grouped[collector].sort((a,b)=>a._date-b._date);
-    const subtotal=rows.reduce((s,p)=>s+Number(p.amount||0),0);
+    // No collections this month
+    if(!payments.length) {
+      $('report-area').innerHTML=`
+        ${letterheadHTML}
+        <div class="no-collections">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <h3>No collections recorded for ${monthLabel}</h3>
+          <p>There are no payments with a collected status (Received, Deposited, Remitted, or Collected) for this month.</p>
+        </div>`;
+      return;
+    }
 
-    html+=`
-    <div class="collector-section">
-      <div class="collector-header">
-        <span class="collector-name">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          ${collector}
-        </span>
-        <span class="collector-count">${rows.length} collection${rows.length===1?'':'s'}</span>
-        <span class="collector-subtotal">${fmtCur(subtotal)}</span>
-      </div>
-      <table class="coll-table">
-        <thead><tr>
-          <th>#</th>
-          <th>Date</th>
-          <th>OR No.</th>
-          <th>Client Name</th>
-          <th>Customer No</th>
-          <th>Mode</th>
-          <th>Status</th>
-          <th>Remarks</th>
-          <th class="right">Amount (₱)</th>
-        </tr></thead>
-        <tbody>`;
+    // Build full report HTML
+    let html=`
+      ${letterheadHTML}
+      <div class="grand-banner">
+        <div>
+          <div class="grand-banner-label">Grand Total Collected — ${monthLabel}</div>
+          <div class="grand-banner-amount">${fmtCur(grandTotal)}</div>
+          <div class="grand-banner-meta">${payments.length} transaction${payments.length===1?'':'s'} · ${sortedCollectors.length} collector${sortedCollectors.length===1?'':'s'}</div>
+        </div>
+        <div class="grand-stats">
+          ${sortedCollectors.map(c=>`<div class="grand-stat">
+            <div class="grand-stat-val">${fmtCur(grouped[c].reduce((s,p)=>s+Number(p.amount||0),0))}</div>
+            <div class="grand-stat-lbl">${c}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
 
-    rows.forEach((p,i)=>{
-      const clientName=cleanName(clientMap[p.customerNo]?.clientName||p.customerNo||'—');
-      html+=`<tr>
-        <td class="num">${i+1}</td>
-        <td class="nowrap">${fmtDate(p.paymentDate||p.dueDate)}</td>
-        <td class="mono">${p.orNumber||'—'}</td>
-        <td style="font-weight:600;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
-        <td class="mono">${p.customerNo||'—'}</td>
-        <td><span class="mode-tag">${p.paymentMode||'—'}</span></td>
-        <td style="font-size:11.5px;font-weight:600;color:#15803d">${p.status||'—'}</td>
-        <td class="remarks-cell">${p.remarks||'—'}</td>
-        <td class="right">${fmtCur(p.amount)}</td>
-      </tr>`;
+    /* ── Collector sections ── */
+    sortedCollectors.forEach(collector=>{
+      const rows=grouped[collector].slice().sort((a,b)=>a._date-b._date);
+      const subtotal=rows.reduce((s,p)=>s+Number(p.amount||0),0);
+
+      html+=`
+      <div class="collector-section">
+        <div class="collector-header">
+          <span class="collector-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            ${collector}
+          </span>
+          <span class="collector-count">${rows.length} collection${rows.length===1?'':'s'}</span>
+          <span class="collector-subtotal">${fmtCur(subtotal)}</span>
+        </div>
+        <table class="coll-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>OR No.</th>
+            <th>Client Name</th>
+            <th>Customer No</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th>Remarks</th>
+            <th class="right">Amount (₱)</th>
+          </tr></thead>
+          <tbody>`;
+
+      rows.forEach((p,i)=>{
+        const clientName=cleanName(clientMap[p.customerNo]?.clientName||p.customerNo||'—');
+        html+=`<tr>
+          <td class="num">${i+1}</td>
+          <td class="nowrap">${fmtDate(p.paymentDate||p.dueDate)}</td>
+          <td class="mono">${p.orNumber||'—'}</td>
+          <td style="font-weight:600;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
+          <td class="mono">${p.customerNo||'—'}</td>
+          <td><span class="mode-tag">${p.paymentMode||'—'}</span></td>
+          <td style="font-size:11.5px;font-weight:600;color:#15803d">${p.status||'—'}</td>
+          <td class="remarks-cell">${p.remarks||'—'}</td>
+          <td class="right">${fmtCur(p.amount)}</td>
+        </tr>`;
+      });
+
+      html+=`</tbody><tfoot><tr>
+        <td colspan="8" style="text-align:right;text-transform:uppercase;letter-spacing:.05em;font-size:11px">Subtotal — ${collector}</td>
+        <td class="right">${fmtCur(subtotal)}</td>
+      </tr></tfoot></table>
+      </div>`;
     });
 
-    html+=`</tbody><tfoot><tr>
-      <td colspan="8" style="text-align:right;text-transform:uppercase;letter-spacing:.05em;font-size:11px">Subtotal — ${collector}</td>
-      <td class="right">${fmtCur(subtotal)}</td>
-    </tr></tfoot></table>
-    </div>`;
-  });
+    /* ── Report Footer ── */
+    html+=`
+      <div class="report-footer">
+        <span class="confidential-note">Confidential</span>
+        <span>${companyName} — Monthly Collection Summary</span>
+        <span>Page 1 of 1 · Generated: ${genTime}</span>
+      </div>`;
 
-  /* ── Report Footer ── */
-  html+=`
-    <div class="report-footer">
-      <span class="confidential-note">Confidential</span>
-      <span>${companyName} — Monthly Collection Summary</span>
-      <span>Page 1 of 1 · Generated: ${genTime}</span>
-    </div>`;
+    $('report-area').innerHTML=html;
 
-  $('report-area').innerHTML=html;
+  } catch(err) {
+    console.error('[generateReport] Failed:', err);
+    $('report-area').innerHTML=`
+      <div class="report-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:hsl(0,84%,50%)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Failed to load report</h3>
+        <p>${err.message||'An unexpected error occurred. Check your connection and try again.'}</p>
+      </div>`;
+  }
 }
 
 /* ── Month nav ── */
@@ -665,7 +703,16 @@ onAuthStateChanged(auth, async user=>{
     updateMonthLabel();
     await loadRefData();
     await generateReport();
-  }catch(err){dismissLoadingScreen();console.error(err);}
+  }catch(err){
+    dismissLoadingScreen();
+    console.error('[auth] Startup error:', err);
+    if($('report-area'))$('report-area').innerHTML=`
+      <div class="report-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:hsl(0,84%,50%)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Failed to load report</h3>
+        <p>${err.message||'An unexpected error occurred.'}</p>
+      </div>`;
+  }
 });
 
 $('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
