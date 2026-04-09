@@ -1289,57 +1289,59 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       const today = todayStart();
       const mStart = filterStart();
       const mEnd   = filterEnd();
+      const COLLECTED_STATUSES = ['Received','Deposited','Remitted','Collected'];
 
-      // Contract value — sum of active contracts
+      // Contract value — sum of active contracts in period
       const contractsSnap = await getDocs(collection(db,'contracts'));
       let contractValue = 0;
       let activeCount = 0;
       contractsSnap.forEach(d => {
         const data = d.data();
-        const startDate = toDate(data.contractStartDate) || toDate(data.createdAt);
         const endDate = toDate(data.contractEndDate);
-        const isActive = data.status === 'active' || (endDate && endDate >= today);
-        // Contract overlaps with filtered period
-        const overlaps = isActive && (!startDate || startDate <= mEnd) && (!endDate || endDate >= mStart);
-        if (overlaps) {
+        if (data.status === 'active' || (endDate && endDate >= today)) {
           contractValue += Number(data.totalAmount) || 0;
           activeCount++;
         }
       });
       document.getElementById('val-contract-value').textContent = fmt(contractValue);
-      document.getElementById('sub-contract-val').textContent = `${activeCount} contracts in period`;
+      document.getElementById('sub-contract-val').textContent = `${activeCount} active contract${activeCount===1?'':'s'}`;
       doneLoading('kpi-contract-val');
 
-      // Payments
+      // Payments — filter by dueDate within selected period (matches payments page logic)
       const paymentsSnap = await getDocs(collection(db,'payments'));
+      let receivable       = 0;
       let totalCollected   = 0;
       let overduePayAmount = 0;
       let overduePayCount  = 0;
-      const collectedStatuses = ['Received','Deposited','Remitted','Collected'];
+      let paymentCount     = 0;
 
       paymentsSnap.forEach(d => {
         const data = d.data();
-        const payDate = toDate(data.paymentDate) || toDate(data.dueDate);
-        const inRange = payDate && payDate >= mStart && payDate <= mEnd;
+        const dueDate = toDate(data.dueDate);
+        // Filter by due date within selected range
+        const inRange = dueDate && dueDate >= mStart && dueDate <= mEnd;
+        if (!inRange) return;
 
-        if (collectedStatuses.includes(data.status) && inRange) {
+        paymentCount++;
+        receivable += Number(data.amount) || 0;
+
+        if (COLLECTED_STATUSES.includes(data.status)) {
           totalCollected += Number(data.amount) || 0;
         }
-        // Overdue: pending + past due date + within filtered range
-        const dueDate = toDate(data.dueDate);
-        if (data.status === 'Pending' && dueDate && dueDate < today && dueDate >= mStart && dueDate <= mEnd) {
+        // Overdue: Pending + due date in the past (matches isOverdue in payments page)
+        if (data.status === 'Pending' && dueDate && dueDate < today) {
           overduePayAmount += Number(data.amount) || 0;
           overduePayCount++;
         }
       });
 
-      const outstanding = Math.max(0, contractValue - totalCollected);
+      const outstanding = Math.max(0, receivable - totalCollected);
 
       document.getElementById('val-collected').textContent    = fmt(totalCollected);
-      document.getElementById('sub-collected').textContent    = `Collected in selected period`;
+      document.getElementById('sub-collected').textContent    = `of ${fmt(receivable)} receivable (${paymentCount} record${paymentCount===1?'':'s'})`;
 
       document.getElementById('val-outstanding').textContent  = fmt(outstanding);
-      document.getElementById('sub-outstanding').textContent  = `Contract value − collected`;
+      document.getElementById('sub-outstanding').textContent  = outstanding === 0 ? '✓ Fully collected' : 'Receivable − collected';
       document.getElementById('sub-outstanding').className    = `kpi-sub ${outstanding > 0 ? 'negative' : 'positive'}`;
 
       document.getElementById('val-overdue-pay').textContent  = fmt(overduePayAmount);
