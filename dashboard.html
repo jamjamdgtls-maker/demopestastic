@@ -1201,17 +1201,18 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
        'kpi-contract-val','kpi-collected','kpi-outstanding','kpi-overdue-pay'
       ].forEach(id => { const el=document.getElementById(id); if(el)el.classList.add('loading'); });
 
-      try {
-        await Promise.all([
-          loadOpsKPIs(),
-          loadFinancialKPIs(),
-          loadQuickStats(),
-          loadUpcomingTreatments(),
-          loadRecentActivity(),
-        ]);
-      } catch (err) {
-        console.error('Dashboard load error:', err);
-        showToast('Some data failed to load. Please refresh.', 'warning');
+      const results = await Promise.allSettled([
+        loadOpsKPIs(),
+        loadFinancialKPIs(),
+        loadQuickStats(),
+        loadUpcomingTreatments(),
+        loadRecentActivity(),
+      ]);
+
+      const failed = results.filter(result => result.status === 'rejected');
+      if (failed.length) {
+        failed.forEach((result, index) => console.error(`Dashboard section ${index + 1} failed:`, result.reason));
+        showToast('Some dashboard sections failed to load.', 'warning');
       }
 
       refreshBtn.classList.remove('spinning');
@@ -1304,7 +1305,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
         }
       });
       document.getElementById('val-contract-value').textContent = fmt(contractValue);
-      document.getElementById('sub-contract-val').textContent = `${activeCount} active contract${activeCount===1?'':'s'}`;
+      document.getElementById('sub-contract-value').textContent = `${activeCount} active contract${activeCount===1?'':'s'}`;
       doneLoading('kpi-contract-val');
 
       // Payments — filter by dueDate within selected period (matches payments page logic)
