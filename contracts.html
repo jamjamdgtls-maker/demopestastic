@@ -28,6 +28,26 @@
     button{font-family:var(--font);cursor:pointer}
     input,select,textarea{font-family:var(--font);font-size:14px}
 
+
+    /* ── MULTI-SELECT TAG PICKER ── */
+    .tag-picker{border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;background:white;min-height:42px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
+    .tag-picker:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+    .tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:3px 8px;border-radius:16px;font-size:12px;font-weight:600;white-space:nowrap;animation:tagIn .15s ease}
+    @keyframes tagIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    .tag-chip button{background:none;border:none;color:var(--green-text);cursor:pointer;padding:0;display:flex;align-items:center;opacity:.6;transition:opacity .15s}
+    .tag-chip button:hover{opacity:1}
+    .tag-chip button svg{width:12px;height:12px}
+    .tag-picker-input{border:none;outline:none;font-size:13px;font-family:var(--font);flex:1;min-width:120px;padding:2px 4px;background:transparent;color:var(--text)}
+    .tag-picker-input::placeholder{color:var(--text-muted)}
+    .tag-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:200px;overflow-y:auto;z-index:10;margin-top:4px;display:none}
+    .tag-dropdown.open{display:block}
+    .tag-dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
+    .tag-dropdown-item:hover{background:var(--bg-secondary)}
+    .tag-dropdown-item.selected{background:var(--green-bg);color:var(--green-text);font-weight:600}
+    .tag-dropdown-item .check-icon{width:14px;height:14px;color:var(--green)}
+    .tag-dropdown-empty{padding:10px 12px;font-size:12px;color:var(--text-muted);text-align:center}
+    .tag-picker-wrap{position:relative}
+
     /* ── AUTH ── */
     #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
     .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
@@ -412,13 +432,6 @@
         </select>
         <select class="filter-select" id="filter-type">
           <option value="">All Types</option>
-          <option>Termite Control</option>
-          <option>General Pest Control</option>
-          <option>Rodents Control</option>
-          <option>Crawling Insects Control</option>
-          <option>Pre-Construction Termite Control</option>
-          <option>Reticulation System</option>
-          <option>Flying Insects Control</option>
         </select>
         <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
@@ -750,6 +763,8 @@ let currentPage = 1; const PER_PAGE = 20;
 let teamsData = [], salesAgents = [];
 let activeDetailId = null, csvRows = [];
 let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
+let treatmentTypesList = [];
+let selectedContractTypes = [];
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -845,13 +860,15 @@ async function getNextContractNo() {
 }
 
 /* ── Generate treatment schedule ── */
-function generateTreatmentDates(startDate, freq, sessions, contractId, customerNo, contractType, team) {
+function generateTreatmentDates(startDate, freq, sessions, contractId, customerNo, contractType, team, contractTypes) {
   const entries = [];
   const interval = getIntervalMonths(freq);
   for(let i=0;i<sessions;i++) {
     const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
     entries.push({
       contractId, customerNo, contractType,
+      contractTypes: contractTypes || [],
+      treatmentType: (contractTypes && contractTypes.length) ? contractTypes[0] : '',
       treatmentNo: `TRT-${String(i+1).padStart(3,'0')}`,
       treatmentDate: d,
       status: 'scheduled',
@@ -940,10 +957,13 @@ async function loadAll() {
     if(cfg.exists()) {
       const s = cfg.data();
       salesAgents = s.salesAgents || [];
+      treatmentTypesList = s.treatmentTypes || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
       systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
       systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
     }
-  } catch { salesAgents=[]; }
+  } catch { salesAgents=[]; treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control']; }
+  // Populate filter-type dropdown from settings
+  $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
   // Also collect from clients
   const agentSet=new Set(salesAgents);
   cSnap.forEach(d=>{if(d.data().salesAgent)agentSet.add(d.data().salesAgent);});
@@ -997,7 +1017,7 @@ function applyFilters() {
     const clientName = (clientMap[c.customerNo]?.name||'').toLowerCase();
     const matchQ = !q||[c.customerNo,clientName,c.contractNumber,c.contractType].some(f=>(f||'').toLowerCase().includes(q));
     const matchS = !s||dispStatus===s;
-    const matchT = !type||c.contractType===type;
+    const matchT = !type || (c.contractType||'').includes(type) || (Array.isArray(c.contractTypes) && c.contractTypes.includes(type));
     return matchQ&&matchS&&matchT;
   });
   currentPage=1;
@@ -1043,7 +1063,7 @@ function renderTable() {
       <td><span class="contract-no-link" style="color:var(--primary);cursor:pointer;font-weight:600;font-family:monospace;font-size:12.5px" data-id="${c.id}">${contractNo}</span></td>
       <td class="mono">${c.customerNo||'—'}</td>
       <td style="font-weight:500">${clientName.replace(/\s*\(.*?\)\s*/g,'').trim()}</td>
-      <td style="font-size:12.5px">${c.contractType||'—'}</td>
+      <td style="font-size:12.5px">${Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes.map(t=>'<span style="display:inline-block;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;margin:1px 2px">'+t+'</span>').join('') : (c.contractType||'—')}</td>
       <td class="muted">${fmtDate(c.contractStartDate)}</td>
       <td class="muted">${fmtDate(c.contractEndDate)}</td>
       <td style="font-variant-numeric:tabular-nums">${fmtCurrency(c.totalAmount)}</td>
@@ -1171,6 +1191,122 @@ function updateEndDateAndPreview() {
 
 ['form-start-date','form-frequency','form-sessions','form-amount','form-warranty','form-downpayment-pct','form-payment-plan-type'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
 
+
+/* ── Multi-select Tag Picker for Treatment Types ── */
+function initTagPicker() {
+  const picker = $('form-contract-type-picker');
+  const input = $('form-contract-type-input');
+  const dropdown = $('form-contract-type-dropdown');
+  const hiddenField = $('form-contract-type');
+
+  function getSelected() { return [...selectedContractTypes]; }
+
+  function setSelected(arr) {
+    selectedContractTypes = [...arr];
+    hiddenField.value = selectedContractTypes.join(', ');
+    renderTags();
+  }
+
+  function renderTags() {
+    // Remove old tags
+    picker.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    // Add tags before the input
+    selectedContractTypes.forEach(type => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = type + '<button type="button" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+      chip.querySelector('button').addEventListener('click', e => {
+        e.stopPropagation();
+        selectedContractTypes = selectedContractTypes.filter(t => t !== type);
+        hiddenField.value = selectedContractTypes.join(', ');
+        renderTags();
+        renderDropdown();
+      });
+      picker.insertBefore(chip, input);
+    });
+  }
+
+  function renderDropdown() {
+    const q = input.value.trim().toLowerCase();
+    const available = treatmentTypesList.filter(t => !selectedContractTypes.includes(t));
+    const filtered = q ? available.filter(t => t.toLowerCase().includes(q)) : available;
+
+    let html = '';
+    filtered.forEach(t => {
+      html += '<div class="tag-dropdown-item" data-value="'+t+'">'+t+'</div>';
+    });
+
+    // If typing something not in list, offer to add it
+    if(q && !treatmentTypesList.some(t => t.toLowerCase() === q) && !selectedContractTypes.some(t => t.toLowerCase() === q)) {
+      html += '<div class="tag-dropdown-item" data-value="__new__" style="color:var(--primary);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add "'+input.value.trim()+'"</div>';
+    }
+
+    if(!html) html = '<div class="tag-dropdown-empty">No types available</div>';
+    dropdown.innerHTML = html;
+    dropdown.classList.add('open');
+
+    // Attach click handlers
+    dropdown.querySelectorAll('.tag-dropdown-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const val = item.dataset.value;
+        if(val === '__new__') {
+          const newType = input.value.trim();
+          if(newType) {
+            selectedContractTypes.push(newType);
+            hiddenField.value = selectedContractTypes.join(', ');
+            renderTags();
+          }
+        } else {
+          selectedContractTypes.push(val);
+          hiddenField.value = selectedContractTypes.join(', ');
+          renderTags();
+        }
+        input.value = '';
+        renderDropdown();
+      });
+    });
+  }
+
+  picker.addEventListener('click', () => { input.focus(); renderDropdown(); });
+  input.addEventListener('focus', () => renderDropdown());
+  input.addEventListener('input', () => renderDropdown());
+  input.addEventListener('blur', () => { setTimeout(() => dropdown.classList.remove('open'), 150); });
+
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter') {
+      e.preventDefault();
+      const val = input.value.trim();
+      if(val && !selectedContractTypes.includes(val)) {
+        selectedContractTypes.push(val);
+        hiddenField.value = selectedContractTypes.join(', ');
+        renderTags();
+        input.value = '';
+        renderDropdown();
+      }
+    }
+    if(e.key === 'Backspace' && !input.value && selectedContractTypes.length) {
+      selectedContractTypes.pop();
+      hiddenField.value = selectedContractTypes.join(', ');
+      renderTags();
+      renderDropdown();
+    }
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', e => {
+    if(!picker.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  return { getSelected, setSelected, renderTags, renderDropdown };
+}
+
+let tagPicker = null;
+// Initialize after DOM is ready (called at bottom or after loadAll)
+setTimeout(() => { tagPicker = initTagPicker(); }, 100);
+
 /* ── Customer No hint ── */
 $('form-customer-no').addEventListener('input',()=>{
   const no=$('form-customer-no').value.trim();
@@ -1186,6 +1322,8 @@ $('btn-new-contract').addEventListener('click', async ()=>{
   $('save-btn-text').textContent='Save & Generate Schedule';
   $('form-contract-id').value='';
   $('form-old-contract-id').value='';
+  selectedContractTypes = [];
+  if(tagPicker) tagPicker.renderTags();
   $('form-contract-no').value = 'Auto-generated';
   if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
   openModal('contract-form-modal');
@@ -1216,7 +1354,11 @@ async function openRenewalMode(params) {
     const client = clientMap[params.get('customerNo')];
     $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
   }
-  if(params.get('contractType'))   $('form-contract-type').value   = params.get('contractType');
+  if(params.get('contractType')) {
+    const types = params.get('contractType').split(',').map(s=>s.trim()).filter(Boolean);
+    selectedContractTypes = [...types];
+    if(tagPicker) tagPicker.renderTags();
+  }
   if(params.get('method'))         $('form-treatment-method').value = params.get('method');
   if(params.get('frequency'))      $('form-frequency').value        = params.get('frequency');
   if(params.get('sessions'))       $('form-sessions').value         = params.get('sessions');
@@ -1297,7 +1439,11 @@ async function openInspectionMode(params) {
   }
 
   // Pre-fill contract details from inspection
-  if(params.get('contractType')) $('form-contract-type').value = params.get('contractType');
+  if(params.get('contractType')) {
+    const types = params.get('contractType').split(',').map(s=>s.trim()).filter(Boolean);
+    selectedContractTypes = [...types];
+    if(tagPicker) tagPicker.renderTags();
+  }
   if(params.get('assignedTeam')) $('form-team').value          = params.get('assignedTeam');
   if(params.get('salesAgent'))   $('form-sales-agent').value   = params.get('salesAgent');
 
@@ -1334,7 +1480,10 @@ function openEditModal(id) {
   const client=clientMap[c.customerNo];
   $('client-name-hint').textContent=client?`✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}`:'';
   $('form-contract-no').value=c.contractNumber||'';
-  $('form-contract-type').value=c.contractType||'';
+  // Restore treatment types - support both array and comma-separated string
+  const savedTypes = Array.isArray(c.contractTypes) ? c.contractTypes : (c.contractType||'').split(',').map(s=>s.trim()).filter(Boolean);
+  selectedContractTypes = [...savedTypes];
+  if(tagPicker) tagPicker.renderTags();
   $('form-treatment-method').value=c.treatmentMethod||'';
   $('form-frequency').value=c.frequency||'';
   $('form-sessions').value=c.noOfSessions||'';
@@ -1363,6 +1512,8 @@ function clearForm() {
   ['form-contract-type','form-frequency','form-team','form-sales-agent','form-comm-source','form-payment-plan-type'].forEach(id=>{$(id).value='';});
   $('form-status').value='active';
   $('client-name-hint').textContent='';
+  selectedContractTypes = [];
+  if(tagPicker) tagPicker.renderTags();
   $('schedule-preview').style.display='none';
   $('renewal-banner').style.display='none';
   // Show default hint
@@ -1372,7 +1523,7 @@ function clearForm() {
 /* ── Save Contract ── */
 $('btn-save-contract').addEventListener('click', async ()=>{
   const customerNo   = $('form-customer-no').value.trim();
-  const contractType = $('form-contract-type').value;
+  const contractType = selectedContractTypes.length ? selectedContractTypes.join(', ') : '';
   const freq         = $('form-frequency').value;
   const sessions     = parseInt($('form-sessions').value)||0;
   const startStr     = $('form-start-date').value;
@@ -1397,7 +1548,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
   const planType       = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
 
   const data = {
-    customerNo, contractType,
+    customerNo, contractType, contractTypes: [...selectedContractTypes],
     contractNumber: '',
     treatmentMethod: $('form-treatment-method').value.trim(),
     frequency: freq,
@@ -1441,7 +1592,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
       const ref=await addDoc(collection(db,'contracts'),data);
 
       // Generate treatment + payment schedules
-      const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value);
+      const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value,[...selectedContractTypes]);
       const payments=generatePaymentSchedule(startDate,amount,freq,sessions,ref.id,customerNo,dpPct,planType);
 
       const batch=writeBatch(db);
@@ -1512,7 +1663,7 @@ async function openDetailModal(id) {
     <div class="detail-grid">
       ${[
         ['Contract No.',contractNo],['Client Name',clientName],
-        ['Customer No.',c.customerNo],['Contract Type',c.contractType],
+        ['Customer No.',c.customerNo],['Treatment Type(s)', Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes.join(', ') : (c.contractType||'—')],
         ['Treatment Method',c.treatmentMethod],['Frequency',c.frequency],
         ['Sessions',c.noOfSessions],['Warranty Period',c.warrantyPeriod?c.warrantyPeriod+' months':'—'],
         ['Start Date',fmtDate(c.contractStartDate)],['End Date',fmtDate(c.contractEndDate)],
@@ -1736,7 +1887,7 @@ $('btn-confirm-import').addEventListener('click', async()=>{
     const endDate  =parseFlexDate(g('contractEndDate')||g('contractenddate'));
     const ref=doc(collection(db,'contracts'));
     batch.set(ref,{
-      customerNo, contractType,
+      customerNo, contractType, contractTypes: [...selectedContractTypes],
       contractNumber: g('contractNumber')||g('contractnumber')||'',
       treatmentMethod:g('treatmentMethod')||'',
       frequency:      g('frequency')||'',

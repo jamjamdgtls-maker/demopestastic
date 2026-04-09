@@ -230,6 +230,12 @@
     .toast-close svg{width:14px;height:14px}
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
+
+    /* TREATMENT TYPE RECONFIGURE */
+    .inline-type-select{border:1px solid transparent;background:var(--green-bg);color:var(--green-text);font-size:11.5px;font-weight:600;cursor:pointer;border-radius:14px;padding:3px 22px 3px 8px;outline:none;font-family:var(--font);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2316a34a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;background-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s,box-shadow .15s}
+    .inline-type-select:hover{border-color:var(--primary)}
+    .inline-type-select:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(34,197,94,.15)}
+
     /* RESCHEDULE HISTORY */
     .reschedule-history{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-top:12px;font-size:12.5px}
     .reschedule-history-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px}
@@ -999,7 +1005,13 @@ function renderTable() {
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
       <td style="font-size:12.5px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${contractType}</td>
-      <td style="font-size:12px">${treatmentType}</td>
+      <td style="font-size:12px"><select class="inline-type-select" data-id="${t.id}" data-current-type="${treatmentType}" title="Click to change treatment type">
+        ${(() => {
+          const contractTypes = t.contractTypes || [];
+          const allTypes = [...new Set([...treatmentTypesList, ...contractTypes, ...(treatmentType && treatmentType !== '—' ? [treatmentType] : [])])];
+          return '<option value="">—</option>' + allTypes.map(tt => '<option value="'+tt+'" '+(tt === treatmentType ? 'selected' : '')+'>'+tt+'</option>').join('');
+        })()}
+      </select></td>
       <td style="white-space:nowrap">${fmtDate(t.treatmentDate)}${timeStr}</td>
       <td class="muted" style="font-size:12.5px">${t.assignedTeam || '—'}</td>
       <td class="muted" style="font-size:12.5px">${t.technician   || '—'}</td>
@@ -1052,6 +1064,7 @@ function contextBanner(t) {
     <div class="cb-label">Customer No.</div>  <div class="cb-val">${t.customerNo || '—'}</div>
     <div class="cb-label">Treatment #</div>   <div class="cb-val">${t.treatmentNo || '—'}</div>
     <div class="cb-label">Contract Type</div> <div class="cb-val">${contractType}</div>
+    <div class="cb-label">Treatment Type</div><div class="cb-val">${t.treatmentType || '—'}</div>
     <div class="cb-label">Scheduled</div>     <div class="cb-val">${fmtDate(t.treatmentDate)}${timeStr}</div>
     <div class="cb-label">Team</div>          <div class="cb-val">${t.assignedTeam || '—'}</div>
     ${addr ? `<div class="cb-label" style="grid-column:1/-1;margin-top:4px">Address</div><div class="cb-val" style="grid-column:1/-1;font-size:12px;color:var(--text-secondary)">${addr}</div>` : ''}`;
@@ -1357,6 +1370,34 @@ $('treatments-tbody').addEventListener('change', async e => {
   }
 });
 
+
+/* ══════════════════════════════════
+   INLINE TREATMENT TYPE EDIT
+══════════════════════════════════ */
+$('treatments-tbody').addEventListener('change', async e => {
+  const sel = e.target.closest('.inline-type-select');
+  if (!sel) return;
+  const id      = sel.dataset.id;
+  const newType = sel.value;
+  const oldType = sel.dataset.currentType;
+  if (!id || newType === oldType) return;
+
+  try {
+    await updateDoc(doc(db, 'treatments', id), {
+      treatmentType: newType,
+      updatedAt:     serverTimestamp()
+    });
+    const t = allTreatments.find(x => x.id === id);
+    if (t) t.treatmentType = newType;
+    sel.dataset.currentType = newType;
+    await logAction('updated', 'treatment', id, `Treatment type changed from "${oldType}" to "${newType}"`);
+    showToast(`Treatment type updated to "${newType || '—'}".`);
+  } catch (err) {
+    showToast('Failed to update type: ' + err.message, 'error');
+    sel.value = oldType; // revert
+  }
+});
+
 /* ══════════════════════════════════
    NEW TREATMENT
 ══════════════════════════════════ */
@@ -1395,11 +1436,35 @@ $('btn-new-treatment').addEventListener('click', () => {
   openModal('new-treatment-modal');
 });
 
-// Customer lookup hint
+// Customer lookup hint + populate contract types
 $('nt-customer-no').addEventListener('input', () => {
   const val = $('nt-customer-no').value.trim();
   const client = clientMap[val];
   $('nt-client-hint').textContent = client ? `✓ ${client.name}${client.address ? ' · ' + client.address : ''}` : '';
+
+  // Find contracts for this customer and gather their treatment types
+  if(client && val) {
+    const customerContracts = Object.values(contractMap).filter(c => c.customerNo === val);
+    const contractTypeSet = new Set();
+    customerContracts.forEach(c => {
+      if(Array.isArray(c.contractTypes)) c.contractTypes.forEach(t => contractTypeSet.add(t));
+      else if(c.contractType) c.contractType.split(',').map(s=>s.trim()).filter(Boolean).forEach(t => contractTypeSet.add(t));
+    });
+    // Build dropdown: contract types first (highlighted), then remaining from settings
+    const contractSpecific = [...contractTypeSet];
+    const remaining = treatmentTypesList.filter(t => !contractTypeSet.has(t));
+    let opts = '<option value="">— Select Type —</option>';
+    if(contractSpecific.length) {
+      opts += '<optgroup label="From Contract">' + contractSpecific.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
+    }
+    if(remaining.length) {
+      opts += '<optgroup label="All Types">' + remaining.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
+    }
+    $('nt-treatment-type').innerHTML = opts;
+  } else {
+    $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
+      treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
+  }
 });
 
 // Team change updates technician dropdown in new treatment modal
