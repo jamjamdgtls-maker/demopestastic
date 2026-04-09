@@ -88,6 +88,7 @@
     .topbar-spacer{flex:1}
     .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;position:relative}
     .topbar-btn svg{width:16px;height:16px}
+    .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
     .page-content{flex:1;overflow-y:auto;padding:24px}
     .page-content::-webkit-scrollbar{width:6px}
     .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -229,6 +230,18 @@
     .toast-close svg{width:14px;height:14px}
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
+
+    /* ── RESCHEDULE HISTORY ── */
+    .reschedule-history{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-top:12px;font-size:12.5px}
+    .reschedule-history-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px}
+    .reschedule-history-item{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border)}
+    .reschedule-history-item:last-child{border-bottom:none}
+    .reschedule-history-item .rh-dot{width:7px;height:7px;background:var(--amber);border-radius:50%;flex-shrink:0;margin-top:5px}
+    .reschedule-history-item .rh-text{font-size:12px;color:var(--text-secondary)}
+    /* ── DRIVE LINK SECTION ── */
+    .drive-link-section{background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:12px 14px;margin-top:4px}
+    .drive-link-section label{font-size:12px;font-weight:700;color:var(--blue-text);display:block;margin-bottom:6px}
+
     /* RESPONSIVE */
     @media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:1024px){
@@ -304,7 +317,7 @@
       <div class="nav-section-label">Monitoring</div>
       <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="badge-notifications" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
             <div class="nav-section-label">Reports</div>
       <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
@@ -385,6 +398,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" class="search-input" id="search-input" placeholder="Search client name, customer #, team…" />
         </div>
+        <select class="filter-select" id="filter-type">
+          <option value="">All Types</option>
+        </select>
         <select class="filter-select" id="filter-status">
           <option value="">All Status</option>
           <option value="scheduled">Scheduled</option>
@@ -413,7 +429,7 @@
                 <th>Treatment #</th>
                 <th>Client Name</th>
                 <th>Contract Type</th>
-                <th>Date</th>
+                <th>Date / Time</th>
                 <th>Team</th>
                 <th>Technician</th>
                 <th>Status</th>
@@ -464,8 +480,17 @@
         <input type="text" class="form-input" id="complete-chemicals" placeholder="e.g. Biflex, Termidor, Premise 200SC" />
       </div>
       <div class="form-group">
-        <label class="form-label">Completion Notes</label>
-        <textarea class="form-textarea" id="complete-notes" placeholder="Any observations, recommendations…"></textarea>
+        <label class="form-label">Completion Notes / Observations</label>
+        <textarea class="form-textarea" id="complete-notes" placeholder="Pest observations, areas treated, recommendations…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Internal Remarks</label>
+        <textarea class="form-textarea" id="complete-remarks" style="min-height:56px" placeholder="Internal notes for team use (not shared with client)…"></textarea>
+      </div>
+      <div class="drive-link-section">
+        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report / Attachment (optional)</label>
+        <input type="url" class="form-input" id="complete-drive-url" placeholder="https://drive.google.com/… or any file link" />
+        <div class="form-hint">Paste a Google Drive, Dropbox, or any URL link to the service report document.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -544,12 +569,25 @@
       <div class="context-banner" id="reschedule-context"></div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Original Date</label>
+          <label class="form-label">Current Date</label>
           <input type="date" class="form-input" id="reschedule-original-date" readonly />
         </div>
         <div class="form-group">
           <label class="form-label">New Date <span class="req">*</span></label>
           <input type="date" class="form-input" id="reschedule-new-date" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">New Time Slot</label>
+          <input type="time" class="form-input" id="reschedule-new-time" />
+          <div class="form-hint">Leave blank to keep existing time</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reassign Team</label>
+          <select class="form-select" id="reschedule-new-team">
+            <option value="">— Keep current team —</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
@@ -572,6 +610,7 @@
         <label class="form-label">Additional Notes</label>
         <textarea class="form-textarea" id="reschedule-notes" placeholder="Any additional notes…"></textarea>
       </div>
+      <div id="reschedule-history-wrap" style="display:none"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" data-close="reschedule-modal">Cancel</button>
@@ -617,6 +656,9 @@ let allTreatments = [], filteredTreatments = [];
 let clientMap = {}, contractMap = {};
 let currentPage = 1;
 const PER_PAGE = 20;
+let treatmentTypesList = [];
+let treatmentStatusesList = [];
+const SYSTEM_STATUSES = ['scheduled','completed','cancelled','rescheduled'];
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -659,8 +701,10 @@ function dispStatus(t) {
 }
 
 function statusBadge(s) {
-  const m={completed:'green',scheduled:'blue',overdue:'red',rescheduled:'amber',cancelled:'gray'};
-  return `<span class="badge badge-${m[s]||'gray'}">${s}</span>`;
+  const m={completed:'green',scheduled:'blue',overdue:'red',rescheduled:'amber',cancelled:'gray',
+    confirmed:'green','for confirmation':'amber','awaiting customer confirmation':'amber','pencil booking':'purple'};
+  const key=(s||'').toLowerCase();
+  return `<span class="badge badge-${m[key]||'purple'}">${s||'—'}</span>`;
 }
 
 /* ── Audit log ── */
@@ -678,29 +722,68 @@ async function logAction(action,entityType,entityId,description){
 
 /* ── Load data ── */
 async function loadAll() {
-  // Clients
+  // Clients — store full data including address fields
   const cSnap=await getDocs(collection(db,'clients'));
   clientMap={};
-  cSnap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c.clientName;});
+  cSnap.forEach(d=>{
+    const c=d.data();
+    const addrParts=[c.addressLine1||c.address||'',c.barangay||'',c.city||'',c.province||'',c.postalCode||''].filter(Boolean);
+    clientMap[c.customerNo]={
+      name: c.clientName||'',
+      address: addrParts.join(', '),
+      city: c.city||'',
+      province: c.province||'',
+    };
+  });
 
   // Contracts
   const coSnap=await getDocs(collection(db,'contracts'));
   contractMap={};
   coSnap.forEach(d=>{contractMap[d.id]=d.data();});
 
-  // Teams for filter
+  // Settings — treatment types + statuses
+  try {
+    const cfgSnap=await getDoc(doc(db,'config','settings'));
+    if(cfgSnap.exists()){
+      const s=cfgSnap.data();
+      treatmentTypesList=s.treatmentTypes||[];
+      const customStatuses=(s.treatmentStatuses||[]).filter(st=>!SYSTEM_STATUSES.includes(st.toLowerCase()));
+      treatmentStatusesList=customStatuses;
+    }
+  } catch{}
+
+  // Populate treatment type filter
+  $('filter-type').innerHTML='<option value="">All Types</option>'+
+    treatmentTypesList.map(t=>`<option value="${t}">${t}</option>`).join('');
+
+  // Populate status filter — system + custom booking statuses
+  $('filter-status').innerHTML=`<option value="">All Status</option>
+    <option value="scheduled">Scheduled</option>
+    <option value="overdue">Overdue</option>
+    <option value="completed">Completed</option>
+    <option value="rescheduled">Rescheduled</option>
+    <option value="cancelled">Cancelled</option>
+    ${treatmentStatusesList.map(s=>`<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
+
+  // Teams for filter + reschedule modal dropdown
   const tSnap=await getDocs(collection(db,'teams'));
   const teamNames=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
   $('filter-team').innerHTML='<option value="">All Teams</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
+  $('reschedule-new-team').innerHTML='<option value="">— Keep current team —</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
 
-  // Treatments
-  const trSnap=await getDocs(query(collection(db,'treatments'),orderBy('treatmentDate','desc')));
+  // Treatments — sorted EARLIEST → LATEST (asc), then by treatmentTime within same date
+  const trSnap=await getDocs(query(collection(db,'treatments'),orderBy('treatmentDate','asc')));
   allTreatments=trSnap.docs.map(d=>({id:d.id,...d.data()}));
+  allTreatments.sort((a,b)=>{
+    const da=toDate(a.treatmentDate), db2=toDate(b.treatmentDate);
+    const diff=(da?.getTime()||0)-(db2?.getTime()||0);
+    if(diff!==0) return diff;
+    return (a.treatmentTime||'').localeCompare(b.treatmentTime||'');
+  });
 
   computeSummary();
   applyFilters();
 }
-
 function computeSummary() {
   let total=0,completed=0,scheduled=0,overdue=0,cancelled=0;
   allTreatments.forEach(t=>{
@@ -723,15 +806,17 @@ function applyFilters() {
   const q       = $('search-input').value.toLowerCase().trim();
   const status  = $('filter-status').value;
   const team    = $('filter-team').value;
+  const type    = $('filter-type').value;
   const dateFrom= $('filter-date-from').value;
   const dateTo  = $('filter-date-to').value;
 
   filteredTreatments=allTreatments.filter(t=>{
     const ds=dispStatus(t);
-    const clientName=(clientMap[t.customerNo]||'').toLowerCase();
+    const clientName=(clientMap[t.customerNo]?.name||'').toLowerCase();
     const matchQ=!q||[t.treatmentNo,clientName,t.customerNo,t.assignedTeam,t.contractType].some(f=>(f||'').toLowerCase().includes(q));
-    const matchS=!status||ds===status;
+    const matchS=!status||ds===status||t.status===status;
     const matchT=!team||t.assignedTeam===team;
+    const matchType=!type||t.contractType===type;
     let matchD=true;
     if(dateFrom||dateTo){
       const td=toDate(t.treatmentDate);
@@ -740,18 +825,17 @@ function applyFilters() {
         if(dateTo){const to=new Date(dateTo);to.setHours(23,59,59,999);if(td>to)matchD=false;}
       } else matchD=false;
     }
-    return matchQ&&matchS&&matchT&&matchD;
+    return matchQ&&matchS&&matchT&&matchType&&matchD;
   });
   currentPage=1; renderTable();
 }
-
-['search-input','filter-status','filter-team','filter-date-from','filter-date-to'].forEach(id=>{
+['search-input','filter-status','filter-team','filter-type','filter-date-from','filter-date-to'].forEach(id=>{
   $(id).addEventListener('input',applyFilters);
   $(id).addEventListener('change',applyFilters);
 });
 
 window.filterByStatus=function(s){$('filter-status').value=s;applyFilters();};
-window.clearAllFilters=function(){$('search-input').value='';$('filter-status').value='';$('filter-team').value='';$('filter-date-from').value='';$('filter-date-to').value='';applyFilters();};
+window.clearAllFilters=function(){$('search-input').value='';$('filter-status').value='';$('filter-team').value='';$('filter-type').value='';$('filter-date-from').value='';$('filter-date-to').value='';applyFilters();};
 $('btn-clear-filters').addEventListener('click',clearAllFilters);
 
 
@@ -782,19 +866,21 @@ function renderTable() {
   $('treatments-tbody').innerHTML=page.map(t=>{
     const ds=dispStatus(t);
     const isOverdue=ds==='overdue';
-    const clientName=cleanName(clientMap[t.customerNo]||t.customerNo||'—');
+    const clientName=cleanName(clientMap[t.customerNo]?.name||t.customerNo||'—');
     const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
-
-    // Action buttons based on status
-    const canComplete = ds==='scheduled'||ds==='overdue'||ds==='rescheduled';
-    const canCancel   = ds==='scheduled'||ds==='overdue'||ds==='rescheduled';
-    const canReschedule=ds==='scheduled'||ds==='overdue';
+    const timeStr=t.treatmentTime?`<br><span style="font-size:11.5px;color:var(--text-muted)">${t.treatmentTime}</span>`:'';
+    const reschedCount=(t.rescheduleHistory||[]).length;
+    const reschedBadge=reschedCount>0?`<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);border:1px solid #fcd34d;border-radius:10px;padding:1px 5px;margin-left:4px" title="${reschedCount} reschedule(s)">↺${reschedCount}</span>`:'';
+    const customStatusKeys=treatmentStatusesList.map(s=>s.toLowerCase());
+    const canComplete = ['scheduled','overdue','rescheduled'].includes(ds)||customStatusKeys.includes(ds);
+    const canCancel   = ['scheduled','overdue','rescheduled'].includes(ds)||customStatusKeys.includes(ds);
+    const canReschedule=['scheduled','overdue'].includes(ds)||customStatusKeys.includes(ds);
 
     return `<tr class="${isOverdue?'overdue-row':''}">
-      <td class="mono">${t.treatmentNo||'—'}</td>
+      <td class="mono">${t.treatmentNo||'—'}${reschedBadge}</td>
       <td style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
       <td style="font-size:12.5px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${contractType}</td>
-      <td style="white-space:nowrap">${fmtDate(t.treatmentDate)}</td>
+      <td style="white-space:nowrap">${fmtDate(t.treatmentDate)}${timeStr}</td>
       <td class="muted">${t.assignedTeam||'—'}</td>
       <td class="muted">${t.technician||'—'}</td>
       <td>${statusBadge(ds)}</td>
@@ -809,7 +895,10 @@ function renderTable() {
           ${canCancel?`<button class="btn btn-sm btn-danger btn-cancel" data-id="${t.id}" title="Cancel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>`:''}
-          ${ds==='completed'?`<span style="font-size:12px;color:var(--green-text);font-weight:600">✓ Done</span>`:''}
+          ${t.serviceReportUrl?`<a href="${t.serviceReportUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary" title="View service report" style="padding:5px 8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </a>`:''}
+          ${ds==='completed'&&!t.serviceReportUrl?`<span style="font-size:12px;color:var(--green-text);font-weight:600">✓ Done</span>`:''}
           ${ds==='cancelled'?`<span style="font-size:12px;color:var(--gray-text)">Cancelled</span>`:''}
         </div>
       </td>
@@ -828,25 +917,33 @@ function renderTable() {
 
 /* ── Context banner helper ── */
 function contextBanner(t) {
-  const clientName=cleanName(clientMap[t.customerNo]||t.customerNo||'—');
+  const client=clientMap[t.customerNo]||{};
+  const clientName=cleanName(client.name||t.customerNo||'—');
   const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
+  const addr=client.address||'';
+  const timeStr=t.treatmentTime?` at ${t.treatmentTime}`:'';
   return `
     <div class="cb-label">Client</div><div class="cb-val">${clientName}</div>
+    <div class="cb-label">Customer No.</div><div class="cb-val">${t.customerNo||'—'}</div>
     <div class="cb-label">Treatment #</div><div class="cb-val">${t.treatmentNo||'—'}</div>
     <div class="cb-label">Contract Type</div><div class="cb-val">${contractType}</div>
-    <div class="cb-label">Scheduled Date</div><div class="cb-val">${fmtDate(t.treatmentDate)}</div>`;
+    <div class="cb-label">Scheduled</div><div class="cb-val">${fmtDate(t.treatmentDate)}${timeStr}</div>
+    <div class="cb-label">Team</div><div class="cb-val">${t.assignedTeam||'—'}</div>
+    ${addr?`<div class="cb-label" style="grid-column:1/-1;margin-top:4px">Address</div><div class="cb-val" style="grid-column:1/-1;font-size:12px;color:var(--text-secondary)">${addr}</div>`:''}`;
 }
 
 /* ────────── COMPLETE ────────── */
 function openCompleteModal(id) {
   const t=allTreatments.find(x=>x.id===id); if(!t) return;
   $('complete-id').value=id;
-  $('complete-subtitle').textContent=`${cleanName(clientMap[t.customerNo])} · ${t.treatmentNo||''}`;
+  $('complete-subtitle').textContent=`${cleanName(clientMap[t.customerNo]?.name||'')} · ${t.treatmentNo||''}`;
   $('complete-context').innerHTML=contextBanner(t);
   $('complete-date').value=toInputDate(new Date());
   $('complete-technician').value=t.technician||'';
   $('complete-chemicals').value=t.chemicalsUsed||'';
-  $('complete-notes').value='';
+  $('complete-notes').value=t.notes||'';
+  $('complete-remarks').value=t.remarks||'';
+  $('complete-drive-url').value=t.serviceReportUrl||'';
   $('complete-btn-text').textContent='Mark Completed';
   openModal('complete-modal');
 }
@@ -861,12 +958,15 @@ $('btn-confirm-complete').addEventListener('click', async ()=>{
   const btn=$('btn-confirm-complete'); btn.disabled=true; $('complete-btn-text').textContent='Saving…';
   const [y,m,d]=date.split('-').map(Number);
   try {
+    const driveUrl=$('complete-drive-url').value.trim();
     const update={
       status:'completed',
       treatmentDate: new Date(y,m-1,d),
       technician: tech,
       chemicalsUsed: $('complete-chemicals').value.trim(),
       notes: $('complete-notes').value.trim(),
+      remarks: $('complete-remarks').value.trim(),
+      ...(driveUrl ? {serviceReportUrl: driveUrl} : {}),
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -885,7 +985,7 @@ $('btn-confirm-complete').addEventListener('click', async ()=>{
 function openCancelModal(id) {
   const t=allTreatments.find(x=>x.id===id); if(!t) return;
   $('cancel-id').value=id;
-  $('cancel-subtitle').textContent=`${cleanName(clientMap[t.customerNo])} · ${t.treatmentNo||''}`;
+  $('cancel-subtitle').textContent=`${cleanName(clientMap[t.customerNo]?.name||'')} · ${t.treatmentNo||''}`;
   $('cancel-context').innerHTML=contextBanner(t);
   $('cancel-reason-select').value=''; $('cancel-reason-other').value=''; $('cancel-notes').value='';
   $('cancel-other-wrap').style.display='none';
@@ -927,13 +1027,36 @@ $('btn-confirm-cancel').addEventListener('click', async ()=>{
 function openRescheduleModal(id) {
   const t=allTreatments.find(x=>x.id===id); if(!t) return;
   $('reschedule-id').value=id;
-  $('reschedule-subtitle').textContent=`${cleanName(clientMap[t.customerNo])} · ${t.treatmentNo||''}`;
+  $('reschedule-subtitle').textContent=`${cleanName(clientMap[t.customerNo]?.name||'')} · ${t.treatmentNo||''}`;
   $('reschedule-context').innerHTML=contextBanner(t);
   $('reschedule-original-date').value=toInputDate(t.treatmentDate);
   $('reschedule-new-date').value='';
+  $('reschedule-new-time').value=t.treatmentTime||'';
+  $('reschedule-new-team').value='';
   $('reschedule-reason-select').value=''; $('reschedule-reason-other').value=''; $('reschedule-notes').value='';
   $('reschedule-other-wrap').style.display='none';
   $('reschedule-btn-text').textContent='Reschedule';
+
+  // Show reschedule history if any
+  const history=t.rescheduleHistory||[];
+  const histWrap=$('reschedule-history-wrap');
+  if(history.length>0 && histWrap){
+    histWrap.style.display='';
+    histWrap.innerHTML=`<div class="reschedule-history">
+      <div class="reschedule-history-title">Reschedule History (${history.length})</div>
+      ${history.map(h=>`<div class="reschedule-history-item">
+        <div class="rh-dot"></div>
+        <div class="rh-text">
+          <strong>${h.fromFormatted||'?'} → ${h.toFormatted||'?'}</strong>
+          <span style="color:var(--text-muted)"> · ${h.reason||''}${h.notes?' · '+h.notes:''}</span>
+          ${h.by?`<span style="display:block;font-size:11px;color:var(--text-muted);margin-top:2px">By ${h.by}${h.at?' · '+new Date(h.at).toLocaleDateString('en-PH'):''}</span>`:''}
+        </div>
+      </div>`).join('')}
+    </div>`;
+  } else if(histWrap) {
+    histWrap.style.display='none';
+  }
+
   openModal('reschedule-modal');
 }
 
@@ -951,178 +1074,41 @@ $('btn-confirm-reschedule').addEventListener('click', async ()=>{
 
   const btn=$('btn-confirm-reschedule'); btn.disabled=true; $('reschedule-btn-text').textContent='Saving…';
   const [y,m,d]=newDateStr.split('-').map(Number);
+  const newTime=$('reschedule-new-time').value;
+  const newTeam=$('reschedule-new-team').value;
+
   try {
     const t=allTreatments.find(x=>x.id===id);
+    // Build reschedule history entry
+    const historyEntry={
+      from: t?.treatmentDate||null,
+      fromFormatted: fmtDate(t?.treatmentDate),
+      to: new Date(y,m-1,d),
+      toFormatted: new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}),
+      reason,
+      notes: $('reschedule-notes').value.trim(),
+      by: currentUser?.email||'',
+      at: new Date().toISOString()
+    };
+    const prevHistory=t?.rescheduleHistory||[];
     const update={
       status:'rescheduled',
-      originalDate: t?.treatmentDate||null,
       treatmentDate: new Date(y,m-1,d),
       rescheduleReason: reason,
-      notes: $('reschedule-notes').value.trim(),
+      rescheduleHistory: [...prevHistory, historyEntry],
+      notes: $('reschedule-notes').value.trim()||t?.notes||'',
       rescheduledAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
+    if(newTime) update.treatmentTime=newTime;
+    if(newTeam) update.assignedTeam=newTeam;
     await updateDoc(doc(db,'treatments',id),update);
     if(t) Object.assign(t,update);
-    await logAction('updated','treatment',id,`Rescheduled treatment ${t?.treatmentNo||id} to ${newDateStr} — Reason: ${reason}`);
+    const reschedCount=update.rescheduleHistory.length;
+    await logAction('updated','treatment',id,`Rescheduled treatment ${t?.treatmentNo||id} to ${newDateStr}${newTeam?' (team: '+newTeam+')':''} — Reason: ${reason} (reschedule #${reschedCount})`);
     closeModal('reschedule-modal');
-    showToast(`Treatment rescheduled to ${new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}.`);
+    showToast(`Rescheduled to ${new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}.${newTeam?' Team updated.':''}`);
     computeSummary(); applyFilters();
   } catch(err){showToast('Failed: '+err.message,'error');}
   btn.disabled=false; $('reschedule-btn-text').textContent='Reschedule';
 });
-
-/* ── Export CSV ── */
-$('btn-export-csv').addEventListener('click',()=>{
-  const headers=['treatmentNo','customerNo','clientName','contractType','treatmentDate','status','computedStatus','assignedTeam','technician','chemicalsUsed','notes','cancellationReason','rescheduleReason'];
-  const rows=filteredTreatments.map(t=>[
-    t.treatmentNo, t.customerNo,
-    cleanName(clientMap[t.customerNo]||''),
-    t.contractType||(contractMap[t.contractId]?.contractType)||'',
-    fmtDate(t.treatmentDate), t.status, dispStatus(t),
-    t.assignedTeam||'', t.technician||'', t.chemicalsUsed||'',
-    t.notes||'', t.cancellationReason||'', t.rescheduleReason||''
-  ]);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`pestastic_treatments_${Date.now()}.csv`});
-  a.click(); showToast(`Exported ${filteredTreatments.length} treatment records.`);
-});
-
-/* ── Auth ── */
-
-/* ── Sidebar & topbar notification badges ── */
-async function loadSidebarBadges() {
-  try {
-    const today = new Date(); today.setHours(0,0,0,0);
-    let notifCount = 0;
-
-    // ── Overdue treatments ──
-    const trSnap = await getDocs(collection(db,'treatments'));
-    let overdueT = 0;
-    trSnap.forEach(d => {
-      const t = d.data();
-      if(t.status === 'scheduled') {
-        const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
-        if(td < today) { overdueT++; notifCount++; }
-      }
-    });
-
-    // ── Overdue payments ──
-    const pySnap = await getDocs(collection(db,'payments'));
-    let overdueP = 0;
-    pySnap.forEach(d => {
-      const p = d.data();
-      if(p.status === 'Pending') {
-        const dd = p.dueDate?.toDate ? p.dueDate.toDate() : new Date(p.dueDate||0);
-        if(dd < today) { overdueP++; notifCount++; }
-      }
-    });
-
-    // ── Overdue nav badge = overdue treatments + overdue payments ──
-    const overdueTotal = overdueT + overdueP;
-    const bdOverdue = document.getElementById('badge-overdue');
-    if(bdOverdue && overdueTotal > 0) {
-      bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal;
-      bdOverdue.style.display = '';
-    }
-
-    // ── Contracts expiring within 7 days ──
-    const coSnap = await getDocs(collection(db,'contracts'));
-    coSnap.forEach(d => {
-      const c = d.data();
-      if(c.status !== 'active') return;
-      const ed = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
-      const daysLeft = Math.round((ed - today) / 86400000);
-      if(daysLeft >= 0 && daysLeft <= 7) notifCount++;
-    });
-
-    // ── Open complaints ──
-    const cmpSnap = await getDocs(collection(db,'complaints'));
-    let openComplaints = 0;
-    cmpSnap.forEach(d => {
-      const c = d.data();
-      const s = c.status || '';
-      if(['Open','In Progress','Scheduled'].includes(s)) {
-        openComplaints++;
-        const rd = c.dateReported?.toDate ? c.dateReported.toDate() : new Date(c.dateReported||0);
-        const age = Math.abs(Math.round((today - rd) / 86400000));
-        if(age >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
-      }
-    });
-    const bdComplaints = document.getElementById('badge-complaints');
-    if(bdComplaints && openComplaints > 0) {
-      bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints;
-      bdComplaints.style.display = '';
-    }
-
-    // ── Scheduled inspections ──
-    const inSnap = await getDocs(collection(db,'inspections'));
-    let scheduledInspections = 0;
-    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledInspections++; });
-    const bdInspections = document.getElementById('badge-inspections');
-    if(bdInspections && scheduledInspections > 0) {
-      bdInspections.textContent = scheduledInspections > 99 ? '99+' : scheduledInspections;
-      bdInspections.style.display = '';
-    }
-
-    // ── Notifications nav badge (total urgent items) ──
-    const bdNotif = document.getElementById('badge-notifications');
-    if(bdNotif && notifCount > 0) {
-      bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
-      bdNotif.style.display = '';
-    }
-
-    // ── Topbar bell dot ──
-    const notifDot = document.getElementById('notif-dot');
-    if(notifDot && notifCount > 0) notifDot.style.display = '';
-
-    // ── Pending users (admin/super_admin only) ──
-    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
-      const usrSnap = await getDocs(collection(db,'users'));
-      let pendingUsers = 0;
-      usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
-      const bdUsers = document.getElementById('badge-pending-users');
-      if(bdUsers && pendingUsers > 0) {
-        bdUsers.textContent = pendingUsers > 99 ? '99+' : pendingUsers;
-        bdUsers.style.display = '';
-      }
-    }
-  } catch(e) { console.warn('[badges] Failed:', e.message); }
-}
-onAuthStateChanged(auth, async user=>{
-  if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
-  currentUser=user;
-  try{
-    const snap=await getDoc(doc(db,'users',user.uid));
-    if(!snap.exists()){
-      await setDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
-      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
-    }
-    const data=snap.data();
-    updateDoc(doc(db,'users',user.uid),{lastLogin:serverTimestamp()}).catch(()=>{});
-    if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
-    currentRole=data.role;
-    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
-    loadSidebarBadges();
-    const name=user.displayName||user.email;
-    $('user-display-name').textContent=name;
-    $('user-role-label').textContent=(data.role||'user').replace('_',' ');
-    if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
-    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-    if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
-    if(data.role==='super_admin')$('nav-settings').style.display='';
-    await loadAll();
-  }catch(err){dismissLoadingScreen();console.error(err);}
-});
-
-$('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
-$('btn-signout-pending').addEventListener('click',()=>signOut(auth));
-$('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
-$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth);});
-
-const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
-hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
-overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
-</script>
-</body>
-</html>
