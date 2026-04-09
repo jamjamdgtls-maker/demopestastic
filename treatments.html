@@ -266,12 +266,7 @@
 <!-- PAGE LOAD SCREEN -->
 <div id="loading-screen">
   <div class="ls-logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-      <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
-      <circle cx="9.5" cy="9" r="1" fill="white"/>
-      <circle cx="14.5" cy="9" r="1" fill="white"/>
-    </svg>
+    <img src="logo.jpg" alt="Pestastic" style="width:34px;height:34px;object-fit:contain" />
   </div>
   <div class="ls-spinner"></div>
   <div class="ls-text">Pestastic</div>
@@ -280,14 +275,7 @@
 <!-- AUTH -->
 <div id="auth-screen" style="display:none">
   <div id="login-card" class="auth-card">
-    <div class="auth-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-        <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
-        <circle cx="9.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/>
-        <circle cx="14.5" cy="9" r=".75" fill="hsl(142,76%,36%)"/>
-      </svg>
-    </div>
+    <div class="auth-logo"><img src="logo.jpg" alt="Pestastic" style="width:36px;height:36px;object-fit:contain" /></div>
     <h1>Pestastic</h1>
     <p>Sign in to continue</p>
     <button class="btn-google" id="btn-google-signin">
@@ -318,16 +306,10 @@
 <div id="app-shell">
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-          <path d="M8 10c.5-2 3-3 4-1 1-2 3.5-1 4 1 .5 2-1 4-4 5-3-1-4.5-3-4-5z"/>
-          <circle cx="9.5" cy="9" r="1" fill="white"/>
-          <circle cx="14.5" cy="9" r="1" fill="white"/>
-        </svg>
+    <div class="sidebar-logo" style="justify-content:center;padding:14px 16px">
+      <div style="background:white;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:center;width:100%">
+        <img src="logo.jpg" alt="Pestastic" style="width:100%;max-width:188px;height:40px;object-fit:contain" />
       </div>
-      <div class="sidebar-logo-text"><span>Pestastic</span><small>Pest Control</small></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Main</div>
@@ -1316,6 +1298,66 @@ $('btn-signout').addEventListener('click', () => signOut(auth));
    AUTH STATE — THIS IS WHAT DRIVES
    THE ENTIRE APP STARTUP
 ══════════════════════════════════ */
+/* ── Sidebar & topbar notification badges ── */
+async function loadSidebarBadges() {
+  try {
+    const today = new Date(); today.setHours(0,0,0,0);
+    let notifCount = 0;
+    const trSnap = await getDocs(collection(db,'treatments'));
+    let overdueT = 0;
+    trSnap.forEach(d => {
+      const t = d.data();
+      if(t.status === 'scheduled') {
+        const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
+        if(td < today) { overdueT++; notifCount++; }
+      }
+    });
+    const pySnap = await getDocs(collection(db,'payments'));
+    pySnap.forEach(d => {
+      const p = d.data();
+      if(p.status === 'Pending') {
+        const dd = p.dueDate?.toDate ? p.dueDate.toDate() : new Date(p.dueDate||0);
+        if(dd < today) notifCount++;
+      }
+    });
+    const bdOverdue = document.getElementById('badge-overdue');
+    if(bdOverdue && overdueT > 0) { bdOverdue.textContent = overdueT > 99 ? '99+' : overdueT; bdOverdue.style.display = ''; }
+    const coSnap = await getDocs(collection(db,'contracts'));
+    coSnap.forEach(d => {
+      const c = d.data(); if(c.status !== 'active') return;
+      const ed = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
+      if(Math.round((ed - today) / 86400000) <= 7 && Math.round((ed - today) / 86400000) >= 0) notifCount++;
+    });
+    const cmpSnap = await getDocs(collection(db,'complaints'));
+    let openComplaints = 0;
+    cmpSnap.forEach(d => {
+      const c = d.data();
+      if(['Open','In Progress','Scheduled'].includes(c.status||'')) {
+        openComplaints++;
+        const rd = c.dateReported?.toDate ? c.dateReported.toDate() : new Date(c.dateReported||0);
+        if(Math.abs(Math.round((today - rd) / 86400000)) >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
+      }
+    });
+    const bdComplaints = document.getElementById('badge-complaints');
+    if(bdComplaints && openComplaints > 0) { bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints; bdComplaints.style.display = ''; }
+    const inSnap = await getDocs(collection(db,'inspections'));
+    let scheduledI = 0;
+    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledI++; });
+    const bdI = document.getElementById('badge-inspections');
+    if(bdI && scheduledI > 0) { bdI.textContent = scheduledI > 99 ? '99+' : scheduledI; bdI.style.display = ''; }
+    const bdNotif = document.getElementById('notif-count-badge');
+    if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
+    const notifDot = document.getElementById('notif-dot');
+    if(notifDot && notifCount > 0) notifDot.style.display = '';
+    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
+      const usrSnap = await getDocs(collection(db,'users'));
+      let pu = 0; usrSnap.forEach(d => { if(d.data().status === 'pending') pu++; });
+      const bdU = document.getElementById('badge-pending-users');
+      if(bdU && pu > 0) { bdU.textContent = pu > 99 ? '99+' : pu; bdU.style.display = ''; }
+    }
+  } catch(e) { console.warn('[badges] Failed:', e.message); }
+}
+
 onAuthStateChanged(auth, async user => {
   // Always dismiss loading screen once Firebase responds
   dismissLoadingScreen();
@@ -1382,6 +1424,7 @@ onAuthStateChanged(auth, async user => {
   // Show app shell, hide auth
   $('auth-screen').style.display = 'none';
   $('app-shell').style.display   = 'flex';
+  loadSidebarBadges();
 
   // Load data
   await loadAll();
