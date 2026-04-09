@@ -523,12 +523,6 @@
             <label class="form-label">Frequency <span class="req">*</span></label>
             <select class="form-select" id="form-frequency">
               <option value="">— Select —</option>
-              <option value="monthly">Monthly</option>
-              <option value="bi-monthly">Bi-Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="semi-annual">Semi-Annual</option>
-              <option value="annual">Annual</option>
-              <option value="one-time">One-Time</option>
             </select>
           </div>
           <div class="form-group">
@@ -596,9 +590,6 @@
             <label class="form-label">Communication Source</label>
             <select class="form-select" id="form-comm-source">
               <option value="">— Select Source —</option>
-              <option>Cavite Page</option><option>Parañaque Page</option><option>Main Page</option>
-              <option>Batangas Page</option><option>Phone Number</option><option>Email</option>
-              <option>Walk-in</option><option>Referral</option>
             </select>
           </div>
           <div class="form-group">
@@ -936,6 +927,9 @@ async function loadAll() {
   teamsData = tSnap.docs.map(d=>({id:d.id,...d.data()}));
   $('form-team').innerHTML = '<option value="">— Select Team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
 
+  let commSources = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
+  let contractFrequencies = ['Monthly','Bi-Monthly','Quarterly','Semi-Annual','Annual','One-Time'];
+
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
     if(cfg.exists()) {
@@ -945,6 +939,8 @@ async function loadAll() {
       treatmentMethods = s.treatmentMethods || ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
       systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
       systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
+      if (s.commSources && s.commSources.length) commSources = s.commSources;
+      if (s.contractFrequencies && s.contractFrequencies.length) contractFrequencies = s.contractFrequencies;
     }
   } catch { 
     salesAgents=[]; 
@@ -954,6 +950,10 @@ async function loadAll() {
 
   $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
   $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentMethods.map(m => '<option>'+m+'</option>').join('');
+
+  /* Populate Communication Source and Frequency dropdowns */
+  $('form-comm-source').innerHTML = '<option value="">— Select Source —</option>' + commSources.map(s => `<option>${s}</option>`).join('');
+  $('form-frequency').innerHTML   = '<option value="">— Select —</option>'         + contractFrequencies.map(f => `<option value="${f.toLowerCase().replace(/\s+/g,'-')}">${f}</option>`).join('');
 
   const agentSet=new Set(salesAgents);
   cSnap.forEach(d=>{if(d.data().salesAgent)agentSet.add(d.data().salesAgent);});

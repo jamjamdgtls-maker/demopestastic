@@ -438,17 +438,9 @@
         </div>
         <select class="filter-select" id="filter-status">
           <option value="">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Received">Received</option>
-          <option value="Deposited">Deposited</option>
-          <option value="Remitted">Remitted</option>
-          <option value="Collected">Collected</option>
-          <option value="overdue">Overdue (computed)</option>
         </select>
         <select class="filter-select" id="filter-mode">
           <option value="">All Modes</option>
-          <option>cash</option><option>check</option><option>bank-transfer</option>
-          <option>credit-card</option><option>gcash</option><option>maya</option>
         </select>
         <div class="date-range">
           <input type="date" id="filter-date-from" title="Due date from" />
@@ -535,8 +527,6 @@
           <label class="form-label">Payment Mode</label>
           <select class="form-select" id="form-mode">
             <option value="">— Select Mode —</option>
-            <option>cash</option><option>check</option><option>bank-transfer</option>
-            <option>credit-card</option><option>gcash</option><option>maya</option>
           </select>
         </div>
       </div>
@@ -557,10 +547,6 @@
           <label class="form-label">Status <span class="req">*</span></label>
           <select class="form-select" id="form-status">
             <option value="Pending">Pending</option>
-            <option value="Received">Received</option>
-            <option value="Deposited">Deposited</option>
-            <option value="Remitted">Remitted</option>
-            <option value="Collected">Collected</option>
           </select>
         </div>
         <div class="form-group">
@@ -718,13 +704,34 @@ async function loadAll() {
     contractsByCustomer[c.customerNo].push({id:d.id,...c});
   });
 
-  // Sales agents
-  try{const cfg=await getDoc(doc(db,'config','settings'));salesAgents=cfg.exists()?(cfg.data().salesAgents||[]):[];}catch{salesAgents=[];}
+  // Settings: agents, payment modes, payment statuses
+  let paymentModes    = ['cash','check','bank-transfer','credit-card','gcash','maya'];
+  let paymentStatuses = ['Pending','Received','Deposited','Remitted','Collected'];
+  try {
+    const cfg = await getDoc(doc(db,'config','settings'));
+    if (cfg.exists()) {
+      const s = cfg.data();
+      salesAgents = s.salesAgents || [];
+      if (s.paymentModes    && s.paymentModes.length)    paymentModes    = s.paymentModes;
+      if (s.paymentStatuses && s.paymentStatuses.length) paymentStatuses = s.paymentStatuses;
+    }
+  } catch { salesAgents = []; }
+
   const agentSet=new Set(salesAgents);
   cSnap.forEach(d=>{if(d.data().salesAgent)agentSet.add(d.data().salesAgent);});
   salesAgents=[...agentSet].filter(Boolean).sort();
   const agentOpts='<option value="">— Select Agent —</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
   $('form-received-by').innerHTML=agentOpts;
+
+  /* Populate mode and status dropdowns from settings */
+  const modeOpts = paymentModes.map(m=>`<option>${m}</option>`).join('');
+  $('filter-mode').innerHTML  = '<option value="">All Modes</option>'   + modeOpts;
+  $('form-mode').innerHTML    = '<option value="">— Select Mode —</option>' + modeOpts;
+
+  const statusOpts = paymentStatuses.map(s=>`<option value="${s}">${s}</option>`).join('');
+  $('filter-status').innerHTML = '<option value="">All Status</option>' +
+    statusOpts + '<option value="overdue">Overdue (computed)</option>';
+  $('form-status').innerHTML  = statusOpts;
 
   // Payments
   const pSnap=await getDocs(query(collection(db,'payments'),orderBy('dueDate','desc')));

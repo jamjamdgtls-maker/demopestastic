@@ -571,12 +571,6 @@
         <label class="form-label">Cancellation Reason <span class="req">*</span></label>
         <select class="form-select" id="cancel-reason-select">
           <option value="">— Select reason —</option>
-          <option>Client request</option>
-          <option>No show / not available</option>
-          <option>Weather conditions</option>
-          <option>Team unavailable</option>
-          <option>Contract terminated</option>
-          <option>Other</option>
         </select>
       </div>
       <div class="form-group" id="cancel-other-wrap" style="display:none">
@@ -638,12 +632,6 @@
         <label class="form-label">Reason for Rescheduling <span class="req">*</span></label>
         <select class="form-select" id="reschedule-reason-select">
           <option value="">— Select reason —</option>
-          <option>Client request</option>
-          <option>Team unavailable</option>
-          <option>Weather conditions</option>
-          <option>Equipment issue</option>
-          <option>Holiday / non-working day</option>
-          <option>Other</option>
         </select>
       </div>
       <div class="form-group" id="reschedule-other-wrap" style="display:none">
@@ -828,6 +816,8 @@ async function loadAll() {
     coSnap.forEach(d => { contractMap[d.id] = d.data(); });
 
     // Settings
+    let cancelReasons    = ['Client request','No show / not available','Weather conditions','Team unavailable','Contract terminated'];
+    let rescheduleReasons= ['Client request','Team unavailable','Weather conditions','Equipment issue','Holiday / non-working day'];
     try {
       const cfgSnap = await getDoc(doc(db, 'config', 'settings'));
       if (cfgSnap.exists()) {
@@ -835,8 +825,16 @@ async function loadAll() {
         treatmentTypesList    = s.treatmentTypes || [];
         treatmentStatusesList = (s.treatmentStatuses || [])
           .filter(st => !SYSTEM_STATUSES.includes(st.toLowerCase()));
+        if (s.cancelReasons    && s.cancelReasons.length)    cancelReasons    = s.cancelReasons;
+        if (s.rescheduleReasons && s.rescheduleReasons.length) rescheduleReasons = s.rescheduleReasons;
       }
     } catch (e) { console.warn('Config load skipped:', e.message); }
+
+    /* Populate cancel / reschedule reason dropdowns */
+    const cancelOpts = cancelReasons.map(r=>`<option>${r}</option>`).join('') + '<option>Other</option>';
+    $('cancel-reason-select').innerHTML    = '<option value="">— Select reason —</option>' + cancelOpts;
+    const reschedOpts = rescheduleReasons.map(r=>`<option>${r}</option>`).join('') + '<option>Other</option>';
+    $('reschedule-reason-select').innerHTML = '<option value="">— Select reason —</option>' + reschedOpts;
 
     // Populate type filter
     $('filter-type').innerHTML = '<option value="">All Types</option>' +

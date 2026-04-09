@@ -648,6 +648,160 @@
             </div>
           </div>
 
+          <!-- ══ Communication / Lead Sources ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 9.81 19.79 19.79 0 0 1 1 1.18 2 2 0 0 1 3 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 14h1a2 2 0 0 1 2 2.92z"/></svg>Communication / Lead Sources</div>
+                <div class="settings-card-subtitle">Dropdown values for "How did you hear about us?" on client and contract forms</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">These appear in the Communication Source dropdown in Clients and Contracts. Remove defaults you don't use and add your own channels.</div>
+                <div class="chip-list" id="comm-sources-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-comm-source-input" placeholder="Add source (e.g. TikTok, Flyer)" />
+                  <button class="btn btn-primary" id="btn-add-comm-source">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Source
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Payment Modes ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payment Modes</div>
+                <div class="settings-card-subtitle">Methods of payment shown in the Payments module filter and form</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">Add or remove accepted payment methods. These populate the Payment Mode dropdown in Payments.</div>
+                <div class="chip-list" id="payment-modes-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-payment-mode-input" placeholder="Add mode (e.g. Bank Deposit)" />
+                  <button class="btn btn-primary" id="btn-add-payment-mode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Mode
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Payment Statuses ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payment Statuses</div>
+                <div class="settings-card-subtitle">Status values available on payment records</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">System statuses (Pending, Received) are always kept. Add custom statuses to match your collection workflow. <em>Overdue</em> is computed automatically and cannot be removed.</div>
+                <div class="chip-list" id="payment-statuses-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-payment-status-input" placeholder="Add status (e.g. Waived)" />
+                  <button class="btn btn-primary" id="btn-add-payment-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Status
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Complaint Statuses ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaint Statuses</div>
+                <div class="settings-card-subtitle">Status values for complaint / service issue records</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">System statuses (Open, In Progress, Scheduled, Completed, Closed) cannot be removed.</div>
+                <div class="chip-list" id="complaint-statuses-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-complaint-status-input" placeholder="Add status (e.g. Escalated)" />
+                  <button class="btn btn-primary" id="btn-add-complaint-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Status
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Contract Frequencies ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Contract Frequencies</div>
+                <div class="settings-card-subtitle">Recurrence options available when creating contracts</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">System frequencies (Monthly, Quarterly, Annual, One-Time) cannot be removed. Add custom intervals your business uses.</div>
+                <div class="chip-list" id="contract-frequencies-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-contract-freq-input" placeholder="Add frequency (e.g. Bi-Weekly)" />
+                  <button class="btn btn-primary" id="btn-add-contract-freq">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Frequency
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Cancellation Reasons ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Cancellation Reasons</div>
+                <div class="settings-card-subtitle">Reasons shown when a treatment / booking is cancelled</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">The "Other" option is always included. Add or remove reasons relevant to your operations.</div>
+                <div class="chip-list" id="cancel-reasons-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-cancel-reason-input" placeholder="Add reason (e.g. Public holiday)" />
+                  <button class="btn btn-primary" id="btn-add-cancel-reason">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Reason
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ Reschedule Reasons ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Reschedule Reasons</div>
+                <div class="settings-card-subtitle">Reasons shown when a treatment / booking is rescheduled</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">The "Other" option is always included. Add or remove reasons relevant to your operations.</div>
+                <div class="chip-list" id="reschedule-reasons-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-reschedule-reason-input" placeholder="Add reason (e.g. Permit delay)" />
+                  <button class="btn btn-primary" id="btn-add-reschedule-reason">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Reason
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div style="text-align:right;margin-top:4px">
             <button class="btn btn-primary" id="btn-save-system">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -829,8 +983,28 @@ let currentUser = null, currentRole = null;
 let salesAgents = [];
 let treatmentTypes = [];
 let treatmentStatuses = [];
-const SYSTEM_TREATMENT_TYPES = ['QT','MT','INS','FU','AGS','CIT','OTCIT','Fogging','GT','Mound Demolition','GPC','OTGPC','PRECON','Other'];
-const SYSTEM_TREATMENT_STATUSES = ['Scheduled','Completed','Cancelled','Rescheduled'];
+let commSources = [];
+let paymentModes = [];
+let paymentStatuses = [];
+let complaintStatuses = [];
+let contractFrequencies = [];
+let cancelReasons = [];
+let rescheduleReasons = [];
+
+const SYSTEM_TREATMENT_TYPES     = ['QT','MT','INS','FU','AGS','CIT','OTCIT','Fogging','GT','Mound Demolition','GPC','OTGPC','PRECON','Other'];
+const SYSTEM_TREATMENT_STATUSES  = ['Scheduled','Completed','Cancelled','Rescheduled'];
+const SYSTEM_PAYMENT_STATUSES    = ['Pending','Received'];
+const SYSTEM_COMPLAINT_STATUSES  = ['Open','In Progress','Scheduled','Completed','Closed'];
+const SYSTEM_CONTRACT_FREQS      = ['Monthly','Annual','One-Time'];
+
+const DEFAULT_COMM_SOURCES      = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
+const DEFAULT_PAYMENT_MODES     = ['cash','check','bank-transfer','credit-card','gcash','maya'];
+const DEFAULT_PAYMENT_STATUSES  = ['Pending','Received','Deposited','Remitted','Collected'];
+const DEFAULT_COMPLAINT_STATUSES= ['Open','In Progress','Scheduled','Completed','Closed'];
+const DEFAULT_CONTRACT_FREQS    = ['Monthly','Bi-Monthly','Quarterly','Semi-Annual','Annual','One-Time'];
+const DEFAULT_CANCEL_REASONS    = ['Client request','No show / not available','Weather conditions','Team unavailable','Contract terminated'];
+const DEFAULT_RESCHEDULE_REASONS= ['Client request','Team unavailable','Weather conditions','Equipment issue','Holiday / non-working day'];
+
 let settings = {};
 
 /* ── Helpers ── */
@@ -905,6 +1079,33 @@ async function loadSettings() {
   treatmentStatuses = [...(settings.treatmentStatuses || DEFAULT_TREATMENT_STATUSES)];
   renderTreatmentTypes();
   renderTreatmentStatuses();
+
+  /* Communication Sources */
+  commSources = [...(settings.commSources || DEFAULT_COMM_SOURCES)];
+  renderChipList('comm-sources-list', commSources, [], 'removeCommSource');
+
+  /* Payment Modes */
+  paymentModes = [...(settings.paymentModes || DEFAULT_PAYMENT_MODES)];
+  renderChipList('payment-modes-list', paymentModes, [], 'removePaymentMode');
+
+  /* Payment Statuses */
+  paymentStatuses = [...(settings.paymentStatuses || DEFAULT_PAYMENT_STATUSES)];
+  renderChipList('payment-statuses-list', paymentStatuses, SYSTEM_PAYMENT_STATUSES, 'removePaymentStatus');
+
+  /* Complaint Statuses */
+  complaintStatuses = [...(settings.complaintStatuses || DEFAULT_COMPLAINT_STATUSES)];
+  renderChipList('complaint-statuses-list', complaintStatuses, SYSTEM_COMPLAINT_STATUSES, 'removeComplaintStatus');
+
+  /* Contract Frequencies */
+  contractFrequencies = [...(settings.contractFrequencies || DEFAULT_CONTRACT_FREQS)];
+  renderChipList('contract-frequencies-list', contractFrequencies, SYSTEM_CONTRACT_FREQS, 'removeContractFreq');
+  /* Cancellation Reasons */
+  cancelReasons = [...(settings.cancelReasons || DEFAULT_CANCEL_REASONS)];
+  renderChipList('cancel-reasons-list', cancelReasons, [], 'removeCancelReason');
+
+  /* Reschedule Reasons */
+  rescheduleReasons = [...(settings.rescheduleReasons || DEFAULT_RESCHEDULE_REASONS)];
+  renderChipList('reschedule-reasons-list', rescheduleReasons, [], 'removeRescheduleReason');
 }
 
 const DEFAULT_TREATMENT_STATUSES_DEFAULT = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking'];
@@ -957,6 +1158,50 @@ window.removeTreatmentStatus=function(encoded){
   renderTreatmentStatuses();
 };
 
+/* ── Generic chip-list renderer ── */
+function renderChipList(listId, items, systemItems, removeFn){
+  const list=$(listId);
+  if(!list)return;
+  const removeIcon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  list.innerHTML=items.map(item=>{
+    const isSys=systemItems.includes(item);
+    return `<div class="chip ${isSys?'chip-blue system-chip':'chip-green'}" title="${isSys?'System value — cannot be removed':''}">
+      ${item}
+      ${!isSys?`<button onclick="${removeFn}('${encodeURIComponent(item)}')" title="Remove">${removeIcon}</button>`:''}
+    </div>`;
+  }).join('') || '<span style="font-size:13px;color:var(--text-muted)">No items configured</span>';
+}
+
+function makeAddHandler(inputId, btnId, arr, systemItems, renderListId, removeFn){
+  const input=$(inputId), btn=$(btnId);
+  if(!btn||!input)return;
+  btn.addEventListener('click',()=>{
+    const val=input.value.trim(); if(!val)return;
+    if(arr.includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
+    arr.push(val); input.value='';
+    renderChipList(renderListId, arr, systemItems, removeFn);
+  });
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();btn.click();}});
+}
+
+function makeRemoveFn(fnName, arr, systemItems, renderListId, removeFn){
+  window[fnName]=function(encoded){
+    const name=decodeURIComponent(encoded);
+    if(systemItems.includes(name)){showToast('System values cannot be removed.','warning');return;}
+    const idx=arr.indexOf(name); if(idx>-1)arr.splice(idx,1);
+    renderChipList(renderListId, arr, systemItems, removeFn);
+  };
+}
+
+/* register remove fns */
+makeRemoveFn('removeCommSource',     commSources,        [],                      'comm-sources-list',        'removeCommSource');
+makeRemoveFn('removePaymentMode',    paymentModes,       [],                      'payment-modes-list',       'removePaymentMode');
+makeRemoveFn('removePaymentStatus',  paymentStatuses,    SYSTEM_PAYMENT_STATUSES, 'payment-statuses-list',    'removePaymentStatus');
+makeRemoveFn('removeComplaintStatus',complaintStatuses,  SYSTEM_COMPLAINT_STATUSES,'complaint-statuses-list', 'removeComplaintStatus');
+makeRemoveFn('removeContractFreq',   contractFrequencies,SYSTEM_CONTRACT_FREQS,   'contract-frequencies-list','removeContractFreq');
+makeRemoveFn('removeCancelReason',   cancelReasons,      [],                      'cancel-reasons-list',      'removeCancelReason');
+makeRemoveFn('removeRescheduleReason',rescheduleReasons, [],                      'reschedule-reasons-list',  'removeRescheduleReason');
+
 document.addEventListener('DOMContentLoaded',()=>{
   const ttInput=$('new-treatment-type-input');
   const tsInput=$('new-treatment-status-input');
@@ -982,6 +1227,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderTreatmentStatuses();
   });
   if(tsInput) tsInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(tsBtn)tsBtn.click();}});
+
+  /* new list add handlers */
+  makeAddHandler('new-comm-source-input',      'btn-add-comm-source',      commSources,        [],                       'comm-sources-list',        'removeCommSource');
+  makeAddHandler('new-payment-mode-input',     'btn-add-payment-mode',     paymentModes,       [],                       'payment-modes-list',       'removePaymentMode');
+  makeAddHandler('new-payment-status-input',   'btn-add-payment-status',   paymentStatuses,    SYSTEM_PAYMENT_STATUSES,  'payment-statuses-list',    'removePaymentStatus');
+  makeAddHandler('new-complaint-status-input', 'btn-add-complaint-status', complaintStatuses,  SYSTEM_COMPLAINT_STATUSES,'complaint-statuses-list',  'removeComplaintStatus');
+  makeAddHandler('new-contract-freq-input',    'btn-add-contract-freq',    contractFrequencies,SYSTEM_CONTRACT_FREQS,    'contract-frequencies-list','removeContractFreq');
+  makeAddHandler('new-cancel-reason-input',    'btn-add-cancel-reason',    cancelReasons,      [],                       'cancel-reasons-list',      'removeCancelReason');
+  makeAddHandler('new-reschedule-reason-input','btn-add-reschedule-reason',rescheduleReasons,  [],                       'reschedule-reasons-list',  'removeRescheduleReason');
 });
 
 window.removeAgent=function(encoded){
@@ -1053,6 +1307,14 @@ $('btn-save-system').addEventListener('click', async()=>{
     /* Treatment Configuration */
     treatmentTypes,
     treatmentStatuses:[...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses.filter(s=>!SYSTEM_TREATMENT_STATUSES.includes(s))],
+    /* Configurable dropdown lists */
+    commSources,
+    paymentModes,
+    paymentStatuses:[...SYSTEM_PAYMENT_STATUSES,...paymentStatuses.filter(s=>!SYSTEM_PAYMENT_STATUSES.includes(s))],
+    complaintStatuses:[...SYSTEM_COMPLAINT_STATUSES,...complaintStatuses.filter(s=>!SYSTEM_COMPLAINT_STATUSES.includes(s))],
+    contractFrequencies:[...SYSTEM_CONTRACT_FREQS,...contractFrequencies.filter(f=>!SYSTEM_CONTRACT_FREQS.includes(f))],
+    cancelReasons,
+    rescheduleReasons,
     updatedAt:serverTimestamp()
   };
   try{

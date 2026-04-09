@@ -522,9 +522,6 @@
           <label class="form-label">Communication Source</label>
           <select class="form-select" id="form-comm-source">
             <option value="">— Select Source —</option>
-            <option>Cavite Page</option><option>Parañaque Page</option><option>Main Page</option>
-            <option>Batangas Page</option><option>Phone Number</option><option>Email</option>
-            <option>Walk-in</option><option>Referral</option>
           </select>
         </div>
       </div>
@@ -783,14 +780,26 @@ async function loadClients() {
   const snap = await getDocs(query(collection(db, 'clients'), orderBy('clientName', 'asc')));
   allClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+  let commSources = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
   try {
     const cfg = await getDoc(doc(db, 'config', 'settings'));
-    salesAgents = cfg.exists() ? (cfg.data().salesAgents || []) : [];
+    if (cfg.exists()) {
+      const s = cfg.data();
+      salesAgents = s.salesAgents || [];
+      if (s.commSources && s.commSources.length) commSources = s.commSources;
+    }
   } catch { salesAgents = []; }
 
   const agentSet = new Set(salesAgents);
   allClients.forEach(c => { if (c.salesAgent) agentSet.add(c.salesAgent); });
   salesAgents = [...agentSet].filter(Boolean).sort();
+
+  /* Populate Communication Source dropdown */
+  const commEl = $('form-comm-source');
+  if (commEl) {
+    commEl.innerHTML = '<option value="">— Select Source —</option>' +
+      commSources.map(s => `<option>${s}</option>`).join('');
+  }
 
   populateFilters();
   populateAgentDropdowns();

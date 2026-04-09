@@ -521,13 +521,6 @@
           <!-- FIX: Dropdown — not free text, not treatmentMethod -->
           <select class="form-select" id="form-contract-type">
             <option value="">— Select Type —</option>
-            <option>Termite Control</option>
-            <option>General Pest Control</option>
-            <option>Rodents Control</option>
-            <option>Crawling Insects Control</option>
-            <option>Pre-Construction Termite Control</option>
-            <option>Reticulation System</option>
-            <option>Flying Insects Control</option>
           </select>
         </div>
       </div>
@@ -569,10 +562,6 @@
           <label class="form-label">Status</label>
           <select class="form-select" id="form-status">
             <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Scheduled">Scheduled</option>
-            <option value="Completed">Completed</option>
-            <option value="Closed">Closed</option>
           </select>
         </div>
       </div>
@@ -815,15 +804,33 @@ async function loadAll() {
   teamsData=tSnap.docs.map(d=>({id:d.id,...d.data()}));
   $('book-team').innerHTML='<option value="">— No team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
 
-  // Assignees: agents + teams
+  // Settings: agents, treatment types, complaint statuses
   let agents=[];
-  try{const cfg=await getDoc(doc(db,'config','settings'));agents=cfg.exists()?(cfg.data().salesAgents||[]):[];}catch{}
+  let treatmentTypes    = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+  let complaintStatuses = ['Open','In Progress','Scheduled','Completed','Closed'];
+  try {
+    const cfg = await getDoc(doc(db,'config','settings'));
+    if (cfg.exists()) {
+      const s = cfg.data();
+      agents = s.salesAgents || [];
+      if (s.treatmentTypes    && s.treatmentTypes.length)    treatmentTypes    = s.treatmentTypes;
+      if (s.complaintStatuses && s.complaintStatuses.length) complaintStatuses = s.complaintStatuses;
+    }
+  } catch {}
+
   const aSet=new Set(agents);
   cSnap.forEach(d=>{if(d.data().salesAgent)aSet.add(d.data().salesAgent);});
   teamsData.forEach(t=>{aSet.add(t.teamName);});
   assigneeOptions=[...aSet].filter(Boolean).sort();
   const aOpts='<option value="">— Select —</option>'+assigneeOptions.map(a=>`<option>${a}</option>`).join('');
   $('form-assigned-to').innerHTML=aOpts;
+
+  /* Populate contract type dropdown from settings treatmentTypes */
+  $('form-contract-type').innerHTML = '<option value="">— Select Type —</option>' +
+    treatmentTypes.map(t=>`<option>${t}</option>`).join('');
+
+  /* Populate complaint status dropdown from settings */
+  $('form-status').innerHTML = complaintStatuses.map(s=>`<option value="${s}">${s}</option>`).join('');
 
   // Month filter populate
   const months=[];
