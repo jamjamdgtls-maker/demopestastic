@@ -88,6 +88,7 @@
     .topbar-spacer{flex:1}
     .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer}
     .topbar-btn svg{width:16px;height:16px}
+    .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
     .page-content{flex:1;overflow-y:auto;padding:24px}
     .page-content::-webkit-scrollbar{width:6px}
     .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -368,7 +369,7 @@
       <div class="nav-section-label">Monitoring</div>
       <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
       <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="badge-notifications" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
             <div class="nav-section-label">Reports</div>
       <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
@@ -654,6 +655,85 @@
   </div>
 </div>
 
+
+<!-- ════════════════════════════
+     ADD AS CLIENT MODAL
+════════════════════════════ -->
+<div class="modal-overlay" id="add-client-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Save as Client Record</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="add-client-subtitle">Pre-filled from inspection</div>
+      </div>
+      <button class="modal-close" data-close="add-client-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="add-client-inspection-id" />
+      <div style="background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--blue-text)">
+        This will create a new Client record in the Clients module. The inspection will be marked as <strong>Converted</strong>.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Customer Number</label>
+          <input type="text" class="form-input" id="ac-customer-no" readonly placeholder="Auto-generated" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Name <span class="req">*</span></label>
+          <input type="text" class="form-input" id="ac-client-name" placeholder="Full name" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contact Number</label>
+          <input type="text" class="form-input" id="ac-contact-number" placeholder="09XX XXX XXXX" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" id="ac-email" placeholder="email@example.com" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address (Street / Building)</label>
+        <input type="text" class="form-input" id="ac-address-line1" placeholder="House No., Street, Building" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Barangay</label>
+          <input type="text" class="form-input" id="ac-barangay" placeholder="e.g. Brgy. San Antonio" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">City / Municipality <span class="req">*</span></label>
+          <input type="text" class="form-input" id="ac-city" placeholder="e.g. Bacoor" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Province</label>
+          <input type="text" class="form-input" id="ac-province" placeholder="e.g. Cavite" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sales Agent</label>
+          <select class="form-select" id="ac-sales-agent">
+            <option value="">— Select Agent —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="ac-notes" style="min-height:60px" placeholder="Any additional notes from the inspection…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="add-client-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-confirm-add-client">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span id="add-client-btn-text">Save Client Record</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <!-- ════════════════════════════════════
@@ -675,7 +755,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc,
-  updateDoc, deleteDoc, query, orderBy, serverTimestamp
+  updateDoc, deleteDoc, query, orderBy, serverTimestamp, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const app  = initializeApp({ apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y", authDomain:"pestaticdatabase.firebaseapp.com", databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app", projectId:"pestaticdatabase", storageBucket:"pestaticdatabase.firebasestorage.app", messagingSenderId:"930313053124", appId:"1:930313053124:web:66e6ce6c889dc747d77a91" });
@@ -869,6 +949,9 @@ function renderTable(){
           <button class="btn btn-sm btn-danger btn-delete-row" data-id="${i.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           </button>
+          ${i.status!=='Converted'?`<button class="btn btn-sm btn-add-client" data-id="${i.id}" title="Save as Client" style="background:var(--blue-bg);color:var(--blue-text);border:1px solid #93c5fd">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Client
+          </button>`:'<span style="font-size:11px;color:var(--primary);font-weight:600">✓ Client</span>'}
         </div>
       </td>
     </tr>`;
@@ -886,9 +969,11 @@ function renderTable(){
 
 /* ── Event delegation for inspections table ── */
 document.getElementById('inspections-tbody').addEventListener('click', function(e) {
-  var viewBtn   = e.target.closest('.btn-view');
-  var editBtn   = e.target.closest('.btn-edit-row');
-  var deleteBtn = e.target.closest('.btn-delete-row');
+  var viewBtn      = e.target.closest('.btn-view');
+  var editBtn      = e.target.closest('.btn-edit-row');
+  var deleteBtn    = e.target.closest('.btn-delete-row');
+  var addClientBtn = e.target.closest('.btn-add-client');
+  if (addClientBtn && addClientBtn.dataset.id) { openAddClientModal(addClientBtn.dataset.id); return; }
   if (viewBtn   && viewBtn.dataset.id)   { openDetail(viewBtn.dataset.id);     return; }
   if (editBtn   && editBtn.dataset.id)   { openEditModal(editBtn.dataset.id);   return; }
   if (deleteBtn && deleteBtn.dataset.id) { promptDelete(deleteBtn.dataset.id);  return; }
@@ -1158,6 +1243,114 @@ $('btn-export-csv').addEventListener('click',()=>{
   a.click();showToast(`Exported ${filteredInspections.length} inspection records.`);
 });
 
+
+/* ── Add as Client ── */
+async function getNextCustomerNo() {
+  let nextNum = 1;
+  await runTransaction(db, async tx => {
+    const ref = doc(db, 'config', 'counters');
+    const snap = await tx.get(ref);
+    if (!snap.exists()) { tx.set(ref, { clientCounter: 1 }); nextNum = 1; }
+    else { nextNum = (snap.data().clientCounter || 0) + 1; tx.update(ref, { clientCounter: nextNum }); }
+  });
+  return `PC-${String(nextNum).padStart(5, '0')}`;
+}
+
+async function openAddClientModal(inspectionId) {
+  const insp = allInspections.find(x => x.id === inspectionId);
+  if (!insp) return;
+  $('add-client-inspection-id').value = inspectionId;
+  $('add-client-subtitle').textContent = `From inspection: ${insp.clientName || '—'} · ${fmtDate(insp.inspectionDate)}`;
+
+  // Pre-fill from inspection
+  $('ac-client-name').value    = insp.clientName || '';
+  $('ac-contact-number').value = insp.contactNumber || '';
+  $('ac-email').value          = '';
+  $('ac-address-line1').value  = insp.address || '';
+  $('ac-barangay').value       = '';
+  $('ac-city').value           = '';
+  $('ac-province').value       = '';
+  $('ac-notes').value          = insp.notes ? `From inspection (${fmtDate(insp.inspectionDate)}): ${insp.notes}` : '';
+
+  // Populate agents dropdown
+  $('ac-sales-agent').innerHTML = '<option value="">— Select Agent —</option>' +
+    agentOptions.map(a => `<option>${a}</option>`).join('');
+
+  // Auto-generate customer number
+  $('ac-customer-no').value = 'Generating…';
+  try {
+    const no = await getNextCustomerNo();
+    $('ac-customer-no').value = no;
+  } catch {
+    $('ac-customer-no').value = 'Error — try again';
+  }
+  $('add-client-btn-text').textContent = 'Save Client Record';
+  openModal('add-client-modal');
+}
+
+$('btn-confirm-add-client').addEventListener('click', async () => {
+  const inspId      = $('add-client-inspection-id').value;
+  const clientName  = $('ac-client-name').value.trim();
+  const city        = $('ac-city').value.trim();
+  const customerNo  = $('ac-customer-no').value;
+  if (!clientName) { showToast('Client name is required.', 'error'); return; }
+  if (!city)       { showToast('City is required.', 'error'); return; }
+  if (!customerNo || customerNo.includes('Error') || customerNo === 'Generating…') {
+    showToast('Customer number not ready. Please close and try again.', 'error'); return;
+  }
+
+  const btn = $('btn-confirm-add-client');
+  btn.disabled = true; $('add-client-btn-text').textContent = 'Saving…';
+
+  const addrLine1 = $('ac-address-line1').value.trim();
+  const barangay  = $('ac-barangay').value.trim();
+  const province  = $('ac-province').value.trim();
+  const legacyAddr = [addrLine1, barangay, city, province].filter(Boolean).join(', ');
+
+  try {
+    // 1. Create client record
+    const clientData = {
+      customerNo,
+      clientName,
+      contactNumber:  $('ac-contact-number').value.trim(),
+      email:          $('ac-email').value.trim(),
+      addressLine1:   addrLine1,
+      barangay,
+      city,
+      province,
+      postalCode:     '',
+      country:        'Philippines',
+      address:        legacyAddr,
+      salesAgent:     $('ac-sales-agent').value,
+      notes:          $('ac-notes').value.trim(),
+      fromInspectionId: inspId,
+      createdAt:      serverTimestamp(),
+      updatedAt:      serverTimestamp()
+    };
+    await addDoc(collection(db, 'clients'), clientData);
+
+    // 2. Mark inspection as Converted
+    await updateDoc(doc(db, 'inspections', inspId), {
+      status: 'Converted',
+      convertedToClientNo: customerNo,
+      updatedAt: serverTimestamp()
+    });
+    const insp = allInspections.find(x => x.id === inspId);
+    if (insp) { insp.status = 'Converted'; insp.convertedToClientNo = customerNo; }
+
+    await logAction('created', 'client', customerNo,
+      `Created client ${customerNo} — ${clientName} from inspection ${inspId}`);
+
+    closeModal('add-client-modal');
+    showToast(`Client "${clientName}" (${customerNo}) created successfully. Inspection marked as Converted.`, 'success', 'Client Saved');
+    computeStats();
+    applyFilters();
+  } catch (err) {
+    showToast('Failed to save: ' + err.message, 'error');
+  }
+  btn.disabled = false; $('add-client-btn-text').textContent = 'Save Client Record';
+});
+
 /* ── Auth ── */
 
 /* ── Sidebar & topbar notification badges ── */
@@ -1236,7 +1429,7 @@ async function loadSidebarBadges() {
     }
 
     // ── Notifications nav badge (total urgent items) ──
-    const bdNotif = document.getElementById('badge-notifications');
+    const bdNotif = document.getElementById('notif-count-badge');
     if(bdNotif && notifCount > 0) {
       bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
       bdNotif.style.display = '';
