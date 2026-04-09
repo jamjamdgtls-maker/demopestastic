@@ -495,6 +495,69 @@
   </div>
 </div>
 
+<!-- EDIT TREATMENT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Edit Treatment</div>
+        <div class="modal-subtitle"></div>
+      </div>
+      <button class="modal-close" data-close="edit-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Treatment Type <span class="req">*</span></label>
+          <select class="form-select" id="edit-treatment-type">
+            <option value="">— Select Type —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contract Type / Description</label>
+          <input type="text" class="form-input" id="edit-contract-type" placeholder="e.g. General Pest Control" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Treatment Date <span class="req">*</span></label>
+          <input type="date" class="form-input" id="edit-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time Slot</label>
+          <input type="time" class="form-input" id="edit-time" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Assigned Team</label>
+          <select class="form-select" id="edit-team">
+            <option value="">— Select Team —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Technician</label>
+          <select class="form-select" id="edit-technician">
+            <option value="">— Select Technician —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="edit-notes" style="min-height:80px" placeholder="Special instructions, areas to treat, client concerns…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="edit-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-edit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span id="edit-btn-text">Save Changes</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- COMPLETE MODAL -->
 <div class="modal-overlay" id="complete-modal">
   <div class="modal">
@@ -949,9 +1012,11 @@ $('btn-clear-filters').addEventListener('click', clearAllFilters);
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
+  const edit       = e.target.closest('.btn-edit');
   const complete   = e.target.closest('.btn-complete');
   const cancel     = e.target.closest('.btn-cancel');
   const reschedule = e.target.closest('.btn-reschedule');
+  if (edit       && edit.dataset.id)       { openEditModal(edit.dataset.id);             return; }
   if (complete   && complete.dataset.id)   { openCompleteModal(complete.dataset.id);     return; }
   if (cancel     && cancel.dataset.id)     { openCancelModal(cancel.dataset.id);         return; }
   if (reschedule && reschedule.dataset.id) { openRescheduleModal(reschedule.dataset.id); return; }
@@ -1019,6 +1084,7 @@ function renderTable() {
       <td style="font-size:12px;max-width:130px;color:var(--text-secondary)" title="${t.notes||''}">${notePreview}</td>
       <td>
         <div class="actions-cell">
+          <button class="btn btn-sm btn-secondary btn-edit" data-id="${t.id}" title="Edit treatment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           ${canComplete   ? `<button class="btn btn-sm btn-primary btn-complete"   data-id="${t.id}" title="Mark completed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Complete</button>` : ''}
           ${canReschedule ? `<button class="btn btn-sm btn-amber   btn-reschedule" data-id="${t.id}" title="Reschedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>` : ''}
           ${canCancel     ? `<button class="btn btn-sm btn-danger  btn-cancel"     data-id="${t.id}" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
@@ -1394,6 +1460,113 @@ $('treatments-tbody').addEventListener('change', async e => {
     showToast('Failed to update type: ' + err.message, 'error');
     sel.value = oldType; // revert
   }
+});
+
+/* ══════════════════════════════════
+   EDIT TREATMENT MODAL
+══════════════════════════════════ */
+function openEditModal(id) {
+  const t = allTreatments.find(x => x.id === id);
+  if (!t) return;
+
+  $('edit-id').value = id;
+  $('edit-modal').querySelector('.modal-subtitle').textContent =
+    `${t.treatmentNo || id.slice(0,8)} — ${cleanName(clientMap[t.customerNo]?.name || t.customerNo)}`;
+
+  /* Treatment Type — build options: settings list + any extra from this record */
+  const existing = t.treatmentType || '';
+  const allTypes = [...new Set([...treatmentTypesList, ...(existing && existing !== '—' ? [existing] : [])])];
+  $('edit-treatment-type').innerHTML =
+    '<option value="">— Select Type —</option>' +
+    allTypes.map(tp => `<option value="${tp}" ${tp === existing ? 'selected' : ''}>${tp}</option>`).join('');
+
+  /* Contract Type (text) */
+  $('edit-contract-type').value = t.contractType || (contractMap[t.contractId]?.contractType) || '';
+
+  /* Date & Time */
+  const d = toDate(t.treatmentDate);
+  $('edit-date').value = d ? d.toISOString().slice(0,10) : '';
+  $('edit-time').value = t.treatmentTime || '';
+
+  /* Team */
+  const teamNames = [...new Set(teamsData.map(x => x.teamName).filter(Boolean))].sort();
+  $('edit-team').innerHTML = '<option value="">— Select Team —</option>' +
+    teamNames.map(tn => `<option value="${tn}" ${tn === (t.assignedTeam||'') ? 'selected' : ''}>${tn}</option>`).join('');
+
+  /* Technician */
+  const team = teamsData.find(x => x.teamName === t.assignedTeam);
+  const members = team ? (team.members || []) : [];
+  const allMembers = [...new Set([...members, ...(t.technician && !members.includes(t.technician) ? [t.technician] : [])])];
+  $('edit-technician').innerHTML = '<option value="">— Select Technician —</option>' +
+    allMembers.map(m => `<option value="${m}" ${m === (t.technician||'') ? 'selected' : ''}>${m}</option>`).join('');
+
+  /* Notes */
+  $('edit-notes').value = t.notes || '';
+
+  $('edit-modal').classList.add('open');
+}
+
+/* Refresh technician list when team changes in edit modal */
+$('edit-team').addEventListener('change', () => {
+  const teamName = $('edit-team').value;
+  const team = teamsData.find(x => x.teamName === teamName);
+  const members = team ? (team.members || []) : [];
+  $('edit-technician').innerHTML = '<option value="">— Select Technician —</option>' +
+    members.map(m => `<option value="${m}">${m}</option>`).join('');
+});
+
+$('btn-save-edit').addEventListener('click', async () => {
+  const id = $('edit-id').value;
+  if (!id) return;
+  const btn = $('btn-save-edit');
+  btn.disabled = true;
+  $('edit-btn-text').textContent = 'Saving…';
+
+  const newType = $('edit-treatment-type').value;
+  const newDate = $('edit-date').value;
+  if (!newDate) {
+    showToast('Treatment date is required.', 'error');
+    btn.disabled = false; $('edit-btn-text').textContent = 'Save Changes';
+    return;
+  }
+
+  const t = allTreatments.find(x => x.id === id);
+  const oldType = t?.treatmentType || '';
+
+  try {
+    const updates = {
+      treatmentType:  newType,
+      contractType:   $('edit-contract-type').value.trim(),
+      treatmentDate:  new Date(newDate + 'T00:00:00'),
+      treatmentTime:  $('edit-time').value || '',
+      assignedTeam:   $('edit-team').value,
+      technician:     $('edit-technician').value,
+      notes:          $('edit-notes').value.trim(),
+      updatedAt:      serverTimestamp()
+    };
+
+    await updateDoc(doc(db, 'treatments', id), updates);
+
+    /* Update local cache */
+    if (t) Object.assign(t, {
+      treatmentType:  newType,
+      contractType:   updates.contractType,
+      treatmentDate:  updates.treatmentDate,
+      treatmentTime:  updates.treatmentTime,
+      assignedTeam:   updates.assignedTeam,
+      technician:     updates.technician,
+      notes:          updates.notes
+    });
+
+    await logAction('updated', 'treatment', id,
+      `Treatment edited${oldType !== newType ? `; type changed from "${oldType||'—'}" to "${newType||'—'}"` : ''}`);
+    showToast('Treatment updated successfully.');
+    $('edit-modal').classList.remove('open');
+    renderTable();
+  } catch (err) {
+    showToast('Failed to save: ' + err.message, 'error');
+  }
+  btn.disabled = false; $('edit-btn-text').textContent = 'Save Changes';
 });
 
 /* ══════════════════════════════════
