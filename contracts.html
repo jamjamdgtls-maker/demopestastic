@@ -1186,8 +1186,7 @@ $('btn-new-contract').addEventListener('click', async ()=>{
   $('save-btn-text').textContent='Save & Generate Schedule';
   $('form-contract-id').value='';
   $('form-old-contract-id').value='';
-  const no = await getNextContractNo();
-  $('form-contract-no').value = no;
+  $('form-contract-no').value = 'Auto-generated';
   if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
   openModal('contract-form-modal');
 });
@@ -1195,8 +1194,7 @@ $('btn-new-contract').addEventListener('click', async ()=>{
 /* ── Open Renewal Mode (called from URL params or programmatically) ── */
 async function openRenewalMode(params) {
   clearForm();
-  const no = await getNextContractNo();
-  $('form-contract-no').value = no;
+  $('form-contract-no').value = 'Auto-generated';
   $('form-contract-id').value = '';
 
   // Old contract reference
@@ -1249,8 +1247,7 @@ async function openRenewalMode(params) {
 /* ── Open Inspection Convert Mode (called when coming from inspections page) ── */
 async function openInspectionMode(params) {
   clearForm();
-  const no = await getNextContractNo();
-  $('form-contract-no').value = no;
+  $('form-contract-no').value = 'Auto-generated';
   $('form-contract-id').value = '';
   $('form-old-contract-id').value = '';
 
@@ -1401,7 +1398,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
 
   const data = {
     customerNo, contractType,
-    contractNumber: $('form-contract-no').value.trim(),
+    contractNumber: '',
     treatmentMethod: $('form-treatment-method').value.trim(),
     frequency: freq,
     noOfSessions: sessions,
@@ -1440,6 +1437,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
         data.fromInspectionId = inspectionSourceId;
       }
       data.createdAt=serverTimestamp();
+      data.contractNumber = await getNextContractNo();
       const ref=await addDoc(collection(db,'contracts'),data);
 
       // Generate treatment + payment schedules

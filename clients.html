@@ -1014,7 +1014,6 @@ $('btn-save-client').addEventListener('click', async () => {
     } else {
       data.createdAt = serverTimestamp();
       data.customerNo = await getNextCustomerNo();
-      $('form-customer-no').value = data.customerNo;
       const ref = await addDoc(collection(db, 'clients'), data);
       await logAction('created', 'client', ref.id, `Created client: ${name} (${data.customerNo})`);
       showToast(`Client "${name}" added successfully.`);

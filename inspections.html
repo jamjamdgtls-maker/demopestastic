@@ -1273,13 +1273,7 @@ async function openAddClientModal(inspectionId) {
     agentOptions.map(a => `<option>${a}</option>`).join('');
 
   // Auto-generate customer number
-  $('ac-customer-no').value = 'Generating…';
-  try {
-    const no = await getNextCustomerNo();
-    $('ac-customer-no').value = no;
-  } catch {
-    $('ac-customer-no').value = 'Error — try again';
-  }
+  $('ac-customer-no').value = 'Auto-generated on save';
   $('add-client-btn-text').textContent = 'Save Client Record';
   openModal('add-client-modal');
 }
@@ -1288,16 +1282,13 @@ $('btn-confirm-add-client').addEventListener('click', async () => {
   const inspId      = $('add-client-inspection-id').value;
   const clientName  = $('ac-client-name').value.trim();
   const city        = $('ac-city').value.trim();
-  const customerNo  = $('ac-customer-no').value;
   if (!clientName) { showToast('Client name is required.', 'error'); return; }
   if (!city)       { showToast('City is required.', 'error'); return; }
-  if (!customerNo || customerNo.includes('Error') || customerNo === 'Generating…') {
-    showToast('Customer number not ready. Please close and try again.', 'error'); return;
-  }
 
   const btn = $('btn-confirm-add-client');
   btn.disabled = true; $('add-client-btn-text').textContent = 'Saving…';
 
+  const customerNo = await getNextCustomerNo();
   const addrLine1 = $('ac-address-line1').value.trim();
   const barangay  = $('ac-barangay').value.trim();
   const province  = $('ac-province').value.trim();
