@@ -671,7 +671,7 @@
         <div class="nav-section-label">Monitoring</div>
         <a class="nav-item" href="overdue.html" data-page="overdue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none;"></span></a>
         <a class="nav-item" href="calendar.html" data-page="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</a>
-        <a class="nav-item" href="notification-calendar.html" data-page="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="badge-notifications" style="display:none"></span></a>
+        <a class="nav-item" href="notification-calendar.html" data-page="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
               <div class="nav-section-label">Reports</div>
       <a class="nav-item " href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
       <a class="nav-item " href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
@@ -806,7 +806,7 @@
         </div>
 
         <!-- Section: Financial KPIs -->
-        <div class="section-label">Financial — <span id="financial-period-label" style="text-transform:none;font-weight:500;font-size:11px;letter-spacing:0;color:var(--text-muted);">All time</span></div>
+        <div class="section-label">Financial — <span id="financial-period-label" style="text-transform:none;font-weight:500;font-size:11px;letter-spacing:0;color:var(--text-muted);">—</span></div>
         <div class="kpi-grid-4" id="kpi-fin-grid">
           <!-- Contract Value -->
           <a class="kpi-card green loading" href="contracts.html" id="kpi-contract-val">
@@ -822,6 +822,7 @@
             <div class="kpi-label">Total Contract Value</div>
             <div class="kpi-sub-skel skeleton"></div>
             <div class="kpi-sub neutral" id="sub-contract-value">Active contracts</div>
+            <div id="sub-contract-value-2" style="font-size:10.5px;color:var(--text-muted);margin-top:2px;display:none"></div>
           </a>
 
           <!-- Total Collected -->
@@ -1183,17 +1184,49 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       const mStart = monthStart();
       const mEnd   = monthEnd();
 
-      // Contract value — sum of active contracts
+      // Contract value — filtered to contracts active during selected month
       const contractsSnap = await getDocs(collection(db,'contracts'));
       let contractValue = 0;
+      let contractCount = 0;
+      let allActiveValue = 0;
+      let allActiveCount = 0;
       contractsSnap.forEach(d => {
         const data = d.data();
-        const endDate = toDate(data.contractEndDate);
-        if (data.status === 'active' || (endDate && endDate >= today)) {
+        const startDate = toDate(data.contractStartDate);
+        const endDate   = toDate(data.contractEndDate);
+        const isActive  = data.status === 'active' || (endDate && endDate >= today);
+        // All active contracts (for outstanding calculation)
+        if (isActive) {
+          allActiveValue += Number(data.totalAmount) || 0;
+          allActiveCount++;
+        }
+        // Contracts active during the selected month:
+        // started on or before month end AND ended on or after month start
+        const activeInMonth = isActive &&
+          (!startDate || startDate <= mEnd) &&
+          (!endDate   || endDate   >= mStart);
+        if (activeInMonth) {
           contractValue += Number(data.totalAmount) || 0;
+          contractCount++;
         }
       });
+
+      // Check if filtered month differs from current month (i.e. is it the current period or past?)
+      const now = new Date();
+      const isCurrentMonth = filterMonth === now.getMonth() && filterYear === now.getFullYear();
+      const monthLabel = new Date(filterYear, filterMonth, 1)
+        .toLocaleDateString('en-PH', { month:'short', year:'numeric' });
+
       document.getElementById('val-contract-value').textContent = fmt(contractValue);
+      document.getElementById('sub-contract-value').textContent =
+        `${contractCount} contract${contractCount===1?'':'s'} active in ${monthLabel}`;
+      const sub2 = document.getElementById('sub-contract-value-2');
+      if (!isCurrentMonth && sub2) {
+        sub2.textContent = `All active: ${fmt(allActiveValue)} (${allActiveCount})`;
+        sub2.style.display = '';
+      } else if (sub2) {
+        sub2.style.display = 'none';
+      }
       doneLoading('kpi-contract-val');
 
       // Payments
@@ -1220,13 +1253,14 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
         }
       });
 
-      const outstanding = Math.max(0, contractValue - totalCollected);
+      // Outstanding uses all active contracts vs all collected (not month-scoped)
+      const outstanding = Math.max(0, allActiveValue - totalCollected);
 
       document.getElementById('val-collected').textContent    = fmt(totalCollected);
       document.getElementById('sub-collected').textContent    = `Received, Deposited & Remitted`;
 
       document.getElementById('val-outstanding').textContent  = fmt(outstanding);
-      document.getElementById('sub-outstanding').textContent  = `Contract value − collected`;
+      document.getElementById('sub-outstanding').textContent  = outstanding === 0 ? '✓ Fully collected' : `${allActiveCount} active contracts − collected`;
       document.getElementById('sub-outstanding').className    = `kpi-sub ${outstanding > 0 ? 'negative' : 'positive'}`;
 
       document.getElementById('val-overdue-pay').textContent  = fmt(overduePayAmount);
@@ -1419,7 +1453,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledI++; });
     const bdI = document.getElementById('badge-inspections');
     if(bdI && scheduledI > 0) { bdI.textContent = scheduledI > 99 ? '99+' : scheduledI; bdI.style.display = ''; }
-    const bdNotif = document.getElementById('badge-notifications');
+    const bdNotif = document.getElementById('notif-count-badge');
     if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
     const notifDot = document.getElementById('notif-dot');
     if(notifDot && notifCount > 0) notifDot.style.display = '';
