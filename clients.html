@@ -1451,8 +1451,8 @@ async function loadSidebarBadges() {
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
-    showAuth('login');
     dismissLoadingScreen();
+    window.location.replace('login.html');
     return;
   }
   currentUser = user;
@@ -1539,7 +1539,7 @@ $('btn-check-status').addEventListener('click', async () => {
   else showToast('Still pending approval. Please wait for an admin to approve your account.', 'warning');
 });
 $('btn-signout').addEventListener('click', () => {
-  if (confirm('Sign out?')) signOut(auth);
+  if (confirm('Sign out?')) signOut(auth).then(() => window.location.replace('login.html'));
 });
 
 /* ── Mobile sidebar ── */

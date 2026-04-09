@@ -1206,7 +1206,7 @@ async function loadSidebarBadges() {
   } catch(e) { console.warn('[badges] Failed:', e.message); }
 }
 onAuthStateChanged(auth, async user=>{
-  if(!user){dismissLoadingScreen();$('auth-screen').style.display='flex';$('app-shell').style.display='none';return;}
+  if(!user){dismissLoadingScreen();window.location.replace('login.html');return;}
   currentUser=user;
   try{
     const snap=await getDoc(doc(db,'users',user.uid));
@@ -1234,7 +1234,7 @@ onAuthStateChanged(auth, async user=>{
 $('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
 $('btn-signout-pending').addEventListener('click',()=>signOut(auth));
 $('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
-$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth);});
+$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth).then(()=>window.location.replace('login.html'));});
 
 const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
 hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));

@@ -1782,7 +1782,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     /* ── Auth state ── */
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        showAuthScreen('login');
+        window.location.replace('login.html');
         return;
       }
 
@@ -1820,6 +1820,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
 
         if (userData.status === 'denied') {
           await signOut(auth);
+          window.location.replace('login.html');
           showError('login-error', 'Your account access has been denied. Please contact an administrator.');
           showAuthScreen('login');
           return;
@@ -1909,7 +1910,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     });
 
     /* ── Pending: Sign Out ── */
-    document.getElementById('btn-signout-pending').addEventListener('click', () => signOut(auth));
+    document.getElementById('btn-signout-pending').addEventListener('click', () => signOut(auth).then(() => window.location.replace('login.html')));
 
     /* ── App Shell init ── */
     function initAppShell(user, userData) {
@@ -2017,6 +2018,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
     document.getElementById('btn-signout').addEventListener('click', async () => {
       if (confirm('Sign out of Pestastic?')) {
         await signOut(auth);
+        window.location.replace('login.html');
       }
     });
 
