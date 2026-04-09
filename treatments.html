@@ -1530,6 +1530,8 @@ async function loadSidebarBadges() {
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     let notifCount = 0;
+
+    // ── Overdue treatments ──
     const trSnap = await getDocs(collection(db,'treatments'));
     let overdueT = 0;
     trSnap.forEach(d => {
@@ -1539,48 +1541,86 @@ async function loadSidebarBadges() {
         if(td < today) { overdueT++; notifCount++; }
       }
     });
+
+    // ── Overdue payments ──
     const pySnap = await getDocs(collection(db,'payments'));
+    let overdueP = 0;
     pySnap.forEach(d => {
       const p = d.data();
       if(p.status === 'Pending') {
         const dd = p.dueDate?.toDate ? p.dueDate.toDate() : new Date(p.dueDate||0);
-        if(dd < today) notifCount++;
+        if(dd < today) { overdueP++; notifCount++; }
       }
     });
+
+    // ── Overdue nav badge = overdue treatments + overdue payments ──
+    const overdueTotal = overdueT + overdueP;
     const bdOverdue = document.getElementById('badge-overdue');
-    if(bdOverdue && overdueT > 0) { bdOverdue.textContent = overdueT > 99 ? '99+' : overdueT; bdOverdue.style.display = ''; }
+    if(bdOverdue && overdueTotal > 0) {
+      bdOverdue.textContent = overdueTotal > 99 ? '99+' : overdueTotal;
+      bdOverdue.style.display = '';
+    }
+
+    // ── Contracts expiring within 7 days ──
     const coSnap = await getDocs(collection(db,'contracts'));
     coSnap.forEach(d => {
-      const c = d.data(); if(c.status !== 'active') return;
+      const c = d.data();
+      if(c.status !== 'active') return;
       const ed = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
-      if(Math.round((ed - today) / 86400000) <= 7 && Math.round((ed - today) / 86400000) >= 0) notifCount++;
+      const daysLeft = Math.round((ed - today) / 86400000);
+      if(daysLeft >= 0 && daysLeft <= 7) notifCount++;
     });
+
+    // ── Open complaints ──
     const cmpSnap = await getDocs(collection(db,'complaints'));
     let openComplaints = 0;
     cmpSnap.forEach(d => {
       const c = d.data();
-      if(['Open','In Progress','Scheduled'].includes(c.status||'')) {
+      const s = c.status || '';
+      if(['Open','In Progress','Scheduled'].includes(s)) {
         openComplaints++;
         const rd = c.dateReported?.toDate ? c.dateReported.toDate() : new Date(c.dateReported||0);
-        if(Math.abs(Math.round((today - rd) / 86400000)) >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
+        const age = Math.abs(Math.round((today - rd) / 86400000));
+        if(age >= 3 && c.priority?.toLowerCase() === 'high') notifCount++;
       }
     });
     const bdComplaints = document.getElementById('badge-complaints');
-    if(bdComplaints && openComplaints > 0) { bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints; bdComplaints.style.display = ''; }
+    if(bdComplaints && openComplaints > 0) {
+      bdComplaints.textContent = openComplaints > 99 ? '99+' : openComplaints;
+      bdComplaints.style.display = '';
+    }
+
+    // ── Scheduled inspections ──
     const inSnap = await getDocs(collection(db,'inspections'));
-    let scheduledI = 0;
-    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledI++; });
-    const bdI = document.getElementById('badge-inspections');
-    if(bdI && scheduledI > 0) { bdI.textContent = scheduledI > 99 ? '99+' : scheduledI; bdI.style.display = ''; }
+    let scheduledInspections = 0;
+    inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledInspections++; });
+    const bdInspections = document.getElementById('badge-inspections');
+    if(bdInspections && scheduledInspections > 0) {
+      bdInspections.textContent = scheduledInspections > 99 ? '99+' : scheduledInspections;
+      bdInspections.style.display = '';
+    }
+
+    // ── Notifications nav badge (total urgent items) ──
     const bdNotif = document.getElementById('notif-count-badge');
-    if(bdNotif && notifCount > 0) { bdNotif.textContent = notifCount > 99 ? '99+' : notifCount; bdNotif.style.display = ''; }
+    if(bdNotif && notifCount > 0) {
+      bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
+      bdNotif.style.display = '';
+    }
+
+    // ── Topbar bell dot ──
     const notifDot = document.getElementById('notif-dot');
     if(notifDot && notifCount > 0) notifDot.style.display = '';
+
+    // ── Pending users (admin/super_admin only) ──
     if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
       const usrSnap = await getDocs(collection(db,'users'));
-      let pu = 0; usrSnap.forEach(d => { if(d.data().status === 'pending') pu++; });
-      const bdU = document.getElementById('badge-pending-users');
-      if(bdU && pu > 0) { bdU.textContent = pu > 99 ? '99+' : pu; bdU.style.display = ''; }
+      let pendingUsers = 0;
+      usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
+      const bdUsers = document.getElementById('badge-pending-users');
+      if(bdUsers && pendingUsers > 0) {
+        bdUsers.textContent = pendingUsers > 99 ? '99+' : pendingUsers;
+        bdUsers.style.display = '';
+      }
     }
   } catch(e) { console.warn('[badges] Failed:', e.message); }
 }
