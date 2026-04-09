@@ -378,108 +378,139 @@ function sevBadge(days){const s=getSev(days);const l={critical:'Critical',warnin
 function daysPill(days){return `<span class="days-pill ${getSev(days)}">${days}d</span>`;}
 
 async function loadRefData(){
-  const cSnap=await getDocs(collection(db,'clients'));cSnap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c;});
-  const coSnap=await getDocs(collection(db,'contracts'));coSnap.forEach(d=>{contractMap[d.id]=d.data();});
-  const tSnap=await getDocs(collection(db,'teams'));
-  const teams=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
-  $('filter-team').innerHTML='<option value="">All Teams</option>'+teams.map(t=>`<option>${t}</option>`).join('');
+  try{const cSnap=await getDocs(collection(db,'clients'));cSnap.forEach(d=>{const c=d.data();if(c.customerNo)clientMap[c.customerNo]=c;});}catch(e){console.warn('[loadRefData] clients:',e.message);}
+  try{const coSnap=await getDocs(collection(db,'contracts'));coSnap.forEach(d=>{contractMap[d.id]=d.data();});}catch(e){console.warn('[loadRefData] contracts:',e.message);}
+  try{
+    const tSnap=await getDocs(collection(db,'teams'));
+    const teams=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
+    $('filter-team').innerHTML='<option value="">All Teams</option>'+teams.map(t=>`<option>${t}</option>`).join('');
+  }catch(e){console.warn('[loadRefData] teams:',e.message);}
   try{const s=await getDoc(doc(db,'config','settings'));companySettings=s.exists()?s.data():{};}catch{}
 }
 
 async function generateReport(){
   $('report-area').innerHTML=`<div style="text-align:center;padding:52px"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:#9ca3af">Loading overdue treatments…</p></div>`;
-  const today=todayLocal();
-  const teamF=$('filter-team').value, typeF=$('filter-type').value, minDays=Number($('filter-severity').value)||0;
 
-  const snap=await getDocs(query(collection(db,'treatments'),where('status','==','scheduled')));
-  let treatments=[];
-  snap.forEach(d=>{
-    const t=d.data(); const tDate=toLocalDate(t.treatmentDate);
-    if(!tDate||tDate>=today)return;
-    const days=daysOverdue(t.treatmentDate);
-    if(days<=minDays)return;
-    if(teamF&&t.assignedTeam!==teamF)return;
-    if(typeF&&(t.contractType||contractMap[t.contractId]?.contractType)!==typeF)return;
-    treatments.push({id:d.id,...t,_days:days});
-  });
-  treatments.sort((a,b)=>b._days-a._days);
+  try {
+    const today=todayLocal();
+    const teamF=$('filter-team').value, typeF=$('filter-type').value, minDays=Number($('filter-severity').value)||0;
 
-  const critical=treatments.filter(t=>t._days>30).length;
-  const warning=treatments.filter(t=>t._days>14&&t._days<=30).length;
-  const attention=treatments.filter(t=>t._days<=14).length;
-  $('sc-critical').textContent=critical;$('sc-warning').textContent=warning;$('sc-attention').textContent=attention;$('sc-total').textContent=treatments.length;
+    const snap=await getDocs(query(collection(db,'treatments'),where('status','==','scheduled')));
+    let treatments=[];
+    snap.forEach(d=>{
+      const t=d.data(); const tDate=toLocalDate(t.treatmentDate);
+      if(!tDate||tDate>=today)return;
+      const days=daysOverdue(t.treatmentDate);
+      if(days<=minDays)return;
+      if(teamF&&t.assignedTeam!==teamF)return;
+      if(typeF&&(t.contractType||contractMap[t.contractId]?.contractType)!==typeF)return;
+      treatments.push({id:d.id,...t,_days:days});
+    });
+    treatments.sort((a,b)=>b._days-a._days);
 
-  const companyName=companySettings.companyName||'Pestastic Pest Control Services';
-  const companyAddr=companySettings.companyAddress||'';
-  const companyPhone=companySettings.companyPhone||'';
-  const genDate=new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const critical=treatments.filter(t=>t._days>30).length;
+    const warning=treatments.filter(t=>t._days>14&&t._days<=30).length;
+    const attention=treatments.filter(t=>t._days<=14).length;
+    $('sc-critical').textContent=critical;$('sc-warning').textContent=warning;$('sc-attention').textContent=attention;$('sc-total').textContent=treatments.length;
 
-  if(!treatments.length){
-    $('report-area').innerHTML=`
+    const companyName=companySettings.companyName||'Pestastic Pest Control Services';
+    const companyAddr=companySettings.companyAddress||'';
+    const companyPhone=companySettings.companyPhone||'';
+    const genDate=new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    // Shared letterhead
+    const letterheadHTML=`
       <div class="letterhead">
-        <div class="lh-logo"><div class="lh-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
-        <div class="lh-company"><h1>${companyName}</h1><p>${[companyAddr,companyPhone].filter(Boolean).join(' · ')}</p></div>
+        <div class="lh-logo">
+          <div class="lh-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
+          <div class="lh-company"><h1>${companyName}</h1><p>${[companyAddr,companyPhone].filter(Boolean).join(' · ')}</p></div>
+        </div>
+        <div class="lh-right">
+          <div class="lh-doc-title">Overdue Treatments Report</div>
+          <div class="lh-doc-sub">${genDate}</div>
+          <div class="lh-doc-meta">As of: ${genTime}${teamF?' · Team: '+teamF:''}${typeF?' · '+typeF:''}</div>
+        </div>
+      </div>`;
+
+    // No overdue treatments found
+    if(!treatments.length){
+      $('report-area').innerHTML=`
+        ${letterheadHTML}
+        <div class="no-overdue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <h3>No overdue treatments${teamF?' for '+teamF:''}${typeF?' ('+typeF+')':''}</h3>
+          <p>All scheduled treatments are up to date${minDays>0?' for the selected severity filter':''}.</p>
+        </div>`;
+      return;
+    }
+
+    // Build full report HTML
+    let html=`
+      ${letterheadHTML}
+      <div class="report-summary">
+        <div class="rs-item"><div class="rs-val red">${critical}</div><div class="rs-lbl">Critical (&gt;30d)</div></div>
+        <div class="rs-item"><div class="rs-val amber">${warning}</div><div class="rs-lbl">Warning (15-30d)</div></div>
+        <div class="rs-item"><div class="rs-val" style="color:#92400e">${attention}</div><div class="rs-lbl">Attention (1-14d)</div></div>
+        <div class="rs-item"><div class="rs-val blue">${treatments.length}</div><div class="rs-lbl">Total Overdue</div></div>
       </div>
-      <div class="lh-right">
-        <div class="lh-doc-title">Overdue Treatments Report</div>
-        <div class="lh-doc-sub">${genDate}</div>
-        <div class="lh-doc-meta">As of: ${genTime}${teamF?' · Team: '+teamF:''}${typeF?' · '+typeF:''}</div>
+      <div class="legend-bar">
+        <span class="legend-bar-title">Severity Key:</span>
+        <span class="legend-item"><span class="legend-swatch critical"></span>Critical — more than 30 days overdue</span>
+        <span class="legend-item"><span class="legend-swatch warning"></span>Warning — 15 to 30 days overdue</span>
+        <span class="legend-item"><span class="legend-swatch attention"></span>Attention — 1 to 14 days overdue</span>
       </div>
-    </div>
-    <div class="report-summary">
-      <div class="rs-item"><div class="rs-val red">${critical}</div><div class="rs-lbl">Critical (&gt;30d)</div></div>
-      <div class="rs-item"><div class="rs-val amber">${warning}</div><div class="rs-lbl">Warning (15-30d)</div></div>
-      <div class="rs-item"><div class="rs-val" style="color:#92400e">${attention}</div><div class="rs-lbl">Attention (1-14d)</div></div>
-      <div class="rs-item"><div class="rs-val blue">${treatments.length}</div><div class="rs-lbl">Total Overdue</div></div>
-    </div>
-    <div class="legend-bar">
-      <span class="legend-bar-title">Severity Key:</span>
-      <span class="legend-item"><span class="legend-swatch critical"></span>Critical — more than 30 days overdue</span>
-      <span class="legend-item"><span class="legend-swatch warning"></span>Warning — 15 to 30 days overdue</span>
-      <span class="legend-item"><span class="legend-swatch attention"></span>Attention — 1 to 14 days overdue</span>
-    </div>
-    <table class="report-table">
-      <thead><tr>
-        <th>#</th>
-        <th>Client Name</th>
-        <th>Customer No</th>
-        <th>Contract Type</th>
-        <th>Treatment #</th>
-        <th>Scheduled Date</th>
-        <th>Days Overdue</th>
-        <th>Assigned Team</th>
-        <th>Technician</th>
-        <th>Severity</th>
-      </tr></thead>
-      <tbody>`;
+      <table class="report-table">
+        <thead><tr>
+          <th>#</th>
+          <th>Client Name</th>
+          <th>Customer No</th>
+          <th>Contract Type</th>
+          <th>Treatment #</th>
+          <th>Scheduled Date</th>
+          <th>Days Overdue</th>
+          <th>Assigned Team</th>
+          <th>Technician</th>
+          <th>Severity</th>
+        </tr></thead>
+        <tbody>`;
 
-  treatments.forEach((t,i)=>{
-    const clientData=clientMap[t.customerNo];
-    const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
-    const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
-    const sev=getSev(t._days);
-    html+=`<tr class="sev-${sev}">
-      <td class="num">${i+1}</td>
-      <td style="font-weight:600;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
-      <td class="mono">${t.customerNo||'—'}</td>
-      <td style="font-size:12px">${contractType}</td>
-      <td class="mono">${t.treatmentNo||'—'}</td>
-      <td class="nowrap" style="color:#dc2626;font-weight:700">${fmtDate(t.treatmentDate)}</td>
-      <td class="nowrap">${daysPill(t._days)}</td>
-      <td style="font-size:12px">${t.assignedTeam||'—'}</td>
-      <td style="font-size:12px">${t.technician||'—'}</td>
-      <td>${sevBadge(t._days)}</td>
-    </tr>`;
-  });
+    treatments.forEach((t,i)=>{
+      const clientData=clientMap[t.customerNo];
+      const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
+      const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
+      const sev=getSev(t._days);
+      html+=`<tr class="sev-${sev}">
+        <td class="num">${i+1}</td>
+        <td style="font-weight:600;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
+        <td class="mono">${t.customerNo||'—'}</td>
+        <td style="font-size:12px">${contractType}</td>
+        <td class="mono">${t.treatmentNo||'—'}</td>
+        <td class="nowrap" style="color:#dc2626;font-weight:700">${fmtDate(t.treatmentDate)}</td>
+        <td class="nowrap">${daysPill(t._days)}</td>
+        <td style="font-size:12px">${t.assignedTeam||'—'}</td>
+        <td style="font-size:12px">${t.technician||'—'}</td>
+        <td>${sevBadge(t._days)}</td>
+      </tr>`;
+    });
 
-  html+=`</tbody></table>
-    <div class="report-footer">
-      <span>${companyName} — Overdue Treatments Report</span>
-      <span>Generated: ${genTime} · ${treatments.length} overdue treatment${treatments.length===1?'':'s'}</span>
-    </div>`;
+    html+=`</tbody></table>
+      <div class="report-footer">
+        <span>${companyName} — Overdue Treatments Report</span>
+        <span>Generated: ${genTime} · ${treatments.length} overdue treatment${treatments.length===1?'':'s'}</span>
+      </div>`;
 
-  $('report-area').innerHTML=html;
+    $('report-area').innerHTML=html;
+
+  } catch(err) {
+    console.error('[generateReport] Failed:', err);
+    $('report-area').innerHTML=`
+      <div class="no-overdue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#dc2626"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Failed to load report</h3>
+        <p>${err.message||'An unexpected error occurred. Check your connection and try again.'}</p>
+      </div>`;
+  }
 }
 
 $('btn-refresh').addEventListener('click',generateReport);
@@ -568,7 +599,15 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadRefData();await generateReport();
-  }catch(err){dismissLoadingScreen();console.error(err);}
+  }catch(err){
+    dismissLoadingScreen();
+    console.error('[auth] Startup error:', err);
+    if($('report-area'))$('report-area').innerHTML=`
+      <div class="no-overdue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#dc2626"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Failed to load report</h3><p>${err.message||'An unexpected error occurred.'}</p>
+      </div>`;
+  }
 });
 $('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
 $('btn-signout-pending').addEventListener('click',()=>signOut(auth));
