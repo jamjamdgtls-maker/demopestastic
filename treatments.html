@@ -245,7 +245,7 @@
     /* PAGE LOAD SCREEN */
     #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
     #loading-screen.fade-out{opacity:0;pointer-events:none}
-    .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
+    .ls-logo{display:flex;align-items:center;justify-content:center;background:white;border-radius:12px;padding:10px 20px}
     .ls-logo svg{width:34px;height:34px;color:white}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
@@ -259,6 +259,25 @@
     }
     @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
     @media(max-width:480px){.summary-grid{grid-template-columns:1fr}}
+  
+    /* Sortable headers */
+    .sortable { cursor:pointer; user-select:none; white-space:nowrap; }
+    .sortable:hover { background:var(--bg-tertiary); }
+    .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
+
+    /* Inline status select */
+    .inline-status-select {
+      border:none; background:transparent; font-size:12px; font-weight:600;
+      cursor:pointer; border-radius:20px; padding:3px 8px; outline:none;
+      font-family:var(--font); appearance:none; -webkit-appearance:none;
+      text-align:center;
+    }
+    .inline-status-select.status-scheduled  { background:var(--blue-bg);  color:var(--blue-text); }
+    .inline-status-select.status-overdue    { background:var(--red-bg);   color:var(--red-text);  }
+    .inline-status-select.status-completed  { background:var(--green-bg); color:var(--green-text);}
+    .inline-status-select.status-rescheduled{ background:var(--amber-bg); color:var(--amber-text);}
+    .inline-status-select.status-cancelled  { background:var(--gray-bg);  color:var(--gray-text); }
+
   </style>
 </head>
 <body>
@@ -378,6 +397,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
           </button>
+          <button class="btn btn-primary" id="btn-new-treatment">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Treatment
+          </button>
         </div>
       </div>
 
@@ -440,13 +463,15 @@
           <table>
             <thead>
               <tr>
-                <th>Treatment #</th>
-                <th>Client Name</th>
-                <th>Contract Type</th>
-                <th>Date / Time</th>
+                <th class="sortable" data-sort="treatmentNo">Treatment # <span class="sort-icon" id="sort-treatmentNo"></span></th>
+                <th class="sortable" data-sort="clientName">Client Name <span class="sort-icon" id="sort-clientName"></span></th>
+                <th class="sortable" data-sort="contractType">Contract Type <span class="sort-icon" id="sort-contractType"></span></th>
+                <th class="sortable" data-sort="treatmentType">Type <span class="sort-icon" id="sort-treatmentType"></span></th>
+                <th class="sortable" data-sort="treatmentDate">Date / Time <span class="sort-icon" id="sort-treatmentDate">▲</span></th>
                 <th>Team</th>
                 <th>Technician</th>
                 <th>Status</th>
+                <th>Notes</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -484,7 +509,9 @@
         </div>
         <div class="form-group">
           <label class="form-label">Technician Name <span class="req">*</span></label>
-          <input type="text" class="form-input" id="complete-technician" placeholder="Name of technician" />
+          <select class="form-select" id="complete-technician">
+            <option value="">— Select Technician —</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
@@ -654,7 +681,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc,
-  query, orderBy, serverTimestamp
+  query, orderBy, serverTimestamp, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 /* ── Firebase init ── */
@@ -678,6 +705,8 @@ let currentPage = 1;
 const PER_PAGE = 20;
 let treatmentTypesList  = [];
 let treatmentStatusesList = [];
+let teamsData = [];
+let sortField = 'treatmentDate', sortDir = 'asc';
 const SYSTEM_STATUSES = ['scheduled','completed','cancelled','rescheduled'];
 
 /* ── DOM helper ── */
@@ -819,10 +848,12 @@ async function loadAll() {
 
     // Teams
     const tSnap = await getDocs(collection(db, 'teams'));
-    const teamNames = [...new Set(tSnap.docs.map(d => d.data().teamName).filter(Boolean))].sort();
+    teamsData = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const teamNames = [...new Set(teamsData.map(d => d.teamName).filter(Boolean))].sort();
     const teamOpts  = teamNames.map(t => `<option>${t}</option>`).join('');
     $('filter-team').innerHTML         = '<option value="">All Teams</option>'           + teamOpts;
     $('reschedule-new-team').innerHTML = '<option value="">— Keep current team —</option>' + teamOpts;
+    $('new-treatment-team').innerHTML  = '<option value="">— Select Team —</option>'      + teamOpts;
 
     // Treatments — sorted ascending by date then time
     const trSnap = await getDocs(query(collection(db, 'treatments'), orderBy('treatmentDate', 'asc')));
@@ -841,7 +872,7 @@ async function loadAll() {
     showToast('Failed to load data: ' + err.message, 'error', 'Load Error');
     console.error('[loadAll]', err);
     // Show empty state instead of endless spinner
-    $('treatments-tbody').innerHTML = `<tr><td colspan="8"><div class="empty-state">
+    $('treatments-tbody').innerHTML = `<tr><td colspan="10"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <h3>Could not load treatments</h3>
       <p>${err.message}</p>
@@ -959,16 +990,23 @@ function renderTable() {
 
     const canComplete   = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
     const canCancel     = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
-    const canReschedule = ['scheduled','overdue'].includes(ds)               || customStatusKeys.includes(ds);
+    const canReschedule = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
 
+    const treatmentType = t.treatmentType || '—';
+    const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
+    const allStatuses   = ['scheduled','rescheduled','completed','cancelled',...treatmentStatusesList];
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
-      <td style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
-      <td style="font-size:12.5px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${contractType}</td>
+      <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
+      <td style="font-size:12.5px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${contractType}</td>
+      <td style="font-size:12px">${treatmentType}</td>
       <td style="white-space:nowrap">${fmtDate(t.treatmentDate)}${timeStr}</td>
-      <td class="muted">${t.assignedTeam || '—'}</td>
-      <td class="muted">${t.technician   || '—'}</td>
-      <td>${statusBadge(ds)}</td>
+      <td class="muted" style="font-size:12.5px">${t.assignedTeam || '—'}</td>
+      <td class="muted" style="font-size:12.5px">${t.technician   || '—'}</td>
+      <td><select class="inline-status-select status-${ds}" data-id="${t.id}" data-current="${ds}">
+        ${allStatuses.map(s => `<option value="${s}" ${s===ds?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+      </select></td>
+      <td style="font-size:12px;max-width:130px;color:var(--text-secondary)" title="${t.notes||''}">${notePreview}</td>
       <td>
         <div class="actions-cell">
           ${canComplete   ? `<button class="btn btn-sm btn-primary btn-complete"   data-id="${t.id}" title="Mark completed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Complete</button>` : ''}
@@ -1029,7 +1067,16 @@ function openCompleteModal(id) {
   $('complete-subtitle').textContent = `${cleanName(clientMap[t.customerNo]?.name || '')} · ${t.treatmentNo || ''}`;
   $('complete-context').innerHTML   = contextBanner(t);
   $('complete-date').value          = toInputDate(new Date());
-  $('complete-technician').value    = t.technician     || '';
+  // Populate technician dropdown from team members
+  const teamForTech = t.assignedTeam || '';
+  const teamObj = teamsData.find(td => td.teamName === teamForTech);
+  const members = teamObj?.members || teamObj?.technicians || [];
+  // Also gather all members across all teams as fallback
+  const allMembers = [...new Set(teamsData.flatMap(td => td.members || td.technicians || []).filter(Boolean))].sort();
+  const memberList = members.length > 0 ? members : allMembers;
+  $('complete-technician').innerHTML = '<option value="">— Select Technician —</option>' +
+    memberList.map(m => `<option value="${m}" ${m === (t.technician||'') ? 'selected' : ''}>${m}</option>`).join('') +
+    (t.technician && !memberList.includes(t.technician) ? `<option value="${t.technician}" selected>${t.technician}</option>` : '');
   $('complete-chemicals').value     = t.chemicalsUsed  || '';
   $('complete-notes').value         = t.notes          || '';
   $('complete-remarks').value       = t.remarks        || '';
@@ -1235,6 +1282,181 @@ $('btn-confirm-reschedule').addEventListener('click', async () => {
   }
   btn.disabled = false;
   $('reschedule-btn-text').textContent = 'Reschedule';
+});
+
+/* ══════════════════════════════════
+   SORTING
+══════════════════════════════════ */
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.dataset.sort;
+    if (sortField === field) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortField = field;
+      sortDir   = 'asc';
+    }
+    // Update all sort icons
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+
+    filteredTreatments.sort((a, b) => {
+      let av, bv;
+      if (field === 'treatmentDate') {
+        av = toDate(a.treatmentDate)?.getTime() || 0;
+        bv = toDate(b.treatmentDate)?.getTime() || 0;
+      } else if (field === 'clientName') {
+        av = (clientMap[a.customerNo]?.name || '').toLowerCase();
+        bv = (clientMap[b.customerNo]?.name || '').toLowerCase();
+      } else {
+        av = (a[field] || '').toString().toLowerCase();
+        bv = (b[field] || '').toString().toLowerCase();
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ?  1 : -1;
+      return 0;
+    });
+    currentPage = 1;
+    renderTable();
+  });
+});
+
+/* ══════════════════════════════════
+   INLINE STATUS EDIT
+══════════════════════════════════ */
+$('treatments-tbody').addEventListener('change', async e => {
+  const sel = e.target.closest('.inline-status-select');
+  if (!sel) return;
+  const id        = sel.dataset.id;
+  const newStatus = sel.value;
+  const oldStatus = sel.dataset.current;
+  if (!id || newStatus === oldStatus) return;
+
+  try {
+    await updateDoc(doc(db, 'treatments', id), {
+      status:    newStatus,
+      updatedAt: serverTimestamp()
+    });
+    const t = allTreatments.find(x => x.id === id);
+    if (t) t.status = newStatus;
+    // Update the select's class and data-current
+    sel.dataset.current = newStatus;
+    sel.className = 'inline-status-select status-' + newStatus;
+    await logAction('updated', 'treatment', id, `Status changed from ${oldStatus} to ${newStatus}`);
+    showToast(`Status updated to "${newStatus}".`);
+    computeSummary();
+  } catch (err) {
+    showToast('Failed to update status: ' + err.message, 'error');
+    sel.value = oldStatus; // revert
+  }
+});
+
+/* ══════════════════════════════════
+   NEW TREATMENT
+══════════════════════════════════ */
+async function getNextTreatmentNo() {
+  let nextNum = 1;
+  await runTransaction(db, async tx => {
+    const ref  = doc(db, 'config', 'counters');
+    const snap = await tx.get(ref);
+    const curr = snap.exists() ? (snap.data().treatmentCounter || 0) : 0;
+    nextNum = curr + 1;
+    if (snap.exists()) tx.update(ref, { treatmentCounter: nextNum });
+    else               tx.set(ref,    { treatmentCounter: nextNum });
+  });
+  return `TR-${String(nextNum).padStart(5, '0')}`;
+}
+
+$('btn-new-treatment').addEventListener('click', () => {
+  // Reset form
+  $('nt-customer-no').value   = '';
+  $('nt-client-hint').textContent = '';
+  $('nt-treatment-no').value  = 'Auto-generated';
+  $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
+    treatmentTypesList.map(t => `<option>${t}</option>`).join('');
+  $('nt-contract-type').value = '';
+  const today = new Date();
+  $('nt-date').value = today.toISOString().slice(0,10);
+  $('nt-time').value = '';
+  $('nt-technician').innerHTML = '<option value="">— Select Technician —</option>';
+  $('nt-notes').value = '';
+  $('nt-btn-text').textContent = 'Create Treatment';
+
+  // Populate datalist for customer lookup
+  $('nt-customer-list').innerHTML = Object.entries(clientMap)
+    .map(([no, c]) => `<option value="${no}">${no} — ${c.name || ''}</option>`).join('');
+
+  openModal('new-treatment-modal');
+});
+
+// Customer lookup hint
+$('nt-customer-no').addEventListener('input', () => {
+  const val = $('nt-customer-no').value.trim();
+  const client = clientMap[val];
+  $('nt-client-hint').textContent = client ? `✓ ${client.name}${client.address ? ' · ' + client.address : ''}` : '';
+});
+
+// Team change updates technician dropdown in new treatment modal
+$('new-treatment-team').addEventListener('change', () => {
+  const teamName = $('new-treatment-team').value;
+  const teamObj  = teamsData.find(t => t.teamName === teamName);
+  const members  = teamObj?.members || teamObj?.technicians || [];
+  const allM     = [...new Set(teamsData.flatMap(t => t.members || t.technicians || []).filter(Boolean))].sort();
+  const list     = members.length > 0 ? members : allM;
+  $('nt-technician').innerHTML = '<option value="">— Select Technician —</option>' +
+    list.map(m => `<option>${m}</option>`).join('');
+});
+
+$('btn-save-new-treatment').addEventListener('click', async () => {
+  const customerNo   = $('nt-customer-no').value.trim();
+  const treatType    = $('nt-treatment-type').value;
+  const dateStr      = $('nt-date').value;
+  if (!customerNo)  { showToast('Customer No is required.', 'error');      return; }
+  if (!clientMap[customerNo]) { showToast('Customer not found. Please enter a valid Customer No.', 'error'); return; }
+  if (!treatType)   { showToast('Treatment Type is required.', 'error');   return; }
+  if (!dateStr)     { showToast('Date is required.', 'error');              return; }
+
+  const btn = $('btn-save-new-treatment');
+  btn.disabled = true;
+  $('nt-btn-text').textContent = 'Saving…';
+
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const treatmentNo = await getNextTreatmentNo();
+    const data = {
+      treatmentNo,
+      customerNo,
+      contractType:  $('nt-contract-type').value.trim() || '',
+      treatmentType: treatType,
+      treatmentDate: new Date(y, m - 1, d),
+      treatmentTime: $('nt-time').value || '',
+      assignedTeam:  $('new-treatment-team').value || '',
+      technician:    $('nt-technician').value || '',
+      notes:         $('nt-notes').value.trim() || '',
+      status:        'scheduled',
+      createdAt:     serverTimestamp(),
+      updatedAt:     serverTimestamp()
+    };
+    const ref = await addDoc(collection(db, 'treatments'), data);
+    const newTreatment = { id: ref.id, ...data };
+    allTreatments.push(newTreatment);
+    allTreatments.sort((a, b) => {
+      const da = toDate(a.treatmentDate)?.getTime() || 0;
+      const db2 = toDate(b.treatmentDate)?.getTime() || 0;
+      return da - db2;
+    });
+    await logAction('created', 'treatment', ref.id,
+      `Created treatment ${treatmentNo} for ${customerNo} — ${clientMap[customerNo]?.name || ''} on ${dateStr}`);
+    closeModal('new-treatment-modal');
+    showToast(`Treatment ${treatmentNo} created successfully.`, 'success', 'Created');
+    computeSummary();
+    applyFilters();
+  } catch (err) {
+    showToast('Failed: ' + err.message, 'error');
+  }
+  btn.disabled = false;
+  $('nt-btn-text').textContent = 'Create Treatment';
 });
 
 /* ══════════════════════════════════
@@ -1447,5 +1669,83 @@ $('btn-check-status')?.addEventListener('click',    () => location.reload());
 $('btn-signout-pending')?.addEventListener('click', () => signOut(auth).then(() => window.location.replace('login.html')));
 
 </script>
+
+<!-- ════════════════════════════
+     NEW TREATMENT MODAL
+════════════════════════════ -->
+<div class="modal-overlay" id="new-treatment-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">New Treatment Schedule</div>
+        <div class="modal-subtitle">Create and link a treatment to a client</div>
+      </div>
+      <button class="modal-close" data-close="new-treatment-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Customer No <span class="req">*</span></label>
+          <input type="text" class="form-input" id="nt-customer-no" placeholder="e.g. PC-00001" list="nt-customer-list" autocomplete="off" />
+          <datalist id="nt-customer-list"></datalist>
+          <div class="form-hint" id="nt-client-hint" style="color:var(--primary);font-weight:500"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Treatment #</label>
+          <input type="text" class="form-input" id="nt-treatment-no" placeholder="Auto-generated" readonly style="background:var(--bg-secondary);color:var(--text-muted)" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Treatment Type <span class="req">*</span></label>
+          <select class="form-select" id="nt-treatment-type">
+            <option value="">— Select Type —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contract Type / Description</label>
+          <input type="text" class="form-input" id="nt-contract-type" placeholder="e.g. General Pest Control" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date <span class="req">*</span></label>
+          <input type="date" class="form-input" id="nt-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time Slot</label>
+          <input type="time" class="form-input" id="nt-time" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Assigned Team</label>
+          <select class="form-select" id="new-treatment-team">
+            <option value="">— Select Team —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Technician</label>
+          <select class="form-select" id="nt-technician">
+            <option value="">— Select Technician —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="nt-notes" style="min-height:70px" placeholder="Special instructions, areas to treat, client concerns…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="new-treatment-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-new-treatment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="nt-btn-text">Create Treatment</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>
