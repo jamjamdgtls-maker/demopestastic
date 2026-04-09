@@ -29,7 +29,6 @@
     input,select,textarea{font-family:var(--font);font-size:14px}
 
     /* ── MULTI-SELECT TAG PICKER ── */
-    .tag-picker-wrap{position:relative}
     .tag-picker{border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;background:white;min-height:42px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
     .tag-picker:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
     .tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:3px 8px;border-radius:16px;font-size:12px;font-weight:600;white-space:nowrap;animation:tagIn .15s ease}
@@ -39,14 +38,15 @@
     .tag-chip button svg{width:12px;height:12px}
     .tag-picker-input{border:none;outline:none;font-size:13px;font-family:var(--font);flex:1;min-width:120px;padding:2px 4px;background:transparent;color:var(--text)}
     .tag-picker-input::placeholder{color:var(--text-muted)}
-    .tag-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;z-index:10;margin-top:4px;display:none}
+    .tag-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:200px;overflow-y:auto;z-index:10;margin-top:4px;display:none}
     .tag-dropdown.open{display:block}
     .tag-dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
     .tag-dropdown-item:hover{background:var(--bg-secondary)}
     .tag-dropdown-item.selected{background:var(--green-bg);color:var(--green-text);font-weight:600}
-    .tag-dropdown-item .check-icon{width:14px;height:14px;color:var(--green)}
-    .tag-dropdown-item.add-new{color:var(--primary);font-weight:600;border-top:1px solid var(--border);margin-top:4px;padding-top:8px}
+    .tag-dropdown-item svg{width:14px;height:14px}
     .tag-dropdown-empty{padding:10px 12px;font-size:12px;color:var(--text-muted);text-align:center}
+    .tag-dropdown-section{padding:6px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:var(--bg-secondary);border-bottom:1px solid var(--border);margin-top:0}
+    .tag-picker-wrap{position:relative}
 
     /* ── AUTH ── */
     #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
@@ -303,7 +303,7 @@
 
 <!-- PAGE LOAD SCREEN -->
 <div id="loading-screen">
-  <div class="ls-logo">
+    <div class="ls-logo">
     <img src="logo.jpg" alt="Pestastic" style="width:34px;height:34px;object-fit:contain" />
   </div>
   <div class="ls-spinner"></div>
@@ -469,7 +469,7 @@
 
 <!-- ══════════════════════════════════
      CONTRACT FORM MODAL (New / Edit)
-══════════════════════════════════ -->
+════════════��═════════════════════ -->
 <div class="modal-overlay" id="contract-form-modal">
   <div class="modal modal-xl">
     <div class="modal-header">
@@ -503,7 +503,7 @@
             <label class="form-label">Contract Type(s) <span class="req">*</span></label>
             <div class="tag-picker-wrap">
               <div class="tag-picker" id="form-contract-type-picker">
-                <input type="text" class="tag-picker-input" id="form-contract-type-input" placeholder="Search or type treatment type…" />
+                <input type="text" class="tag-picker-input" id="form-contract-type-input" placeholder="Search or type treatment type…" autocomplete="off" />
               </div>
               <div class="tag-dropdown" id="form-contract-type-dropdown"></div>
             </div>
@@ -512,7 +512,10 @@
           </div>
           <div class="form-group">
             <label class="form-label">Treatment Method</label>
-            <input type="text" class="form-input" id="form-treatment-method" placeholder="e.g. Chemical spraying" />
+            <select class="form-select" id="form-treatment-method">
+              <option value="">— Select or type —</option>
+            </select>
+            <div class="form-hint">Choose from common methods or type a custom one.</div>
           </div>
         </div>
         <div class="form-row three">
@@ -615,7 +618,7 @@
         <textarea class="form-textarea" id="form-notes" placeholder="Any additional notes…"></textarea>
       </div>
 
-      <!-- Renewal banner (hidden by default) -->
+      <!-- Renewal banner -->
       <div id="renewal-banner" style="display:none;background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -626,7 +629,7 @@
         </div>
       </div>
 
-      <!-- Schedule preview -->
+      <!-- Schedule Preview -->
       <div id="schedule-preview" style="display:none;border:1px solid var(--primary-border);border-radius:var(--radius);overflow:hidden;margin-top:4px">
         <div style="background:var(--primary);color:white;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -761,8 +764,8 @@ let teamsData = [], salesAgents = [];
 let activeDetailId = null, csvRows = [];
 let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
 let treatmentTypesList = [];
+let treatmentMethods = [];
 let selectedContractTypes = [];
-let tagPicker = null;
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -920,7 +923,6 @@ function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contrac
 }
 
 async function loadAll() {
-  // Clients
   const cSnap = await getDocs(collection(db,'clients'));
   clientMap = {};
   cSnap.forEach(d=>{ const c=d.data(); clientMap[c.customerNo]={ name:c.clientName, id:d.id }; });
@@ -930,36 +932,34 @@ async function loadAll() {
     return `<option value="${c.customerNo}">${c.customerNo} — ${c.clientName}</option>`;
   }).join('');
 
-  // Teams
   const tSnap = await getDocs(collection(db,'teams'));
   teamsData = tSnap.docs.map(d=>({id:d.id,...d.data()}));
   $('form-team').innerHTML = '<option value="">— Select Team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
 
-  // Sales agents & treatment types from settings
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
     if(cfg.exists()) {
       const s = cfg.data();
       salesAgents = s.salesAgents || [];
       treatmentTypesList = s.treatmentTypes || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+      treatmentMethods = s.treatmentMethods || ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
       systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
       systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
     }
   } catch { 
     salesAgents=[]; 
-    treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control']; 
+    treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+    treatmentMethods = ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
   }
 
-  // Populate filter type dropdown
   $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
+  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentMethods.map(m => '<option>'+m+'</option>').join('');
 
-  // Collect agents
   const agentSet=new Set(salesAgents);
   cSnap.forEach(d=>{if(d.data().salesAgent)agentSet.add(d.data().salesAgent);});
   salesAgents=[...agentSet].filter(Boolean).sort();
   $('form-sales-agent').innerHTML='<option value="">— Select Agent —</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
 
-  // Payments map
   const pSnap = await getDocs(collection(db,'payments'));
   paymentMap = {};
   pSnap.forEach(d=>{
@@ -970,7 +970,6 @@ async function loadAll() {
       paymentMap[p.contractId].collected += Number(p.amount)||0;
   });
 
-  // Contracts
   const coSnap = await getDocs(query(collection(db,'contracts'), orderBy('contractStartDate','desc')));
   allContracts = coSnap.docs.map(d=>({id:d.id,...d.data()}));
 
@@ -1064,7 +1063,6 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  // Pagination
   const ctrl=$('pagination-controls');
   if(totalPages<=1){ctrl.innerHTML='';return;}
   const pages=[];
@@ -1073,145 +1071,6 @@ function renderTable() {
   ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
 }
 
-/* ── Multi-select Tag Picker ── */
-function initTagPicker() {
-  const picker = $('form-contract-type-picker');
-  const input = $('form-contract-type-input');
-  const dropdown = $('form-contract-type-dropdown');
-  const hiddenField = $('form-contract-type');
-
-  function renderTags() {
-    picker.querySelectorAll('.tag-chip').forEach(c => c.remove());
-    selectedContractTypes.forEach(type => {
-      const chip = document.createElement('span');
-      chip.className = 'tag-chip';
-      chip.innerHTML = `${type}<button type="button" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
-      chip.querySelector('button').addEventListener('click', e => {
-        e.stopPropagation();
-        selectedContractTypes = selectedContractTypes.filter(t => t !== type);
-        hiddenField.value = selectedContractTypes.join(', ');
-        renderTags();
-        renderDropdown();
-      });
-      picker.insertBefore(chip, input);
-    });
-  }
-
-  function renderDropdown() {
-    const q = input.value.trim().toLowerCase();
-    const available = treatmentTypesList.filter(t => !selectedContractTypes.includes(t));
-    const filtered = q 
-      ? available.filter(t => t.toLowerCase().includes(q))
-      : available;
-
-    let html = '';
-
-    filtered.forEach(t => {
-      const isSelected = selectedContractTypes.includes(t);
-      html += `<div class="tag-dropdown-item${isSelected ? ' selected' : ''}" data-value="${t}">
-        ${isSelected ? '<svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
-        <span>${t}</span>
-      </div>`;
-    });
-
-    if(q && !treatmentTypesList.some(t => t.toLowerCase() === q) && !selectedContractTypes.some(t => t.toLowerCase() === q)) {
-      html += `<div class="tag-dropdown-item add-new" data-value="__new__" title="Add as new treatment type">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Add "${q}" as new type</span>
-      </div>`;
-    }
-
-    if(!html) {
-      html = '<div class="tag-dropdown-empty">No more types available</div>';
-    }
-
-    dropdown.innerHTML = html;
-    dropdown.classList.add('open');
-
-    dropdown.querySelectorAll('.tag-dropdown-item').forEach(item => {
-      item.addEventListener('mousedown', e => {
-        e.preventDefault();
-        const val = item.dataset.value;
-        
-        if(val === '__new__') {
-          const newType = input.value.trim();
-          if(newType) {
-            selectedContractTypes.push(newType);
-            if(!treatmentTypesList.includes(newType)) {
-              treatmentTypesList.push(newType);
-            }
-            hiddenField.value = selectedContractTypes.join(', ');
-            renderTags();
-            input.value = '';
-            renderDropdown();
-            showToast(`"${newType}" added as treatment type.`, 'success');
-          }
-        } else {
-          const idx = selectedContractTypes.indexOf(val);
-          if(idx >= 0) {
-            selectedContractTypes.splice(idx, 1);
-          } else {
-            selectedContractTypes.push(val);
-          }
-          hiddenField.value = selectedContractTypes.join(', ');
-          renderTags();
-          renderDropdown();
-        }
-      });
-    });
-  }
-
-  picker.addEventListener('click', e => {
-    if(e.target === input) return;
-    input.focus();
-  });
-
-  input.addEventListener('focus', () => renderDropdown());
-  input.addEventListener('input', () => renderDropdown());
-  input.addEventListener('blur', () => {
-    setTimeout(() => dropdown.classList.remove('open'), 150);
-  });
-
-  input.addEventListener('keydown', e => {
-    if(e.key === 'Enter') {
-      e.preventDefault();
-      const val = input.value.trim();
-      if(val && !selectedContractTypes.includes(val) && !treatmentTypesList.includes(val)) {
-        selectedContractTypes.push(val);
-        treatmentTypesList.push(val);
-        hiddenField.value = selectedContractTypes.join(', ');
-        renderTags();
-        input.value = '';
-        renderDropdown();
-        showToast(`"${val}" added as treatment type.`, 'success');
-      }
-    }
-    
-    if(e.key === 'Backspace' && !input.value && selectedContractTypes.length) {
-      selectedContractTypes.pop();
-      hiddenField.value = selectedContractTypes.join(', ');
-      renderTags();
-      renderDropdown();
-    }
-  });
-
-  document.addEventListener('click', e => {
-    if(!picker.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.remove('open');
-    }
-  });
-
-  return { renderTags, renderDropdown };
-}
-
-/* ── Customer No hint ── */
-$('form-customer-no').addEventListener('input',()=>{
-  const no=$('form-customer-no').value.trim();
-  const client=clientMap[no];
-  $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : (no?'Client not found in system':'');
-});
-
-/* ── Update end date & preview ── */
 function updateEndDateAndPreview() {
   const startStr   = $('form-start-date').value;
   const freq       = $('form-frequency').value;
@@ -1222,6 +1081,7 @@ function updateEndDateAndPreview() {
 
   const [y,m,d] = startStr.split('-').map(Number);
   const startDate = new Date(y,m-1,d);
+
   const endDate   = computeEndDate(startDate, freq, sessions, warranty);
   const interval  = getIntervalMonths(freq);
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1304,7 +1164,126 @@ function updateEndDateAndPreview() {
 
 ['form-start-date','form-frequency','form-sessions','form-amount','form-warranty','form-downpayment-pct','form-payment-plan-type'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
 
-/* ── New Contract ── */
+function initTagPicker() {
+  const picker = $('form-contract-type-picker');
+  const input = $('form-contract-type-input');
+  const dropdown = $('form-contract-type-dropdown');
+  const hiddenField = $('form-contract-type');
+
+  function getSelected() { return [...selectedContractTypes]; }
+
+  function setSelected(arr) {
+    selectedContractTypes = [...arr];
+    hiddenField.value = selectedContractTypes.join(', ');
+    renderTags();
+  }
+
+  function renderTags() {
+    picker.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    selectedContractTypes.forEach(type => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = type + '<button type="button" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+      chip.querySelector('button').addEventListener('click', e => {
+        e.stopPropagation();
+        selectedContractTypes = selectedContractTypes.filter(t => t !== type);
+        hiddenField.value = selectedContractTypes.join(', ');
+        renderTags();
+        renderDropdown();
+      });
+      picker.insertBefore(chip, input);
+    });
+  }
+
+  function renderDropdown() {
+    const q = input.value.trim().toLowerCase();
+    const available = treatmentTypesList.filter(t => !selectedContractTypes.includes(t));
+    const filtered = q ? available.filter(t => t.toLowerCase().includes(q)) : available;
+
+    let html = '';
+    
+    if(filtered.length) {
+      html += '<div class="tag-dropdown-section">Saved Types</div>';
+      filtered.forEach(t => {
+        html += '<div class="tag-dropdown-item" data-value="'+t+'">'+t+'</div>';
+      });
+    }
+
+    if(q && !treatmentTypesList.some(t => t.toLowerCase() === q) && !selectedContractTypes.some(t => t.toLowerCase() === q)) {
+      html += '<div class="tag-dropdown-section">Add New</div>';
+      html += '<div class="tag-dropdown-item" data-value="__new__" style="color:var(--primary);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add "'+input.value.trim()+'" as new type</div>';
+    }
+
+    if(!html) html = '<div class="tag-dropdown-empty">No types available</div>';
+    dropdown.innerHTML = html;
+    dropdown.classList.add('open');
+
+    dropdown.querySelectorAll('.tag-dropdown-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const val = item.dataset.value;
+        if(val === '__new__') {
+          const newType = input.value.trim();
+          if(newType) {
+            selectedContractTypes.push(newType);
+            treatmentTypesList.push(newType);
+            hiddenField.value = selectedContractTypes.join(', ');
+            renderTags();
+          }
+        } else {
+          selectedContractTypes.push(val);
+          hiddenField.value = selectedContractTypes.join(', ');
+          renderTags();
+        }
+        input.value = '';
+        renderDropdown();
+      });
+    });
+  }
+
+  picker.addEventListener('click', () => { input.focus(); renderDropdown(); });
+  input.addEventListener('focus', () => renderDropdown());
+  input.addEventListener('input', () => renderDropdown());
+  input.addEventListener('blur', () => { setTimeout(() => dropdown.classList.remove('open'), 150); });
+
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter') {
+      e.preventDefault();
+      const val = input.value.trim();
+      if(val && !selectedContractTypes.includes(val)) {
+        selectedContractTypes.push(val);
+        treatmentTypesList.push(val);
+        hiddenField.value = selectedContractTypes.join(', ');
+        renderTags();
+        input.value = '';
+        renderDropdown();
+      }
+    }
+    if(e.key === 'Backspace' && !input.value && selectedContractTypes.length) {
+      selectedContractTypes.pop();
+      hiddenField.value = selectedContractTypes.join(', ');
+      renderTags();
+      renderDropdown();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if(!picker.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  return { getSelected, setSelected, renderTags, renderDropdown };
+}
+
+let tagPicker = null;
+
+$('form-customer-no').addEventListener('input',()=>{
+  const no=$('form-customer-no').value.trim();
+  const client=clientMap[no];
+  $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : (no?'Client not found in system':'');
+});
+
 $('btn-new-contract').addEventListener('click', async ()=>{
   clearForm();
   $('renewal-banner').style.display='none';
@@ -1315,11 +1294,10 @@ $('btn-new-contract').addEventListener('click', async ()=>{
   selectedContractTypes = [];
   if(tagPicker) tagPicker.renderTags();
   $('form-contract-no').value = 'Auto-generated';
-  if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
+  if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
   openModal('contract-form-modal');
 });
 
-/* ── Open Renewal Mode ── */
 async function openRenewalMode(params) {
   clearForm();
   $('form-contract-no').value = 'Auto-generated';
@@ -1339,7 +1317,7 @@ async function openRenewalMode(params) {
   if(params.get('customerNo')) {
     $('form-customer-no').value = params.get('customerNo');
     const client = clientMap[params.get('customerNo')];
-    $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
+        $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
   }
   if(params.get('contractType')) {
     const types = params.get('contractType').split(',').map(s=>s.trim()).filter(Boolean);
@@ -1370,7 +1348,6 @@ async function openRenewalMode(params) {
   if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
 }
 
-/* ── Open Inspection Convert Mode ── */
 async function openInspectionMode(params) {
   clearForm();
   $('form-contract-no').value = 'Auto-generated';
@@ -1444,7 +1421,6 @@ async function openInspectionMode(params) {
   if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
 }
 
-/* ── Edit Contract ── */
 function openEditModal(id) {
   const c=allContracts.find(x=>x.id===id);
   if(!c) return;
@@ -1493,7 +1469,6 @@ function clearForm() {
   if($('downpayment-hint')) $('downpayment-hint').textContent=`System default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
 }
 
-/* ── Save Contract ── */
 $('btn-save-contract').addEventListener('click', async ()=>{
   const customerNo   = $('form-customer-no').value.trim();
   const contractType = selectedContractTypes.length ? selectedContractTypes.join(', ') : '';
@@ -1609,7 +1584,6 @@ $('btn-save-contract').addEventListener('click', async ()=>{
   btn.disabled=false; $('save-btn-text').textContent=editId?'Update Contract':'Save & Generate Schedule';
 });
 
-/* ── Detail Modal ── */
 async function openDetailModal(id) {
   const c=allContracts.find(x=>x.id===id);
   if(!c) return;
@@ -1751,7 +1725,6 @@ async function loadDetailPayments(c) {
   } catch(e) { panel.innerHTML=`<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load payments.</p>`; }
 }
 
-/* ── Export CSV ── */
 $('btn-export-csv').addEventListener('click',()=>{
   const headers=['contractNumber','customerNo','clientName','contractType','treatmentMethod','frequency','noOfSessions','warrantyPeriod','contractStartDate','contractEndDate','totalAmount','assignedTeam','salesAgent','status','notes'];
   const rows=filteredContracts.map(c=>[
@@ -1766,7 +1739,6 @@ $('btn-export-csv').addEventListener('click',()=>{
   a.click(); showToast(`Exported ${filteredContracts.length} contracts.`);
 });
 
-/* ── CSV Template ── */
 $('btn-dl-template').addEventListener('click',()=>{
   const h='customerNo,contractNumber,contractType,treatmentMethod,frequency,noOfSessions,warrantyPeriod,contractStartDate,contractEndDate,totalAmount,assignedTeam,salesAgent,communicationSource,status,notes';
   const ex='PC-00001,CTR-00001,Termite Control,Chemical,monthly,12,6,2024-01-15,2024-12-15,12000,Team A,Agent Name,Referral,active,';
@@ -1774,7 +1746,6 @@ $('btn-dl-template').addEventListener('click',()=>{
   a.click();
 });
 
-/* ── Excel serial date converter ── */
 function parseFlexDate(val) {
   if(!val) return null;
   const s=String(val).trim();
@@ -1798,7 +1769,6 @@ function parseFlexDate(val) {
   return isNaN(d)?null:d;
 }
 
-/* ── CSV Import ── */
 $('btn-import-csv').addEventListener('click',()=>{
   csvRows=[]; $('upload-preview').style.display='none'; $('btn-confirm-import').disabled=true; $('csv-file-input').value='';
   openModal('csv-import-modal');
@@ -1875,9 +1845,6 @@ $('btn-confirm-import').addEventListener('click', async()=>{
   $('import-btn-text').textContent='Import Records';
 });
 
-/* ── Auth ── */
-
-/* ── Sidebar & topbar notification badges ── */
 async function loadSidebarBadges() {
   try {
     const today = new Date(); today.setHours(0,0,0,0);
@@ -1991,14 +1958,11 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadAll();
+    tagPicker = initTagPicker();
     
-    // Check for redirect from renewals or inspections pages
     const _rp = new URLSearchParams(window.location.search);
     if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
     else if(_rp.get('mode')==='inspection') { openInspectionMode(_rp); }
-    
-    // Initialize tag picker after everything loads
-    tagPicker = initTagPicker();
   } catch(err){ dismissLoadingScreen();console.error(err); }
 });
 
