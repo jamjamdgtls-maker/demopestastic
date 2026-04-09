@@ -1293,14 +1293,21 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       // Contract value — sum of active contracts
       const contractsSnap = await getDocs(collection(db,'contracts'));
       let contractValue = 0;
+      let activeCount = 0;
       contractsSnap.forEach(d => {
         const data = d.data();
+        const startDate = toDate(data.contractStartDate) || toDate(data.createdAt);
         const endDate = toDate(data.contractEndDate);
-        if (data.status === 'active' || (endDate && endDate >= today)) {
+        const isActive = data.status === 'active' || (endDate && endDate >= today);
+        // Contract overlaps with filtered period
+        const overlaps = isActive && (!startDate || startDate <= mEnd) && (!endDate || endDate >= mStart);
+        if (overlaps) {
           contractValue += Number(data.totalAmount) || 0;
+          activeCount++;
         }
       });
       document.getElementById('val-contract-value').textContent = fmt(contractValue);
+      document.getElementById('sub-contract-val').textContent = `${activeCount} contracts in period`;
       doneLoading('kpi-contract-val');
 
       // Payments
@@ -1312,16 +1319,15 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
 
       paymentsSnap.forEach(d => {
         const data = d.data();
-        // Scope to selected month if paymentDate exists
         const payDate = toDate(data.paymentDate) || toDate(data.dueDate);
-        const inMonth = payDate && payDate >= mStart && payDate <= mEnd;
+        const inRange = payDate && payDate >= mStart && payDate <= mEnd;
 
-        if (collectedStatuses.includes(data.status)) {
+        if (collectedStatuses.includes(data.status) && inRange) {
           totalCollected += Number(data.amount) || 0;
         }
-        // Overdue: pending + past due date
+        // Overdue: pending + past due date + within filtered range
         const dueDate = toDate(data.dueDate);
-        if (data.status === 'Pending' && dueDate && dueDate < today) {
+        if (data.status === 'Pending' && dueDate && dueDate < today && dueDate >= mStart && dueDate <= mEnd) {
           overduePayAmount += Number(data.amount) || 0;
           overduePayCount++;
         }
@@ -1330,7 +1336,7 @@ setTimeout(()=>dismissLoadingScreen(), 6000);
       const outstanding = Math.max(0, contractValue - totalCollected);
 
       document.getElementById('val-collected').textContent    = fmt(totalCollected);
-      document.getElementById('sub-collected').textContent    = `Received, Deposited & Remitted`;
+      document.getElementById('sub-collected').textContent    = `Collected in selected period`;
 
       document.getElementById('val-outstanding').textContent  = fmt(outstanding);
       document.getElementById('sub-outstanding').textContent  = `Contract value − collected`;
