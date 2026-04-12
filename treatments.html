@@ -448,11 +448,6 @@
         <select class="filter-select" id="filter-type"><option value="">All Types</option></select>
         <select class="filter-select" id="filter-status">
           <option value="">All Status</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="overdue">Overdue</option>
-          <option value="completed">Completed</option>
-          <option value="rescheduled">Rescheduled</option>
-          <option value="cancelled">Cancelled</option>
         </select>
         <select class="filter-select" id="filter-team"><option value="">All Teams</option></select>
         <div class="date-range">
@@ -769,7 +764,7 @@ const DEFAULT_CONTRACT_TYPES = ['Termite Control','General Pest Control','Rodent
 const DEFAULT_BOOKING_STATUSES = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
 let teamsData = [];
 let sortField = 'treatmentDate', sortDir = 'asc';
-const SYSTEM_STATUSES = ['scheduled','completed','cancelled','rescheduled'];
+const SYSTEM_STATUSES = [];
 
 /* ── DOM helper ── */
 const $ = id => document.getElementById(id);
@@ -921,11 +916,6 @@ async function loadAll() {
     // Populate status filter (system + custom + booking statuses)
     $('filter-status').innerHTML = `
       <option value="">All Status</option>
-      <option value="scheduled">Scheduled</option>
-      <option value="overdue">Overdue</option>
-      <option value="completed">Completed</option>
-      <option value="rescheduled">Rescheduled</option>
-      <option value="cancelled">Cancelled</option>
       ${bookingStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}
       ${treatmentStatusesList.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
 
