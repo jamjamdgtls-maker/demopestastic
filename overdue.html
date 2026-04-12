@@ -469,9 +469,6 @@
         <label class="form-label">Reason <span class="req">*</span></label>
         <select class="form-select-full" id="reschedule-reason">
           <option value="">— Select reason —</option>
-          <option>Client request</option><option>Team unavailable</option>
-          <option>Weather conditions</option><option>Equipment issue</option>
-          <option>Holiday / non-working day</option><option>Other</option>
         </select>
       </div>
       <div class="form-group" id="reschedule-other-wrap" style="display:none">
@@ -508,9 +505,6 @@
         <label class="form-label">Reason <span class="req">*</span></label>
         <select class="form-select-full" id="cancel-reason">
           <option value="">— Select reason —</option>
-          <option>Client request</option><option>No show / not available</option>
-          <option>Weather conditions</option><option>Team unavailable</option>
-          <option>Contract terminated</option><option>Other</option>
         </select>
       </div>
       <div class="form-group" id="cancel-other-wrap" style="display:none">
@@ -551,8 +545,6 @@
           <label class="form-label">Payment Mode</label>
           <select class="form-select-full" id="pay-mode">
             <option value="">— Select —</option>
-            <option>cash</option><option>check</option><option>bank-transfer</option>
-            <option>credit-card</option><option>gcash</option><option>maya</option>
           </select>
         </div>
       </div>
@@ -714,6 +706,28 @@ async function loadAll() {
     const tSnap=await getDocs(collection(db,'teams'));
     const teamNames=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
     $('t-filter-team').innerHTML='<option value="">All Teams</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
+
+    /* Load settings for dropdowns */
+    let cancelReasons = [], rescheduleReasons = [], paymentModes = [];
+    try {
+      const settingsSnap = await getDoc(doc(db,'config','settings'));
+      if (settingsSnap.exists()) {
+        const ss = settingsSnap.data();
+        cancelReasons = ss.cancelReasons || [];
+        rescheduleReasons = ss.rescheduleReasons || [];
+        paymentModes = ss.paymentModes || [];
+      }
+    } catch(e) { console.warn('Settings load failed:', e.message); }
+
+    /* Populate cancel-reason */
+    $('cancel-reason').innerHTML = '<option value="">— Select reason —</option>' + cancelReasons.map(r => `<option>${r}</option>`).join('') + '<option>Other</option>';
+
+    /* Populate reschedule-reason */
+    $('reschedule-reason').innerHTML = '<option value="">— Select reason —</option>' + rescheduleReasons.map(r => `<option>${r}</option>`).join('') + '<option>Other</option>';
+
+    /* Populate pay-mode */
+    $('pay-mode').innerHTML = '<option value="">— Select —</option>' + paymentModes.map(m => `<option>${m}</option>`).join('');
+
 
     // Overdue treatments: fetch all scheduled, filter by date client-side
     // (avoids needing a composite index for the range query)

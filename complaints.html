@@ -457,9 +457,6 @@
 
         <select class="filter-select" id="filter-priority">
           <option value="">All Priorities</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
         </select>
         <select class="filter-select" id="filter-month">
           <option value="">All Months</option>
@@ -529,9 +526,6 @@
           <label class="form-label">Priority <span class="req">*</span></label>
           <select class="form-select" id="form-priority">
             <option value="">— Select Priority —</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
           </select>
         </div>
         <div class="form-group">
@@ -807,7 +801,7 @@ async function loadAll() {
   // Settings: agents, treatment types, complaint statuses
   let agents=[];
   let treatmentTypes    = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
-  let complaintStatuses = ['Open','In Progress','Scheduled','Completed','Closed'];
+  let complaintStatuses = [];
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
     if (cfg.exists()) {
@@ -831,6 +825,13 @@ async function loadAll() {
 
   /* Populate complaint status dropdown from settings */
   $('form-status').innerHTML = complaintStatuses.map(s=>`<option value="${s}">${s}</option>`).join('');
+
+  /* Populate complaint priorities from settings */
+  let complaintPriorities = [];
+  try { const ss2 = await getDoc(doc(db,'config','settings')); if(ss2.exists() && ss2.data().complaintPriorities) complaintPriorities = ss2.data().complaintPriorities; } catch(e){}
+  if (!complaintPriorities.length) complaintPriorities = ['Low','Medium','High'];
+  $('filter-priority').innerHTML = '<option value="">All Priorities</option>' + complaintPriorities.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('');
+  $('form-priority').innerHTML = '<option value="">— Select Priority —</option>' + complaintPriorities.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('');
 
   // Month filter populate
   const months=[];

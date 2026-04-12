@@ -880,8 +880,8 @@ async function loadAll() {
     coSnap.forEach(d => { contractMap[d.id] = d.data(); });
 
     // Settings
-    let cancelReasons    = ['Client request','No show / not available','Weather conditions','Team unavailable','Contract terminated'];
-    let rescheduleReasons= ['Client request','Team unavailable','Weather conditions','Equipment issue','Holiday / non-working day'];
+    let cancelReasons    = [];
+    let rescheduleReasons= [];
     try {
       const cfgSnap = await getDoc(doc(db, 'config', 'settings'));
       if (cfgSnap.exists()) {

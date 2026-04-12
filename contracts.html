@@ -404,10 +404,6 @@
         </div>
         <select class="filter-select" id="filter-status">
           <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-          <option value="renewed">Renewed</option>
-          <option value="cancelled">Cancelled</option>
         </select>
         <select class="filter-select" id="filter-type">
           <option value="">All Types</option>
@@ -570,10 +566,6 @@
           <div class="form-group">
             <label class="form-label">Status</label>
             <select class="form-select" id="form-status">
-              <option value="active">Active</option>
-              <option value="expired">Expired</option>
-              <option value="renewed">Renewed</option>
-              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
@@ -903,8 +895,8 @@ async function loadAll() {
   teamsData = tSnap.docs.map(d=>({id:d.id,...d.data()}));
   $('form-team').innerHTML = '<option value="">— Select Team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
 
-  let commSources = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
-  let contractFrequencies = ['Monthly','Bi-Monthly','Quarterly','Semi-Annual','Annual','One-Time'];
+  let commSources = [];
+  let contractFrequencies = [];
 
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
@@ -913,7 +905,7 @@ async function loadAll() {
       salesAgents = s.salesAgents || [];
       treatmentTypesList = s.treatmentTypes || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
       treatmentMethods = s.treatmentMethods || ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
-      contractTypesFromSettings = s.contractTypesList || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+      contractTypesFromSettings = s.contractTypesList || [];
       bookingStatuses = s.bookingStatuses || ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
       systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
       systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
@@ -924,7 +916,7 @@ async function loadAll() {
     salesAgents=[]; 
     treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
     treatmentMethods = ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
-    contractTypesFromSettings = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+    contractTypesFromSettings = [];
     bookingStatuses = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
   }
 
@@ -933,6 +925,13 @@ async function loadAll() {
 
   /* Populate filter-type dropdown */
   $('filter-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  /* Populate contract statuses from settings */
+  let contractStatuses = [];
+  try { const ss = await getDoc(doc(db,'config','settings')); if(ss.exists() && ss.data().contractStatuses) contractStatuses = ss.data().contractStatuses; } catch(e){}
+  if (!contractStatuses.length) contractStatuses = ['Active','Expired','Renewed','Cancelled'];
+  $('filter-status').innerHTML = '<option value="">All Status</option>' + contractStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
+  $('form-status').innerHTML = contractStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
 
   $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentTypesList.map(m => `<option value="${m}">${m}</option>`).join('');
 

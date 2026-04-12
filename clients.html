@@ -780,7 +780,7 @@ async function loadClients() {
   const snap = await getDocs(query(collection(db, 'clients'), orderBy('clientName', 'asc')));
   allClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  let commSources = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
+  let commSources = [];
   try {
     const cfg = await getDoc(doc(db, 'config', 'settings'));
     if (cfg.exists()) {

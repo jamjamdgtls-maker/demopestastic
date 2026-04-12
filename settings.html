@@ -779,6 +779,52 @@
             </div>
           </div>
 
+          
+          <!-- ══ Complaint Priorities ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Complaint Priorities</div>
+                <div class="settings-card-subtitle">Priority levels available on complaint records</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">Add or remove priority levels for complaints.</div>
+                <div class="chip-list" id="complaint-priorities-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-complaint-priority-input" placeholder="Add priority (e.g. Urgent)" />
+                  <button class="btn btn-primary" id="btn-add-complaint-priority">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Priority
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          
+          <!-- ══ Contract Statuses ══ -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div>
+                <div class="settings-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Contract Statuses</div>
+                <div class="settings-card-subtitle">Status values for contract records and filters</div>
+              </div>
+            </div>
+            <div class="settings-card-body">
+              <div class="form-group" style="margin-bottom:0">
+                <div class="chip-hint" style="margin-bottom:8px">Add or remove contract status values used in contract forms and filters.</div>
+                <div class="chip-list" id="contract-statuses-list"></div>
+                <div class="add-agent-row">
+                  <input type="text" id="new-contract-status-input" placeholder="Add status (e.g. Suspended)" />
+                  <button class="btn btn-primary" id="btn-add-contract-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Status
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ══ Contract Frequencies ══ -->
           <div class="settings-card">
             <div class="settings-card-header">
@@ -1034,6 +1080,8 @@ let contractFrequencies = [];
 let cancelReasons = [];
 let rescheduleReasons = [];
 let contractTypesList = [];
+let complaintPriorities = [];
+let contractStatuses = [];
 let bookingStatuses = [];
 
 const SYSTEM_TREATMENT_TYPES     = ['QT','MT','INS','FU','AGS','CIT','OTCIT','Fogging','GT','Mound Demolition','GPC','OTGPC','PRECON','Other'];
@@ -1052,6 +1100,8 @@ const DEFAULT_RESCHEDULE_REASONS= ['Client request','Team unavailable','Weather 
 
 const DEFAULT_CONTRACT_TYPES    = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
 const DEFAULT_BOOKING_STATUSES  = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
+const DEFAULT_COMPLAINT_PRIORITIES = ['Low','Medium','High'];
+const DEFAULT_CONTRACT_STATUSES   = ['Active','Expired','Renewed','Cancelled'];
 
 let settings = {};
 
@@ -1159,6 +1209,14 @@ async function loadSettings() {
   contractTypesList = [...(settings.contractTypesList || DEFAULT_CONTRACT_TYPES)];
   renderChipList('contract-types-list', contractTypesList, [], 'removeContractType');
 
+  /* Complaint Priorities */
+  complaintPriorities = [...(settings.complaintPriorities || DEFAULT_COMPLAINT_PRIORITIES)];
+  renderChipList('complaint-priorities-list', complaintPriorities, [], 'removeComplaintPriority');
+
+  /* Contract Statuses */
+  contractStatuses = [...(settings.contractStatuses || DEFAULT_CONTRACT_STATUSES)];
+  renderChipList('contract-statuses-list', contractStatuses, [], 'removeContractStatus');
+
   /* Booking Statuses */
   bookingStatuses = [...(settings.bookingStatuses || DEFAULT_BOOKING_STATUSES)];
   renderChipList('booking-statuses-list', bookingStatuses, [], 'removeBookingStatus');
@@ -1257,8 +1315,12 @@ makeRemoveFn('removeComplaintStatus',complaintStatuses,  SYSTEM_COMPLAINT_STATUS
 makeRemoveFn('removeContractFreq',   contractFrequencies,SYSTEM_CONTRACT_FREQS,   'contract-frequencies-list','removeContractFreq');
 makeRemoveFn('removeCancelReason',   cancelReasons,      [],                      'cancel-reasons-list',      'removeCancelReason');
 makeRemoveFn('removeRescheduleReason',rescheduleReasons, [],                      'reschedule-reasons-list',  'removeRescheduleReason');
-makeRemoveFn('removeContractType',    contractTypesList,  [],                      'contract-types-list',      'removeContractType');
+makeRemoveFn('removeContractType',    contractTypesList,
+    complaintPriorities,
+    contractStatuses,  [],                      'contract-types-list',      'removeContractType');
 makeRemoveFn('removeBookingStatus',   bookingStatuses,    [],                      'booking-statuses-list',    'removeBookingStatus');
+makeRemoveFn('removeComplaintPriority',complaintPriorities,[],                      'complaint-priorities-list','removeComplaintPriority');
+makeRemoveFn('removeContractStatus',  contractStatuses,   [],                      'contract-statuses-list',  'removeContractStatus');
 
 document.addEventListener('DOMContentLoaded',()=>{
   const ttInput=$('new-treatment-type-input');
@@ -1294,8 +1356,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   makeAddHandler('new-contract-freq-input',    'btn-add-contract-freq',    contractFrequencies,SYSTEM_CONTRACT_FREQS,    'contract-frequencies-list','removeContractFreq');
   makeAddHandler('new-cancel-reason-input',    'btn-add-cancel-reason',    cancelReasons,      [],                       'cancel-reasons-list',      'removeCancelReason');
   makeAddHandler('new-reschedule-reason-input','btn-add-reschedule-reason',rescheduleReasons,  [],                       'reschedule-reasons-list',  'removeRescheduleReason');
-  makeAddHandler('new-contract-type-input',   'btn-add-contract-type',    contractTypesList,  [],                       'contract-types-list',      'removeContractType');
+  makeAddHandler('new-contract-type-input',   'btn-add-contract-type',    contractTypesList,
+    complaintPriorities,
+    contractStatuses,  [],                       'contract-types-list',      'removeContractType');
   makeAddHandler('new-booking-status-input',  'btn-add-booking-status',   bookingStatuses,    [],                       'booking-statuses-list',    'removeBookingStatus');
+  makeAddHandler('new-complaint-priority-input','btn-add-complaint-priority',complaintPriorities,[],                       'complaint-priorities-list','removeComplaintPriority');
+  makeAddHandler('new-contract-status-input',  'btn-add-contract-status',  contractStatuses,   [],                       'contract-statuses-list',  'removeContractStatus');
 });
 
 window.removeAgent=function(encoded){
@@ -1376,6 +1442,8 @@ $('btn-save-system').addEventListener('click', async()=>{
     cancelReasons,
     rescheduleReasons,
     contractTypesList,
+    complaintPriorities,
+    contractStatuses,
     bookingStatuses,
     updatedAt:serverTimestamp()
   };

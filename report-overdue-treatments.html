@@ -316,10 +316,6 @@
         <label>Contract Type</label>
         <select class="filter-select" id="filter-type">
           <option value="">All Types</option>
-          <option>Termite Control</option><option>General Pest Control</option>
-          <option>Rodents Control</option><option>Crawling Insects Control</option>
-          <option>Pre-Construction Termite Control</option><option>Reticulation System</option>
-          <option>Flying Insects Control</option>
         </select>
         <label>Severity</label>
         <select class="filter-select" id="filter-severity">
@@ -384,6 +380,11 @@ async function loadRefData(){
     const tSnap=await getDocs(collection(db,'teams'));
     const teams=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
     $('filter-team').innerHTML='<option value="">All Teams</option>'+teams.map(t=>`<option>${t}</option>`).join('');
+
+    /* Load contract types from settings */
+    let contractTypesFromSettings = [];
+    try { const ss = await getDoc(doc(db,'config','settings')); if(ss.exists() && ss.data().contractTypesList) contractTypesFromSettings = ss.data().contractTypesList; } catch(e){}
+    $('filter-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option>${t}</option>`).join('');
   }catch(e){console.warn('[loadRefData] teams:',e.message);}
   try{const s=await getDoc(doc(db,'config','settings'));companySettings=s.exists()?s.data():{};}catch{}
 }

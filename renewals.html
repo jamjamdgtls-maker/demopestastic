@@ -421,13 +421,6 @@
         </select>
         <select class="filter-select" id="filter-contract-type">
           <option value="">All Types</option>
-          <option>Termite Control</option>
-          <option>General Pest Control</option>
-          <option>Rodents Control</option>
-          <option>Crawling Insects Control</option>
-          <option>Pre-Construction Termite Control</option>
-          <option>Reticulation System</option>
-          <option>Flying Insects Control</option>
         </select>
         <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
@@ -533,10 +526,7 @@
           <div class="form-group">
             <label class="form-label">Contract Type <span class="req">*</span></label>
             <select class="form-select" id="renew-contract-type">
-              <option>Termite Control</option><option>General Pest Control</option>
-              <option>Rodents Control</option><option>Crawling Insects Control</option>
-              <option>Pre-Construction Termite Control</option><option>Reticulation System</option>
-              <option>Flying Insects Control</option>
+
             </select>
           </div>
           <div class="form-group">
@@ -548,9 +538,6 @@
           <div class="form-group">
             <label class="form-label">Frequency <span class="req">*</span></label>
             <select class="form-select" id="renew-frequency">
-              <option value="monthly">Monthly</option><option value="bi-monthly">Bi-Monthly</option>
-              <option value="quarterly">Quarterly</option><option value="semi-annual">Semi-Annual</option>
-              <option value="annual">Annual</option><option value="one-time">One-Time</option>
             </select>
           </div>
           <div class="form-group">
@@ -767,6 +754,29 @@ async function loadAll() {
   const tSnap=await getDocs(collection(db,'teams'));
   teamsData=tSnap.docs.map(d=>({id:d.id,...d.data()}));
   $('renew-team').innerHTML='<option value="">— Select Team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
+
+  /* Load contract types & frequencies from settings */
+  let contractTypesFromSettings = [];
+  let contractFrequencies = [];
+  try {
+    const settingsSnap = await getDoc(doc(db,'config','settings'));
+    if (settingsSnap.exists()) {
+      const ss = settingsSnap.data();
+      contractTypesFromSettings = ss.contractTypesList || [];
+      contractFrequencies = ss.contractFrequencies || [];
+    }
+  } catch(e) { console.warn('Settings load failed:', e.message); }
+
+  /* Populate filter-contract-type */
+  $('filter-contract-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option>${t}</option>`).join('');
+
+  /* Populate renew contract type select */
+  const rctEl = $('renew-contract-type');
+  if (rctEl) rctEl.innerHTML = (rctEl.querySelector('option[value=""]') ? '<option value="">— Select Type —</option>' : '') + contractTypesFromSettings.map(t => `<option>${t}</option>`).join('');
+
+  /* Populate renew-frequency */
+  $('renew-frequency').innerHTML = contractFrequencies.map(f => `<option value="${f.toLowerCase().replace(/\s+/g,'-')}">${f}</option>`).join('');
+
 
   // Sales agents
   try{const cfg=await getDoc(doc(db,'config','settings'));salesAgents=cfg.exists()?(cfg.data().salesAgents||[]):[];}catch{salesAgents=[];}

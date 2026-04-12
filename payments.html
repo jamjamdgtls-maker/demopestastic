@@ -705,7 +705,7 @@ async function loadAll() {
   });
 
   // Settings: agents, payment modes, payment statuses
-  let paymentModes    = ['cash','check','bank-transfer','credit-card','gcash','maya'];
+  let paymentModes    = [];
   let paymentStatuses = ['Pending','Received','Deposited','Remitted','Collected'];
   try {
     const cfg = await getDoc(doc(db,'config','settings'));
