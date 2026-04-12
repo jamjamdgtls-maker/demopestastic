@@ -762,6 +762,11 @@ let currentPage = 1;
 const PER_PAGE = 20;
 let treatmentTypesList  = [];
 let treatmentStatusesList = [];
+let contractTypesFromSettings = [];
+let bookingStatuses = [];
+
+const DEFAULT_CONTRACT_TYPES = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+const DEFAULT_BOOKING_STATUSES = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
 let teamsData = [];
 let sortField = 'treatmentDate', sortDir = 'asc';
 const SYSTEM_STATUSES = ['scheduled','completed','cancelled','rescheduled'];
@@ -835,7 +840,8 @@ function statusBadge(s) {
     completed: 'green', scheduled: 'blue', overdue: 'red',
     rescheduled: 'amber', cancelled: 'gray',
     confirmed: 'green', 'for confirmation': 'amber',
-    'awaiting customer confirmation': 'amber', 'pencil booking': 'purple'
+    'awaiting customer confirmation': 'amber', 'pencil booking': 'purple',
+    'need schedule': 'blue'
   };
   const key = (s || '').toLowerCase();
   return `<span class="badge badge-${map[key] || 'purple'}">${s || '—'}</span>`;
@@ -886,12 +892,21 @@ async function loadAll() {
       if (cfgSnap.exists()) {
         const s = cfgSnap.data();
         treatmentTypesList    = s.treatmentTypes || [];
+        contractTypesFromSettings = s.contractTypesList || DEFAULT_CONTRACT_TYPES;
+        bookingStatuses       = s.bookingStatuses || DEFAULT_BOOKING_STATUSES;
         treatmentStatusesList = (s.treatmentStatuses || [])
           .filter(st => !SYSTEM_STATUSES.includes(st.toLowerCase()));
         if (s.cancelReasons    && s.cancelReasons.length)    cancelReasons    = s.cancelReasons;
         if (s.rescheduleReasons && s.rescheduleReasons.length) rescheduleReasons = s.rescheduleReasons;
+      } else {
+        contractTypesFromSettings = DEFAULT_CONTRACT_TYPES;
+        bookingStatuses = DEFAULT_BOOKING_STATUSES;
       }
-    } catch (e) { console.warn('Config load skipped:', e.message); }
+    } catch (e) {
+      console.warn('Config load skipped:', e.message);
+      contractTypesFromSettings = DEFAULT_CONTRACT_TYPES;
+      bookingStatuses = DEFAULT_BOOKING_STATUSES;
+    }
 
     /* Populate cancel / reschedule reason dropdowns */
     const cancelOpts = cancelReasons.map(r=>`<option>${r}</option>`).join('') + '<option>Other</option>';
@@ -903,7 +918,7 @@ async function loadAll() {
     $('filter-type').innerHTML = '<option value="">All Types</option>' +
       treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
 
-    // Populate status filter (system + custom)
+    // Populate status filter (system + custom + booking statuses)
     $('filter-status').innerHTML = `
       <option value="">All Status</option>
       <option value="scheduled">Scheduled</option>
@@ -911,6 +926,7 @@ async function loadAll() {
       <option value="completed">Completed</option>
       <option value="rescheduled">Rescheduled</option>
       <option value="cancelled">Cancelled</option>
+      ${bookingStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}
       ${treatmentStatusesList.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
 
     // Teams
@@ -1063,7 +1079,7 @@ function renderTable() {
 
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = ['scheduled','overdue','rescheduled','completed','cancelled',...treatmentStatusesList];
+    const allStatuses   = ['scheduled','overdue','rescheduled','completed','cancelled',...bookingStatuses.map(s=>s.toLowerCase()),...treatmentStatusesList];
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
