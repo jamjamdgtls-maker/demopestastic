@@ -810,15 +810,43 @@ async function loadAll() {
       agents = s.salesAgents || [];
       if (s.treatmentTypes    && s.treatmentTypes.length)    treatmentTypes    = s.treatmentTypes;
       if (s.complaintStatuses && s.complaintStatuses.length) complaintStatuses = s.complaintStatuses;
-      if (s.contractTypes && s.contractTypes.length) contractTypes = s.contractTypes;
+      // contractTypes are saved as contractTypesList in settings
+      if (s.contractTypesList && s.contractTypesList.length) contractTypes = s.contractTypesList;
+      else if (s.contractTypes && s.contractTypes.length)    contractTypes = s.contractTypes;
     }
+  } catch {}
+
+  // System users: fetch approved users from the users collection
+  let systemUsers = [];
+  try {
+    const usersSnap = await getDocs(collection(db,'users'));
+    usersSnap.forEach(d => {
+      const u = d.data();
+      if (u.status === 'approved') {
+        const label = u.displayName ? `${u.displayName} (${u.email})` : u.email;
+        if (label) systemUsers.push(label);
+      }
+    });
+    systemUsers.sort();
   } catch {}
 
   const aSet=new Set(agents);
   cSnap.forEach(d=>{if(d.data().salesAgent)aSet.add(d.data().salesAgent);});
   teamsData.forEach(t=>{aSet.add(t.teamName);});
+  // Merge system users into assignee options (avoid duplicates)
+  systemUsers.forEach(u=>aSet.add(u));
   assigneeOptions=[...aSet].filter(Boolean).sort();
-  const aOpts='<option value="">— Select —</option>'+assigneeOptions.map(a=>`<option>${a}</option>`).join('');
+
+  // Build grouped assignee dropdown: System Users first, then teams/agents
+  const systemUserSet = new Set(systemUsers);
+  const otherAssignees = assigneeOptions.filter(a => !systemUserSet.has(a));
+  let aOpts = '<option value="">— Select —</option>';
+  if (systemUsers.length) {
+    aOpts += `<optgroup label="System Users">${systemUsers.map(a=>`<option value="${a}">${a}</option>`).join('')}</optgroup>`;
+  }
+  if (otherAssignees.length) {
+    aOpts += `<optgroup label="Teams &amp; Agents">${otherAssignees.map(a=>`<option value="${a}">${a}</option>`).join('')}</optgroup>`;
+  }
   $('form-assigned-to').innerHTML=aOpts;
 
   /* Populate contract type dropdown from settings contractTypes */
