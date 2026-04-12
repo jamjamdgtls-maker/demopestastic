@@ -731,6 +731,8 @@ let activeDetailId = null, csvRows = [];
 let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
 let treatmentTypesList = [];
 let treatmentMethods = [];
+let contractTypesFromSettings = [];
+let bookingStatuses = [];
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -911,6 +913,8 @@ async function loadAll() {
       salesAgents = s.salesAgents || [];
       treatmentTypesList = s.treatmentTypes || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
       treatmentMethods = s.treatmentMethods || ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
+      contractTypesFromSettings = s.contractTypesList || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+      bookingStatuses = s.bookingStatuses || ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
       systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
       systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
       if (s.commSources && s.commSources.length) commSources = s.commSources;
@@ -920,15 +924,17 @@ async function loadAll() {
     salesAgents=[]; 
     treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
     treatmentMethods = ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
+    contractTypesFromSettings = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+    bookingStatuses = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
   }
 
   /* Populate Contract Type dropdown (single select) */
-  $('form-contract-type').innerHTML = '<option value="">— Select Contract Type —</option>' + treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
+  $('form-contract-type').innerHTML = '<option value="">— Select Contract Type —</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
 
   /* Populate filter-type dropdown */
-  $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
+  $('filter-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
 
-  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentMethods.map(m => `<option value="${m}">${m}</option>`).join('');
+  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentTypesList.map(m => `<option value="${m}">${m}</option>`).join('');
 
   /* Populate Communication Source and Frequency dropdowns */
   $('form-comm-source').innerHTML = '<option value="">— Select Source —</option>' + commSources.map(s => `<option>${s}</option>`).join('');
