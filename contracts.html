@@ -28,26 +28,6 @@
     button{font-family:var(--font);cursor:pointer}
     input,select,textarea{font-family:var(--font);font-size:14px}
 
-    /* ── MULTI-SELECT TAG PICKER ── */
-    .tag-picker{border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;background:white;min-height:42px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
-    .tag-picker:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
-    .tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:3px 8px;border-radius:16px;font-size:12px;font-weight:600;white-space:nowrap;animation:tagIn .15s ease}
-    @keyframes tagIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
-    .tag-chip button{background:none;border:none;color:var(--green-text);cursor:pointer;padding:0;display:flex;align-items:center;opacity:.6;transition:opacity .15s}
-    .tag-chip button:hover{opacity:1}
-    .tag-chip button svg{width:12px;height:12px}
-    .tag-picker-input{border:none;outline:none;font-size:13px;font-family:var(--font);flex:1;min-width:120px;padding:2px 4px;background:transparent;color:var(--text)}
-    .tag-picker-input::placeholder{color:var(--text-muted)}
-    .tag-dropdown{position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:200px;overflow-y:auto;z-index:10;margin-top:4px;display:none}
-    .tag-dropdown.open{display:block}
-    .tag-dropdown-item{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
-    .tag-dropdown-item:hover{background:var(--bg-secondary)}
-    .tag-dropdown-item.selected{background:var(--green-bg);color:var(--green-text);font-weight:600}
-    .tag-dropdown-item svg{width:14px;height:14px}
-    .tag-dropdown-empty{padding:10px 12px;font-size:12px;color:var(--text-muted);text-align:center}
-    .tag-dropdown-section{padding:6px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);background:var(--bg-secondary);border-bottom:1px solid var(--border);margin-top:0}
-    .tag-picker-wrap{position:relative}
-
     /* ── AUTH ── */
     #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
     .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
@@ -469,7 +449,7 @@
 
 <!-- ══════════════════════════════════
      CONTRACT FORM MODAL (New / Edit)
-════════════��═════════════════════ -->
+══════════════════════════════════ -->
 <div class="modal-overlay" id="contract-form-modal">
   <div class="modal modal-xl">
     <div class="modal-header">
@@ -500,15 +480,10 @@
         <div class="form-section-title">Contract Details</div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Contract Type(s) <span class="req">*</span></label>
-            <div class="tag-picker-wrap">
-              <div class="tag-picker" id="form-contract-type-picker">
-                <input type="text" class="tag-picker-input" id="form-contract-type-input" placeholder="Search or type treatment type…" autocomplete="off" />
-              </div>
-              <div class="tag-dropdown" id="form-contract-type-dropdown"></div>
-            </div>
-            <input type="hidden" id="form-contract-type" />
-            <div class="form-hint">Select multiple types. Type a new one to add it on-the-fly.</div>
+            <label class="form-label">Contract Type <span class="req">*</span></label>
+            <select class="form-select" id="form-contract-type">
+              <option value="">— Select Contract Type —</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Treatment Method</label>
@@ -756,7 +731,6 @@ let activeDetailId = null, csvRows = [];
 let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
 let treatmentTypesList = [];
 let treatmentMethods = [];
-let selectedContractTypes = [];
 
 /* ── Helpers ── */
 const $ = id => document.getElementById(id);
@@ -845,15 +819,15 @@ async function getNextContractNo() {
   return `CTR-${String(nextNum).padStart(5,'0')}`;
 }
 
-function generateTreatmentDates(startDate, freq, sessions, contractId, customerNo, contractType, team, contractTypes) {
+function generateTreatmentDates(startDate, freq, sessions, contractId, customerNo, contractType, team) {
   const entries = [];
   const interval = getIntervalMonths(freq);
   for(let i=0;i<sessions;i++) {
     const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
     entries.push({
       contractId, customerNo, contractType,
-      contractTypes: contractTypes || [],
-      treatmentType: (contractTypes && contractTypes.length) ? contractTypes[0] : '',
+      contractTypes: contractType ? [contractType] : [],
+      treatmentType: contractType || '',
       treatmentNo: `TRT-${String(i+1).padStart(3,'0')}`,
       treatmentDate: d,
       status: 'scheduled',
@@ -948,8 +922,13 @@ async function loadAll() {
     treatmentMethods = ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
   }
 
-  $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentMethods.map(t => '<option>'+t+'</option>').join('');
-  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentTypesList.map(m => '<option>'+m+'</option>').join('');
+  /* Populate Contract Type dropdown (single select) */
+  $('form-contract-type').innerHTML = '<option value="">— Select Contract Type —</option>' + treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  /* Populate filter-type dropdown */
+  $('filter-type').innerHTML = '<option value="">All Types</option>' + treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentMethods.map(m => `<option value="${m}">${m}</option>`).join('');
 
   /* Populate Communication Source and Frequency dropdowns */
   $('form-comm-source').innerHTML = '<option value="">— Select Source —</option>' + commSources.map(s => `<option>${s}</option>`).join('');
@@ -1004,7 +983,7 @@ function applyFilters() {
     const clientName = (clientMap[c.customerNo]?.name||'').toLowerCase();
     const matchQ = !q||[c.customerNo,clientName,c.contractNumber,c.contractType].some(f=>(f||'').toLowerCase().includes(q));
     const matchS = !s||dispStatus===s;
-    const matchT = !type || (c.contractType||'').includes(type) || (Array.isArray(c.contractTypes) && c.contractTypes.includes(type));
+    const matchT = !type || (c.contractType||'') === type;
     return matchQ&&matchS&&matchT;
   });
   currentPage=1;
@@ -1040,11 +1019,12 @@ function renderTable() {
     const pm = paymentMap[c.id]||{collected:0,total:0};
     const balance = Math.max(0,(Number(c.totalAmount)||0)-pm.collected);
     const contractNo = c.contractNumber||c.id.slice(0,8).toUpperCase();
+    const displayType = c.contractType || '—';
     return `<tr>
       <td><span class="contract-no-link" style="color:var(--primary);cursor:pointer;font-weight:600;font-family:monospace;font-size:12.5px" data-id="${c.id}">${contractNo}</span></td>
       <td class="mono">${c.customerNo||'—'}</td>
       <td style="font-weight:500">${clientName.replace(/\s*\(.*?\)\s*/g,'').trim()}</td>
-      <td style="font-size:12.5px">${Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes.map(t=>'<span style="display:inline-block;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;margin:1px 2px">'+t+'</span>').join('') : (c.contractType||'—')}</td>
+      <td style="font-size:12.5px"><span style="display:inline-block;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${displayType}</span></td>
       <td class="muted">${fmtDate(c.contractStartDate)}</td>
       <td class="muted">${fmtDate(c.contractEndDate)}</td>
       <td style="font-variant-numeric:tabular-nums">${fmtCurrency(c.totalAmount)}</td>
@@ -1122,7 +1102,7 @@ function updateEndDateAndPreview() {
     const dayStr  = days[td.getDay()];
     const rowBg   = i%2===0?'#fff':'var(--bg-secondary)';
     const sessionAmt = sessionAmounts[i];
-    const isDP = planType !== 'equal' && i === 0 && sessions > 1;
+    const isDP   = planType !== 'equal' && i === 0 && sessions > 1;
     const amtLabel = sessionAmt
       ? `₱${sessionAmt.toLocaleString('en-PH',{minimumFractionDigits:2})}`
       : '—';
@@ -1164,120 +1144,6 @@ function updateEndDateAndPreview() {
 
 ['form-start-date','form-frequency','form-sessions','form-amount','form-warranty','form-downpayment-pct','form-payment-plan-type'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
 
-function initTagPicker() {
-  const picker = $('form-contract-type-picker');
-  const input = $('form-contract-type-input');
-  const dropdown = $('form-contract-type-dropdown');
-  const hiddenField = $('form-contract-type');
-
-  function getSelected() { return [...selectedContractTypes]; }
-
-  function setSelected(arr) {
-    selectedContractTypes = [...arr];
-    hiddenField.value = selectedContractTypes.join(', ');
-    renderTags();
-  }
-
-  function renderTags() {
-    picker.querySelectorAll('.tag-chip').forEach(c => c.remove());
-    selectedContractTypes.forEach(type => {
-      const chip = document.createElement('span');
-      chip.className = 'tag-chip';
-      chip.innerHTML = type + '<button type="button" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-      chip.querySelector('button').addEventListener('click', e => {
-        e.stopPropagation();
-        selectedContractTypes = selectedContractTypes.filter(t => t !== type);
-        hiddenField.value = selectedContractTypes.join(', ');
-        renderTags();
-        renderDropdown();
-      });
-      picker.insertBefore(chip, input);
-    });
-  }
-
-  function renderDropdown() {
-    const q = input.value.trim().toLowerCase();
-    const available = treatmentMethods.filter(t => !selectedContractTypes.includes(t));
-    const filtered = q ? available.filter(t => t.toLowerCase().includes(q)) : available;
-
-    let html = '';
-    
-    if(filtered.length) {
-      html += '<div class="tag-dropdown-section">Saved Types</div>';
-      filtered.forEach(t => {
-        html += '<div class="tag-dropdown-item" data-value="'+t+'">'+t+'</div>';
-      });
-    }
-
-    if(q && !treatmentMethods.some(t => t.toLowerCase() === q) && !selectedContractTypes.some(t => t.toLowerCase() === q)) {
-      html += '<div class="tag-dropdown-section">Add New</div>';
-      html += '<div class="tag-dropdown-item" data-value="__new__" style="color:var(--primary);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add "'+input.value.trim()+'" as new type</div>';
-    }
-
-    if(!html) html = '<div class="tag-dropdown-empty">No types available</div>';
-    dropdown.innerHTML = html;
-    dropdown.classList.add('open');
-
-    dropdown.querySelectorAll('.tag-dropdown-item').forEach(item => {
-      item.addEventListener('mousedown', e => {
-        e.preventDefault();
-        const val = item.dataset.value;
-        if(val === '__new__') {
-          const newType = input.value.trim();
-          if(newType) {
-            selectedContractTypes.push(newType);
-            treatmentMethods.push(newType);
-            hiddenField.value = selectedContractTypes.join(', ');
-            renderTags();
-          }
-        } else {
-          selectedContractTypes.push(val);
-          hiddenField.value = selectedContractTypes.join(', ');
-          renderTags();
-        }
-        input.value = '';
-        renderDropdown();
-      });
-    });
-  }
-
-  picker.addEventListener('click', () => { input.focus(); renderDropdown(); });
-  input.addEventListener('focus', () => renderDropdown());
-  input.addEventListener('input', () => renderDropdown());
-  input.addEventListener('blur', () => { setTimeout(() => dropdown.classList.remove('open'), 150); });
-
-  input.addEventListener('keydown', e => {
-    if(e.key === 'Enter') {
-      e.preventDefault();
-      const val = input.value.trim();
-      if(val && !selectedContractTypes.includes(val)) {
-        selectedContractTypes.push(val);
-        treatmentMethods.push(val);
-        hiddenField.value = selectedContractTypes.join(', ');
-        renderTags();
-        input.value = '';
-        renderDropdown();
-      }
-    }
-    if(e.key === 'Backspace' && !input.value && selectedContractTypes.length) {
-      selectedContractTypes.pop();
-      hiddenField.value = selectedContractTypes.join(', ');
-      renderTags();
-      renderDropdown();
-    }
-  });
-
-  document.addEventListener('click', e => {
-    if(!picker.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.remove('open');
-    }
-  });
-
-  return { getSelected, setSelected, renderTags, renderDropdown };
-}
-
-let tagPicker = null;
-
 $('form-customer-no').addEventListener('input',()=>{
   const no=$('form-customer-no').value.trim();
   const client=clientMap[no];
@@ -1291,8 +1157,6 @@ $('btn-new-contract').addEventListener('click', async ()=>{
   $('save-btn-text').textContent='Save & Generate Schedule';
   $('form-contract-id').value='';
   $('form-old-contract-id').value='';
-  selectedContractTypes = [];
-  if(tagPicker) tagPicker.renderTags();
   $('form-contract-no').value = 'Auto-generated';
   if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
   openModal('contract-form-modal');
@@ -1317,12 +1181,10 @@ async function openRenewalMode(params) {
   if(params.get('customerNo')) {
     $('form-customer-no').value = params.get('customerNo');
     const client = clientMap[params.get('customerNo')];
-        $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
+    $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
   }
   if(params.get('contractType')) {
-    const types = params.get('contractType').split(',').map(s=>s.trim()).filter(Boolean);
-    selectedContractTypes = [...types];
-    if(tagPicker) tagPicker.renderTags();
+    $('form-contract-type').value = params.get('contractType');
   }
   if(params.get('method'))         $('form-treatment-method').value = params.get('method');
   if(params.get('frequency'))      $('form-frequency').value        = params.get('frequency');
@@ -1395,9 +1257,7 @@ async function openInspectionMode(params) {
   }
 
   if(params.get('contractType')) {
-    const types = params.get('contractType').split(',').map(s=>s.trim()).filter(Boolean);
-    selectedContractTypes = [...types];
-    if(tagPicker) tagPicker.renderTags();
+    $('form-contract-type').value = params.get('contractType');
   }
   if(params.get('assignedTeam')) $('form-team').value          = params.get('assignedTeam');
   if(params.get('salesAgent'))   $('form-sales-agent').value   = params.get('salesAgent');
@@ -1432,9 +1292,9 @@ function openEditModal(id) {
   const client=clientMap[c.customerNo];
   $('client-name-hint').textContent=client?`✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}`:'';
   $('form-contract-no').value=c.contractNumber||'';
-  const savedTypes = Array.isArray(c.contractTypes) ? c.contractTypes : (c.contractType||'').split(',').map(s=>s.trim()).filter(Boolean);
-  selectedContractTypes = [...savedTypes];
-  if(tagPicker) tagPicker.renderTags();
+  // For edit: use contractType (single value). If old record had contractTypes array, use first item.
+  const savedType = c.contractType || (Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes[0] : '');
+  $('form-contract-type').value = savedType;
   $('form-treatment-method').value=c.treatmentMethod||'';
   $('form-frequency').value=c.frequency||'';
   $('form-sessions').value=c.noOfSessions||'';
@@ -1462,8 +1322,6 @@ function clearForm() {
   ['form-contract-type','form-frequency','form-team','form-sales-agent','form-comm-source','form-payment-plan-type'].forEach(id=>{$(id).value='';});
   $('form-status').value='active';
   $('client-name-hint').textContent='';
-  selectedContractTypes = [];
-  if(tagPicker) tagPicker.renderTags();
   $('schedule-preview').style.display='none';
   $('renewal-banner').style.display='none';
   if($('downpayment-hint')) $('downpayment-hint').textContent=`System default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
@@ -1471,7 +1329,7 @@ function clearForm() {
 
 $('btn-save-contract').addEventListener('click', async ()=>{
   const customerNo   = $('form-customer-no').value.trim();
-  const contractType = selectedContractTypes.length ? selectedContractTypes.join(', ') : '';
+  const contractType = $('form-contract-type').value.trim();
   const freq         = $('form-frequency').value;
   const sessions     = parseInt($('form-sessions').value)||0;
   const startStr     = $('form-start-date').value;
@@ -1496,7 +1354,9 @@ $('btn-save-contract').addEventListener('click', async ()=>{
   const planType       = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
 
   const data = {
-    customerNo, contractType, contractTypes: [...selectedContractTypes],
+    customerNo,
+    contractType,
+    contractTypes: [contractType],   // keep array for backward compat, single item
     contractNumber: '',
     treatmentMethod: $('form-treatment-method').value.trim(),
     frequency: freq,
@@ -1539,7 +1399,7 @@ $('btn-save-contract').addEventListener('click', async ()=>{
       data.contractNumber = await getNextContractNo();
       const ref=await addDoc(collection(db,'contracts'),data);
 
-      const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value,[...selectedContractTypes]);
+      const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value);
       const payments=generatePaymentSchedule(startDate,amount,freq,sessions,ref.id,customerNo,dpPct,planType);
 
       const batch=writeBatch(db);
@@ -1606,7 +1466,7 @@ async function openDetailModal(id) {
     <div class="detail-grid">
       ${[
         ['Contract No.',contractNo],['Client Name',clientName],
-        ['Customer No.',c.customerNo],['Treatment Type(s)', Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes.join(', ') : (c.contractType||'—')],
+        ['Customer No.',c.customerNo],['Contract Type', c.contractType || '—'],
         ['Treatment Method',c.treatmentMethod],['Frequency',c.frequency],
         ['Sessions',c.noOfSessions],['Warranty Period',c.warrantyPeriod?c.warrantyPeriod+' months':'—'],
         ['Start Date',fmtDate(c.contractStartDate)],['End Date',fmtDate(c.contractEndDate)],
@@ -1819,7 +1679,9 @@ $('btn-confirm-import').addEventListener('click', async()=>{
     const endDate  =parseFlexDate(g('contractEndDate')||g('contractenddate'));
     const ref=doc(collection(db,'contracts'));
     batch.set(ref,{
-      customerNo, contractType, contractTypes: [...selectedContractTypes],
+      customerNo,
+      contractType,
+      contractTypes: [contractType],
       contractNumber: g('contractNumber')||g('contractnumber')||'',
       treatmentMethod:g('treatmentMethod')||'',
       frequency:      g('frequency')||'',
@@ -1958,8 +1820,7 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadAll();
-    tagPicker = initTagPicker();
-    
+
     const _rp = new URLSearchParams(window.location.search);
     if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
     else if(_rp.get('mode')==='inspection') { openInspectionMode(_rp); }
