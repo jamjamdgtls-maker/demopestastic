@@ -824,7 +824,7 @@ function generateTreatmentDates(startDate, freq, sessions, contractId, customerN
       treatmentType: contractType || '',
       treatmentNo: `TRT-${String(i+1).padStart(3,'0')}`,
       treatmentDate: d,
-      status: 'scheduled',
+      status: i === 0 ? 'Scheduled' : 'Need Schedule',
       assignedTeam: team||'',
       chemicalsUsed: '',
       technician: '',
