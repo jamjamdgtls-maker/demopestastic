@@ -465,6 +465,7 @@
             <thead>
               <tr>
                 <th class="sortable" data-sort="treatmentNo">Treatment # <span class="sort-icon" id="sort-treatmentNo"></span></th>
+                <th class="sortable" data-sort="contractNumber">Contract # <span class="sort-icon" id="sort-contractNumber"></span></th>
                 <th class="sortable" data-sort="clientName">Client Name <span class="sort-icon" id="sort-clientName"></span></th>
                 <th class="sortable" data-sort="contractType">Contract Type <span class="sort-icon" id="sort-contractType"></span></th>
                 <th class="sortable" data-sort="treatmentType">Type <span class="sort-icon" id="sort-treatmentType"></span></th>
@@ -477,7 +478,7 @@
               </tr>
             </thead>
             <tbody id="treatments-tbody">
-              <tr><td colspan="8" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              <tr><td colspan="9" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -880,8 +881,8 @@ async function loadAll() {
     coSnap.forEach(d => { contractMap[d.id] = d.data(); });
 
     // Settings
-    let cancelReasons    = ['Client request','No show / not available','Weather conditions','Team unavailable','Contract terminated'];
-    let rescheduleReasons= ['Client request','Team unavailable','Weather conditions','Equipment issue','Holiday / non-working day'];
+    let cancelReasons    = [];
+    let rescheduleReasons= [];
     try {
       const cfgSnap = await getDoc(doc(db, 'config', 'settings'));
       if (cfgSnap.exists()) {
@@ -945,7 +946,7 @@ async function loadAll() {
     showToast('Failed to load data: ' + err.message, 'error', 'Load Error');
     console.error('[loadAll]', err);
     // Show empty state instead of endless spinner
-    $('treatments-tbody').innerHTML = `<tr><td colspan="10"><div class="empty-state">
+    $('treatments-tbody').innerHTML = `<tr><td colspan="11"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <h3>Could not load treatments</h3>
       <p>${err.message}</p>
@@ -984,7 +985,7 @@ function applyFilters() {
   filteredTreatments = allTreatments.filter(t => {
     const ds         = dispStatus(t);
     const clientName = (clientMap[t.customerNo]?.name || '').toLowerCase();
-    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType]
+    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType, contractMap[t.contractId]?.contractNumber || '']
                               .some(f => (f || '').toLowerCase().includes(q));
     const matchS     = !status || ds === status || t.status === status;
     const matchT     = !team   || t.assignedTeam === team;
@@ -1042,7 +1043,7 @@ function renderTable() {
     : `Showing ${start + 1}–${end} of ${total} treatments`;
 
   if (!page.length) {
-    $('treatments-tbody').innerHTML = `<tr><td colspan="8"><div class="empty-state">
+    $('treatments-tbody').innerHTML = `<tr><td colspan="9"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
       <h3>No treatments found</h3><p>Try adjusting your search or filters.</p>
     </div></td></tr>`;
@@ -1072,6 +1073,14 @@ function renderTable() {
     const allStatuses   = ['scheduled','overdue','rescheduled','completed','cancelled',...bookingStatuses.map(s=>s.toLowerCase()),...treatmentStatusesList];
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
+      <td>${(() => {
+        const contract = contractMap[t.contractId];
+        const contractNo = contract?.contractNumber || t.contractId?.slice(0,8)?.toUpperCase() || '—';
+        if (t.contractId && contract) {
+          return '<a href="contracts.html?id=' + t.contractId + '" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;font-family:monospace;font-size:12.5px;text-decoration:none" title="View contract">' + contractNo + '</a>';
+        }
+        return '<span class="muted" style="font-size:12.5px">' + contractNo + '</span>';
+      })()}</td>
       <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
       <td style="font-size:12.5px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${contractType}</td>
       <td style="font-size:12px"><select class="inline-type-select" data-id="${t.id}" data-current-type="${treatmentType}" title="Click to change treatment type">
@@ -1391,6 +1400,9 @@ document.querySelectorAll('th.sortable').forEach(th => {
       if (field === 'treatmentDate') {
         av = toDate(a.treatmentDate)?.getTime() || 0;
         bv = toDate(b.treatmentDate)?.getTime() || 0;
+      } else if (field === 'contractNumber') {
+        av = (contractMap[a.contractId]?.contractNumber || '').toLowerCase();
+        bv = (contractMap[b.contractId]?.contractNumber || '').toLowerCase();
       } else if (field === 'clientName') {
         av = (clientMap[a.customerNo]?.name || '').toLowerCase();
         bv = (clientMap[b.customerNo]?.name || '').toLowerCase();
@@ -1599,6 +1611,8 @@ $('btn-new-treatment').addEventListener('click', () => {
   $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
     treatmentTypesList.map(t => `<option>${t}</option>`).join('');
   $('nt-contract-type').value = '';
+  $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
+  $('nt-contract-hint').textContent = '';
   const today = new Date();
   $('nt-date').value = today.toISOString().slice(0,10);
   $('nt-time').value = '';
@@ -1613,35 +1627,79 @@ $('btn-new-treatment').addEventListener('click', () => {
   openModal('new-treatment-modal');
 });
 
-// Customer lookup hint + populate contract types
+// Customer lookup hint + populate contracts dropdown
 $('nt-customer-no').addEventListener('input', () => {
   const val = $('nt-customer-no').value.trim();
   const client = clientMap[val];
   $('nt-client-hint').textContent = client ? `✓ ${client.name}${client.address ? ' · ' + client.address : ''}` : '';
 
-  // Find contracts for this customer and gather their treatment types
+  // Reset contract and type dropdowns
+  $('nt-contract-select').innerHTML = '<option value="">— Select Contract —</option>';
+  $('nt-contract-type').value = '';
+  $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
+  $('nt-contract-hint').textContent = '';
+  $('nt-contract-hint').textContent = '';
+  $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
+    treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
+
   if(client && val) {
-    const customerContracts = Object.values(contractMap).filter(c => c.customerNo === val);
-    const contractTypeSet = new Set();
-    customerContracts.forEach(c => {
-      if(Array.isArray(c.contractTypes)) c.contractTypes.forEach(t => contractTypeSet.add(t));
-      else if(c.contractType) c.contractType.split(',').map(s=>s.trim()).filter(Boolean).forEach(t => contractTypeSet.add(t));
-    });
-    // Build dropdown: contract types first (highlighted), then remaining from settings
-    const contractSpecific = [...contractTypeSet];
-    const remaining = treatmentTypesList.filter(t => !contractTypeSet.has(t));
-    let opts = '<option value="">— Select Type —</option>';
-    if(contractSpecific.length) {
-      opts += '<optgroup label="From Contract">' + contractSpecific.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
+    // Populate contract dropdown with this customer's contracts
+    const customerContracts = Object.entries(contractMap)
+      .filter(([id, c]) => c.customerNo === val)
+      .map(([id, c]) => ({ id, ...c }));
+
+    if(customerContracts.length) {
+      let opts = '<option value="">— Select Contract —</option>';
+      customerContracts.forEach(c => {
+        const contractNo = c.contractNumber || c.id.slice(0,8).toUpperCase();
+        const cType = c.contractType || '—';
+        const startDate = c.contractStartDate ? new Date(c.contractStartDate.seconds ? c.contractStartDate.seconds*1000 : c.contractStartDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) : '';
+        opts += '<option value="'+c.id+'" data-type="'+(c.contractType||'')+'" data-types="'+encodeURIComponent(JSON.stringify(c.contractTypes||[c.contractType].filter(Boolean)))+'">'+contractNo+' — '+cType+(startDate?' ('+startDate+')':'')+'</option>';
+      });
+      $('nt-contract-select').innerHTML = opts;
+    } else {
+      $('nt-contract-select').innerHTML = '<option value="">No contracts found for this client</option>';
     }
-    if(remaining.length) {
-      opts += '<optgroup label="All Types">' + remaining.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
-    }
-    $('nt-treatment-type').innerHTML = opts;
   } else {
+    $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
+  }
+});
+
+// When contract is selected, auto-fill contract type and filter treatment types
+$('nt-contract-select').addEventListener('change', () => {
+  const contractId = $('nt-contract-select').value;
+  if(!contractId) {
+    $('nt-contract-type').value = '';
+  $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
+  $('nt-contract-hint').textContent = '';
+    $('nt-contract-hint').textContent = '';
     $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
       treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
+    return;
   }
+  const contract = contractMap[contractId];
+  if(!contract) return;
+
+  // Auto-fill contract type
+  $('nt-contract-type').value = contract.contractType || '';
+  const contractNo = contract.contractNumber || contractId.slice(0,8).toUpperCase();
+  $('nt-contract-hint').innerHTML = '<a href="contracts.html?id='+contractId+'" target="_blank" rel="noopener" style="color:var(--primary);font-size:11.5px">View contract '+contractNo+' →</a>';
+
+  // Populate treatment types from contract
+  const contractTypeSet = new Set();
+  if(Array.isArray(contract.contractTypes)) contract.contractTypes.forEach(t => contractTypeSet.add(t));
+  else if(contract.contractType) contract.contractType.split(',').map(s=>s.trim()).filter(Boolean).forEach(t => contractTypeSet.add(t));
+
+  const contractSpecific = [...contractTypeSet];
+  const remaining = treatmentTypesList.filter(t => !contractTypeSet.has(t));
+  let opts = '<option value="">— Select Type —</option>';
+  if(contractSpecific.length) {
+    opts += '<optgroup label="From Contract">' + contractSpecific.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
+  }
+  if(remaining.length) {
+    opts += '<optgroup label="All Types">' + remaining.map(t => '<option value="'+t+'">'+t+'</option>').join('') + '</optgroup>';
+  }
+  $('nt-treatment-type').innerHTML = opts;
 });
 
 // Team change updates technician dropdown in new treatment modal
@@ -1659,8 +1717,10 @@ $('btn-save-new-treatment').addEventListener('click', async () => {
   const customerNo   = $('nt-customer-no').value.trim();
   const treatType    = $('nt-treatment-type').value;
   const dateStr      = $('nt-date').value;
+  const contractId  = $('nt-contract-select').value;
   if (!customerNo)  { showToast('Customer No is required.', 'error');      return; }
   if (!clientMap[customerNo]) { showToast('Customer not found. Please enter a valid Customer No.', 'error'); return; }
+  if (!contractId)  { showToast('Please select a contract.', 'error');       return; }
   if (!treatType)   { showToast('Treatment Type is required.', 'error');   return; }
   if (!dateStr)     { showToast('Date is required.', 'error');              return; }
 
@@ -1674,6 +1734,7 @@ $('btn-save-new-treatment').addEventListener('click', async () => {
     const data = {
       treatmentNo,
       customerNo,
+      contractId:    contractId,
       contractType:  $('nt-contract-type').value.trim() || '',
       treatmentType: treatType,
       treatmentDate: new Date(y, m - 1, d),
@@ -1984,14 +2045,23 @@ $('btn-signout-pending')?.addEventListener('click', () => signOut(auth).then(() 
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label class="form-label">Contract <span class="req">*</span></label>
+          <select class="form-select" id="nt-contract-select">
+            <option value="">— Select a client first —</option>
+          </select>
+          <div class="form-hint" id="nt-contract-hint"></div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Treatment Type <span class="req">*</span></label>
           <select class="form-select" id="nt-treatment-type">
             <option value="">— Select Type —</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Contract Type / Description</label>
-          <input type="text" class="form-input" id="nt-contract-type" placeholder="e.g. General Pest Control" />
+          <input type="text" class="form-input" id="nt-contract-type" placeholder="Auto-filled from contract" readonly style="background:var(--bg-secondary);color:var(--text-muted)" />
         </div>
       </div>
       <div class="form-row">
