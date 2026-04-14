@@ -1827,7 +1827,8 @@ onAuthStateChanged(auth, async user=>{
     await loadAll();
 
     const _rp = new URLSearchParams(window.location.search);
-    if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
+    if(_rp.get('id')) { openDetailModal(_rp.get('id')); }
+    else if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
     else if(_rp.get('mode')==='inspection') { openInspectionMode(_rp); }
   } catch(err){ dismissLoadingScreen();console.error(err); }
 });
