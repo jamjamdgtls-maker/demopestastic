@@ -750,7 +750,6 @@ let clientMap = {}, contractMap = {};
 let currentPage = 1;
 const PER_PAGE = 20;
 let treatmentTypesList  = [];
-let treatmentStatusesList = [];
 let contractTypesFromSettings = [];
 let bookingStatuses = [];
 
@@ -758,7 +757,6 @@ const DEFAULT_CONTRACT_TYPES = [];
 const DEFAULT_BOOKING_STATUSES = [];
 let teamsData = [];
 let sortField = 'treatmentDate', sortDir = 'asc';
-const SYSTEM_STATUSES = [];
 
 /* ── DOM helper ── */
 const $ = id => document.getElementById(id);
@@ -822,15 +820,15 @@ function dispStatus(t) {
 }
 
 function statusBadge(s) {
-  const map = {
-    completed: 'green', scheduled: 'blue', overdue: 'red',
-    rescheduled: 'amber', cancelled: 'gray',
-    confirmed: 'green', 'for confirmation': 'amber',
-    'awaiting customer confirmation': 'amber', 'pencil booking': 'purple',
-    'need schedule': 'blue'
-  };
+  // Dynamic color assignment based on bookingStatuses from settings
   const key = (s || '').toLowerCase();
-  return `<span class="badge badge-${map[key] || 'purple'}">${s || '—'}</span>`;
+  if (!window._statusColorCache) window._statusColorCache = {};
+  if (!window._statusColorCache[key]) {
+    const palette = ['green','blue','amber','red','purple','gray'];
+    const idx = Object.keys(window._statusColorCache).length % palette.length;
+    window._statusColorCache[key] = palette[idx];
+  }
+  return `<span class="badge badge-${window._statusColorCache[key]}">${s || '—'}</span>`;
 }
 
 /* ── Audit log ── */
@@ -880,8 +878,6 @@ async function loadAll() {
         treatmentTypesList    = s.treatmentTypes || [];
         contractTypesFromSettings = s.contractTypesList || DEFAULT_CONTRACT_TYPES;
         bookingStatuses       = s.bookingStatuses || DEFAULT_BOOKING_STATUSES;
-        treatmentStatusesList = (s.treatmentStatuses || [])
-          .filter(st => !SYSTEM_STATUSES.includes(st.toLowerCase()));
         if (s.cancelReasons    && s.cancelReasons.length)    cancelReasons    = s.cancelReasons;
         if (s.rescheduleReasons && s.rescheduleReasons.length) rescheduleReasons = s.rescheduleReasons;
       } else {
@@ -904,11 +900,10 @@ async function loadAll() {
     $('filter-type').innerHTML = '<option value="">All Types</option>' +
       treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
 
-    // Populate status filter (system + custom + booking statuses)
+    // Populate status filter from booking statuses (settings)
     $('filter-status').innerHTML = `
       <option value="">All Status</option>
-      ${bookingStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}
-      ${treatmentStatusesList.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
+      ${bookingStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
 
     // Teams
     const tSnap = await getDocs(collection(db, 'teams'));
@@ -954,21 +949,20 @@ function computeSummary() {
   });
   const total = allTreatments.length;
 
-  // Color map for known statuses; unknown ones get purple
-  const colorMap = {
-    completed: { bar: 'var(--green)', val: 'var(--green)', css: 'completed' },
-    scheduled: { bar: 'var(--blue)', val: 'var(--blue)', css: 'scheduled' },
-    overdue:   { bar: 'var(--red)', val: 'var(--red)', css: 'overdue' },
-    cancelled: { bar: 'var(--gray)', val: 'var(--gray)', css: 'cancelled' },
-    rescheduled: { bar: 'var(--amber)', val: 'var(--amber)', css: 'scheduled' },
-    confirmed: { bar: 'var(--green)', val: 'var(--green)', css: 'completed' },
-    'for confirmation': { bar: 'var(--amber)', val: 'var(--amber)', css: 'scheduled' },
-    'awaiting customer confirmation': { bar: 'var(--amber)', val: 'var(--amber)', css: 'scheduled' },
-    'pencil booking': { bar: 'var(--purple)', val: 'var(--purple)', css: 'scheduled' },
-    'need schedule': { bar: 'var(--blue)', val: 'var(--blue)', css: 'scheduled' }
-  };
+  // Dynamic color assignment — cycles through palette based on status index
+  const palette = [
+    { bar: 'var(--green)',  val: 'var(--green)',  css: 'completed' },
+    { bar: 'var(--blue)',   val: 'var(--blue)',   css: 'scheduled' },
+    { bar: 'var(--amber)',  val: 'var(--amber)',  css: 'scheduled' },
+    { bar: 'var(--red)',    val: 'var(--red)',    css: 'overdue' },
+    { bar: 'var(--purple)', val: 'var(--purple)', css: 'scheduled' },
+    { bar: 'var(--gray)',   val: 'var(--gray)',   css: 'cancelled' }
+  ];
+  const colorMap = {};
+  const statusKeys2 = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+  statusKeys2.forEach((s, i) => { colorMap[s.toLowerCase()] = palette[i % palette.length]; });
 
-  const defaultColor = { bar: 'var(--purple)', val: 'var(--purple)', css: 'scheduled' };
+  const defaultColor = palette[0];
 
   // Build summary grid: Total card + one card per status
   const grid = $('summary-grid');
@@ -1079,8 +1073,6 @@ function renderTable() {
     return;
   }
 
-  const customStatusKeys = treatmentStatusesList.map(s => s.toLowerCase());
-
   $('treatments-tbody').innerHTML = page.map(t => {
     const ds          = dispStatus(t);
     const isOverdue   = ds === 'overdue';
@@ -1100,7 +1092,7 @@ function renderTable() {
 
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = [...new Set([...allTreatments.map(t => dispStatus(t)), ...bookingStatuses.map(s=>s.toLowerCase()), ...treatmentStatusesList.map(s=>s.toLowerCase())])].sort();
+    const allStatuses   = [...new Set([...allTreatments.map(t => dispStatus(t)), ...bookingStatuses.map(s=>s.toLowerCase())])].sort();
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td>${(() => {
