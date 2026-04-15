@@ -1118,7 +1118,7 @@ function renderTable() {
       <td class="muted" style="font-size:12.5px">${t.assignedTeam || '—'}</td>
       <td class="muted" style="font-size:12.5px">${t.technician   || '—'}</td>
       <td><select class="inline-status-select status-${ds}" data-id="${t.id}" data-current="${ds}">
-        ${allStatuses.map(s => `<option value="${s}" ${s===ds?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+        ${allStatuses.map(s => `<option value="${s}" ${s===ds.toLowerCase()?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
       </select></td>
       <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)" title="${t.notes||''}">${notePreview}</td>
       <td>
