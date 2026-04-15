@@ -943,6 +943,8 @@ async function loadAll() {
 /* ── Summary counters ── */
 function computeSummary() {
   const counts = {};
+  // Seed counts with all bookingStatuses from settings (even if 0)
+  bookingStatuses.forEach(s => { counts[s.toLowerCase()] = 0; });
   allTreatments.forEach(t => {
     const s = dispStatus(t);
     counts[s] = (counts[s] || 0) + 1;
@@ -1092,7 +1094,7 @@ function renderTable() {
 
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = [...new Set([...allTreatments.map(t => dispStatus(t)), ...bookingStatuses.map(s=>s.toLowerCase())])].sort();
+    const allStatuses   = [...new Set([...bookingStatuses.map(s => s.toLowerCase()), ...(ds && ds !== '—' ? [ds.toLowerCase()] : [])])].sort();
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td>${(() => {
