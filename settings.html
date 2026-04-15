@@ -1161,50 +1161,50 @@ async function loadSettings() {
   $('default-payment-notify-days').value = settings.defaultPaymentNotifyDays ?? 30;
 
   /* Treatment Configuration */
-  treatmentTypes = [...(settings.treatmentTypes || [])];
+  treatmentTypes.length = 0; treatmentTypes.push(...(settings.treatmentTypes || []));
   renderChipList('treatment-types-list', treatmentTypes, [], 'removeTreatmentType');
 
   /* Communication Sources */
-  commSources = [...(settings.commSources || DEFAULT_COMM_SOURCES)];
+  commSources.length = 0; commSources.push(...(settings.commSources || DEFAULT_COMM_SOURCES));
   renderChipList('comm-sources-list', commSources, [], 'removeCommSource');
 
   /* Payment Modes */
-  paymentModes = [...(settings.paymentModes || DEFAULT_PAYMENT_MODES)];
+  paymentModes.length = 0; paymentModes.push(...(settings.paymentModes || DEFAULT_PAYMENT_MODES));
   renderChipList('payment-modes-list', paymentModes, [], 'removePaymentMode');
 
   /* Payment Statuses */
-  paymentStatuses = [...(settings.paymentStatuses || DEFAULT_PAYMENT_STATUSES)];
+  paymentStatuses.length = 0; paymentStatuses.push(...(settings.paymentStatuses || DEFAULT_PAYMENT_STATUSES));
   renderChipList('payment-statuses-list', paymentStatuses, SYSTEM_PAYMENT_STATUSES, 'removePaymentStatus');
 
   /* Complaint Statuses */
-  complaintStatuses = [...(settings.complaintStatuses || DEFAULT_COMPLAINT_STATUSES)];
+  complaintStatuses.length = 0; complaintStatuses.push(...(settings.complaintStatuses || DEFAULT_COMPLAINT_STATUSES));
   renderChipList('complaint-statuses-list', complaintStatuses, SYSTEM_COMPLAINT_STATUSES, 'removeComplaintStatus');
 
   /* Contract Frequencies */
-  contractFrequencies = [...(settings.contractFrequencies || DEFAULT_CONTRACT_FREQS)];
+  contractFrequencies.length = 0; contractFrequencies.push(...(settings.contractFrequencies || DEFAULT_CONTRACT_FREQS));
   renderChipList('contract-frequencies-list', contractFrequencies, SYSTEM_CONTRACT_FREQS, 'removeContractFreq');
   /* Cancellation Reasons */
-  cancelReasons = [...(settings.cancelReasons || DEFAULT_CANCEL_REASONS)];
+  cancelReasons.length = 0; cancelReasons.push(...(settings.cancelReasons || DEFAULT_CANCEL_REASONS));
   renderChipList('cancel-reasons-list', cancelReasons, [], 'removeCancelReason');
 
   /* Reschedule Reasons */
-  rescheduleReasons = [...(settings.rescheduleReasons || DEFAULT_RESCHEDULE_REASONS)];
+  rescheduleReasons.length = 0; rescheduleReasons.push(...(settings.rescheduleReasons || DEFAULT_RESCHEDULE_REASONS));
   renderChipList('reschedule-reasons-list', rescheduleReasons, [], 'removeRescheduleReason');
 
   /* Contract Types */
-  contractTypesList = [...(settings.contractTypesList || DEFAULT_CONTRACT_TYPES)];
+  contractTypesList.length = 0; contractTypesList.push(...(settings.contractTypesList || DEFAULT_CONTRACT_TYPES));
   renderChipList('contract-types-list', contractTypesList, [], 'removeContractType');
 
   /* Complaint Priorities */
-  complaintPriorities = [...(settings.complaintPriorities || DEFAULT_COMPLAINT_PRIORITIES)];
+  complaintPriorities.length = 0; complaintPriorities.push(...(settings.complaintPriorities || DEFAULT_COMPLAINT_PRIORITIES));
   renderChipList('complaint-priorities-list', complaintPriorities, [], 'removeComplaintPriority');
 
   /* Contract Statuses */
-  contractStatuses = [...(settings.contractStatuses || DEFAULT_CONTRACT_STATUSES)];
+  contractStatuses.length = 0; contractStatuses.push(...(settings.contractStatuses || DEFAULT_CONTRACT_STATUSES));
   renderChipList('contract-statuses-list', contractStatuses, [], 'removeContractStatus');
 
   /* Booking Statuses */
-  bookingStatuses = [...(settings.bookingStatuses || DEFAULT_BOOKING_STATUSES)];
+  bookingStatuses.length = 0; bookingStatuses.push(...(settings.bookingStatuses || DEFAULT_BOOKING_STATUSES));
   renderChipList('booking-statuses-list', bookingStatuses, [], 'removeBookingStatus');
 }
 
