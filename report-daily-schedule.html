@@ -649,10 +649,11 @@ async function generateReport() {
             <th>Client Name</th>
             <th>Customer No</th>
             <th>Address</th>
-            <th>Contract Type</th>
+            <th>Treatment Type</th>
             <th>Time</th>
             <th>Treatment #</th>
             <th>Technician</th>
+            <th>Notes</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -671,16 +672,20 @@ async function generateReport() {
       ].filter(Boolean);
       const address=addrParts.join(', ')||'—';
       const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
+      const treatmentType=t.treatmentType||contractType;
+      const notesFull=t.notes||'—';
+      const notesPreview=t.notes?(t.notes.length>60?t.notes.slice(0,60)+'…':t.notes):'—';
       const ds=dispStatus(t,dateStr);
       html+=`<tr>
         <td class="num">${i+1}</td>
         <td style="font-weight:600;max-width:140px">${clientName}</td>
         <td class="treat-no">${t.customerNo||'—'}</td>
         <td style="font-size:11.5px;max-width:160px">${address}</td>
-        <td style="font-size:11.5px">${contractType}</td>
+        <td style="font-size:11.5px">${treatmentType}</td>
         <td style="font-size:12px;white-space:nowrap">${t.treatmentTime||'—'}</td>
         <td class="treat-no">${t.treatmentNo||'—'}</td>
         <td style="font-size:12px">${t.technician||'—'}</td>
+        <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
         <td>${statusDot(ds)}</td>
       </tr>`;
     });
