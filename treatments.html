@@ -89,9 +89,8 @@
     .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;position:relative}
     .topbar-btn svg{width:16px;height:16px}
     .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
-    .page-content{flex:1;overflow-y:auto;padding:24px}
-    .page-content::-webkit-scrollbar{width:6px}
-    .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .page-content{flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column}
+    
 
     /* BUTTONS */
     .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -122,13 +121,13 @@
     .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
 
     /* PAGE */
-    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap;flex-shrink:0}
     .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
     .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
     .page-header-right{display:flex;gap:8px;flex-wrap:wrap}
 
     /* SUMMARY CARDS */
-    .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+    .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px;flex-shrink:0}
     .sum-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:box-shadow .15s,transform .15s;position:relative;overflow:hidden}
     .sum-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
     .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
@@ -266,9 +265,6 @@
     @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
     @media(max-width:480px){.summary-grid{grid-template-columns:1fr}}
   
-    /* Sortable headers */
-    .sortable { cursor:pointer; user-select:none; white-space:nowrap; }
-    .sortable:hover { background:var(--bg-tertiary); }
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
 
     /* Inline status select */
@@ -284,6 +280,36 @@
     .inline-status-select.status-rescheduled{ background:var(--amber-bg); color:var(--amber-text);}
     .inline-status-select.status-cancelled  { background:var(--gray-bg);  color:var(--gray-text); }
 
+
+    /* Column header dropdown menu (Google Sheets style) */
+    .col-header { position:relative; cursor:pointer; user-select:none; white-space:nowrap; }
+    .col-header:hover { background:var(--bg-tertiary); }
+    .col-header-inner { display:flex; align-items:center; gap:4px; }
+    .col-menu-btn { background:none; border:none; color:var(--text-muted); font-size:10px; padding:2px 3px; cursor:pointer; border-radius:2px; line-height:1; opacity:0; transition:opacity .15s; }
+    .col-header:hover .col-menu-btn { opacity:1; }
+    .col-menu-btn:hover { background:var(--border); color:var(--text); }
+
+    .col-dropdown { position:absolute; top:100%; left:0; z-index:100; background:white; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:200px; padding:6px 0; font-size:13px; font-weight:400; text-transform:none; letter-spacing:0; }
+    .col-dropdown-item { display:flex; align-items:center; gap:8px; padding:7px 14px; cursor:pointer; color:var(--text); transition:background .1s; white-space:nowrap; }
+    .col-dropdown-item:hover { background:var(--bg-secondary); }
+    .col-dropdown-item svg { width:14px; height:14px; color:var(--text-muted); flex-shrink:0; }
+    .col-dropdown-sep { height:1px; background:var(--border); margin:4px 0; }
+    .col-dropdown-search { padding:6px 10px; }
+    .col-dropdown-search input { width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; outline:none; }
+    .col-dropdown-search input:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(34,197,94,.12); }
+    .col-dropdown-values { max-height:180px; overflow-y:auto; }
+    .col-dropdown-values label { display:flex; align-items:center; gap:8px; padding:5px 14px; cursor:pointer; font-size:12.5px; color:var(--text); }
+    .col-dropdown-values label:hover { background:var(--bg-secondary); }
+    .col-dropdown-values input[type="checkbox"] { accent-color:var(--primary); }
+    .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
+    .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
+
+    /* Fixed table within screen */
+    .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
+    .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
+    .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
+    .table-wrapper::-webkit-scrollbar-corner { background:var(--bg-secondary); }
+    thead th { position:sticky; top:0; z-index:10; background:var(--bg-secondary); }
   </style>
 </head>
 <body>
@@ -399,6 +425,10 @@
           <p>Track and manage all scheduled pest control treatments</p>
         </div>
         <div class="page-header-right">
+          <div class="search-wrap" style="min-width:260px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="search-input" placeholder="Search treatment, client, team…" />
+          </div>
           <button class="btn btn-secondary" id="btn-export-csv">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
@@ -439,41 +469,30 @@
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="filters-bar">
-        <div class="search-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="search-input" id="search-input" placeholder="Search client name, customer #, team…" />
-        </div>
-        <select class="filter-select" id="filter-type"><option value="">All Types</option></select>
-        <select class="filter-select" id="filter-status">
-          <option value="">All Status</option>
-        </select>
-        <select class="filter-select" id="filter-team"><option value="">All Teams</option></select>
-        <div class="date-range">
-          <input type="date" id="filter-date-from" title="From date" />
-          <span>to</span>
-          <input type="date" id="filter-date-to" title="To date" />
-        </div>
-        <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
-      </div>
+      <!-- Hidden filter elements (kept for JS compatibility) -->
+      <select style="display:none" id="filter-type"><option value="">All Types</option></select>
+      <select style="display:none" id="filter-status"><option value="">All Status</option></select>
+      <select style="display:none" id="filter-team"><option value="">All Teams</option></select>
+      <input type="hidden" id="filter-date-from" />
+      <input type="hidden" id="filter-date-to" />
+      <button style="display:none" id="btn-clear-filters">Clear</button>
 
       <!-- Table -->
-      <div class="table-card">
-        <div class="table-wrapper">
+      <div class="table-card" style="display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0">
+        <div class="table-wrapper" style="flex:1;overflow:auto;min-height:0">
           <table>
             <thead>
               <tr>
-                <th class="sortable" data-sort="treatmentNo">Treatment # <span class="sort-icon" id="sort-treatmentNo"></span></th>
-                <th class="sortable" data-sort="contractNumber">Contract # <span class="sort-icon" id="sort-contractNumber"></span></th>
-                <th class="sortable" data-sort="clientName">Client Name <span class="sort-icon" id="sort-clientName"></span></th>
-                <th class="sortable" data-sort="contractType">Contract Type <span class="sort-icon" id="sort-contractType"></span></th>
-                <th class="sortable" data-sort="treatmentType">Type <span class="sort-icon" id="sort-treatmentType"></span></th>
-                <th class="sortable" data-sort="treatmentDate">Date / Time <span class="sort-icon" id="sort-treatmentDate">▲</span></th>
-                <th>Team</th>
-                <th>Technician</th>
-                <th>Status</th>
-                <th>Notes</th>
+                <th class="col-header" data-sort="treatmentNo" data-col="treatmentNo"><div class="col-header-inner"><span>Treatment #</span><span class="sort-icon" id="sort-treatmentNo"></span><button class="col-menu-btn" data-col="treatmentNo">▾</button></div></th>
+                <th class="col-header" data-sort="contractNumber" data-col="contractNumber"><div class="col-header-inner"><span>Contract #</span><span class="sort-icon" id="sort-contractNumber"></span><button class="col-menu-btn" data-col="contractNumber">▾</button></div></th>
+                <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
+                <th class="col-header" data-sort="contractType" data-col="contractType"><div class="col-header-inner"><span>Contract Type</span><span class="sort-icon" id="sort-contractType"></span><button class="col-menu-btn" data-col="contractType">▾</button></div></th>
+                <th class="col-header" data-sort="treatmentType" data-col="treatmentType"><div class="col-header-inner"><span>Type</span><span class="sort-icon" id="sort-treatmentType"></span><button class="col-menu-btn" data-col="treatmentType">▾</button></div></th>
+                <th class="col-header" data-sort="treatmentDate" data-col="treatmentDate"><div class="col-header-inner"><span>Date / Time</span><span class="sort-icon" id="sort-treatmentDate">▲</span><button class="col-menu-btn" data-col="treatmentDate">▾</button></div></th>
+                <th class="col-header" data-sort="assignedTeam" data-col="assignedTeam"><div class="col-header-inner"><span>Team</span><span class="sort-icon" id="sort-assignedTeam"></span><button class="col-menu-btn" data-col="assignedTeam">▾</button></div></th>
+                <th class="col-header" data-sort="technician" data-col="technician"><div class="col-header-inner"><span>Technician</span><span class="sort-icon" id="sort-technician"></span><button class="col-menu-btn" data-col="technician">▾</button></div></th>
+                <th class="col-header" data-sort="status" data-col="status"><div class="col-header-inner"><span>Status</span><span class="sort-icon" id="sort-status"></span><button class="col-menu-btn" data-col="status">▾</button></div></th>
+                <th class="col-header" data-col="notes"><div class="col-header-inner"><span>Notes</span><button class="col-menu-btn" data-col="notes">▾</button></div></th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -985,7 +1004,7 @@ function applyFilters() {
   filteredTreatments = allTreatments.filter(t => {
     const ds         = dispStatus(t);
     const clientName = (clientMap[t.customerNo]?.name || '').toLowerCase();
-    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType, contractMap[t.contractId]?.contractNumber || '']
+    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType, contractMap[t.contractId]?.contractNumber || '', t.technician || '', ds, t.treatmentType || '']
                               .some(f => (f || '').toLowerCase().includes(q));
     const matchS     = !status || ds === status || t.status === status;
     const matchT     = !team   || t.assignedTeam === team;
@@ -998,7 +1017,13 @@ function applyFilters() {
         if (dateTo)   { const to = new Date(dateTo);  to.setHours(23,59,59,999); if (td > to) matchD = false; }
       } else { matchD = false; }
     }
-    return matchQ && matchS && matchT && matchType && matchD;
+    // Column-level filters from header dropdowns
+    let matchColFilters = true;
+    for (const [col, allowedSet] of Object.entries(columnFilters)) {
+      const val = getColValue(t, col).toString().trim();
+      if (!allowedSet.has(val)) { matchColFilters = false; break; }
+    }
+    return matchQ && matchS && matchT && matchType && matchD && matchColFilters;
   });
   currentPage = 1;
   renderTable();
@@ -1070,7 +1095,7 @@ function renderTable() {
 
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = ['scheduled','overdue','rescheduled','completed','cancelled',...bookingStatuses.map(s=>s.toLowerCase()),...treatmentStatusesList];
+    const allStatuses   = [...new Set(['scheduled','overdue','rescheduled','completed','cancelled',...bookingStatuses.map(s=>s.toLowerCase()),...treatmentStatusesList.map(s=>s.toLowerCase())])];
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td>${(() => {
@@ -1379,45 +1404,187 @@ $('btn-confirm-reschedule').addEventListener('click', async () => {
 });
 
 /* ══════════════════════════════════
-   SORTING
+   COLUMN HEADER DROPDOWNS (Google Sheets style)
 ══════════════════════════════════ */
-document.querySelectorAll('th.sortable').forEach(th => {
-  th.addEventListener('click', () => {
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values } — empty means all
+
+function getColValue(t, col) {
+  if (col === 'treatmentNo')    return t.treatmentNo || '';
+  if (col === 'contractNumber') return contractMap[t.contractId]?.contractNumber || t.contractId?.slice(0,8)?.toUpperCase() || '';
+  if (col === 'clientName')     return cleanName(clientMap[t.customerNo]?.name || t.customerNo || '');
+  if (col === 'contractType')   return t.contractType || contractMap[t.contractId]?.contractType || '';
+  if (col === 'treatmentType')  return t.treatmentType || '';
+  if (col === 'treatmentDate')  return fmtDate(t.treatmentDate);
+  if (col === 'assignedTeam')   return t.assignedTeam || '';
+  if (col === 'technician')     return t.technician || '';
+  if (col === 'status')         return dispStatus(t);
+  if (col === 'notes')          return t.notes || '';
+  return '';
+}
+
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allTreatments.forEach(t => {
+    const v = getColValue(t, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
+}
+
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn')) {
+    closeColDropdown();
+  }
+}
+
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
+
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>
+    ` : ''}
+    <div class="col-dropdown-search">
+      <input type="text" placeholder="Search…" id="col-search-input" />
+    </div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  // Search within values
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      const text = lbl.textContent.toLowerCase();
+      lbl.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+
+  // Sort actions
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = th.dataset.sort;
+      sortField = field;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
+      document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+      const icon = document.getElementById('sort-' + field);
+      if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+      doSort();
+      closeColDropdown();
+    });
+  });
+
+  // Select all / none
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
+
+  // Apply filter
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) {
+      delete columnFilters[col];
+    } else {
+      columnFilters[col] = new Set(checked);
+    }
+    // Update header style to show active filter
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// Attach click handlers to column menu buttons
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const col = btn.dataset.col;
+    const th = btn.closest('th');
+    openColDropdown(col, th);
+  });
+});
+
+// Click on header text sorts
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
     const field = th.dataset.sort;
+    if (!field) return;
     if (sortField === field) {
       sortDir = sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       sortField = field;
-      sortDir   = 'asc';
+      sortDir = 'asc';
     }
-    // Update all sort icons
     document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
     const icon = document.getElementById('sort-' + field);
     if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
-
-    filteredTreatments.sort((a, b) => {
-      let av, bv;
-      if (field === 'treatmentDate') {
-        av = toDate(a.treatmentDate)?.getTime() || 0;
-        bv = toDate(b.treatmentDate)?.getTime() || 0;
-      } else if (field === 'contractNumber') {
-        av = (contractMap[a.contractId]?.contractNumber || '').toLowerCase();
-        bv = (contractMap[b.contractId]?.contractNumber || '').toLowerCase();
-      } else if (field === 'clientName') {
-        av = (clientMap[a.customerNo]?.name || '').toLowerCase();
-        bv = (clientMap[b.customerNo]?.name || '').toLowerCase();
-      } else {
-        av = (a[field] || '').toString().toLowerCase();
-        bv = (b[field] || '').toString().toLowerCase();
-      }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ?  1 : -1;
-      return 0;
-    });
-    currentPage = 1;
-    renderTable();
+    doSort();
   });
 });
+
+function doSort() {
+  filteredTreatments.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'treatmentDate') {
+      av = toDate(a.treatmentDate)?.getTime() || 0;
+      bv = toDate(b.treatmentDate)?.getTime() || 0;
+    } else if (sortField === 'contractNumber') {
+      av = (contractMap[a.contractId]?.contractNumber || '').toLowerCase();
+      bv = (contractMap[b.contractId]?.contractNumber || '').toLowerCase();
+    } else if (sortField === 'clientName') {
+      av = (clientMap[a.customerNo]?.name || '').toLowerCase();
+      bv = (clientMap[b.customerNo]?.name || '').toLowerCase();
+    } else if (sortField === 'status') {
+      av = dispStatus(a).toLowerCase();
+      bv = dispStatus(b).toLowerCase();
+    } else {
+      av = (a[sortField] || '').toString().toLowerCase();
+      bv = (b[sortField] || '').toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
 
 /* ══════════════════════════════════
    INLINE STATUS EDIT
@@ -1915,7 +2082,7 @@ async function loadSidebarBadges() {
     if(notifDot && notifCount > 0) notifDot.style.display = '';
 
     // ── Pending users (admin/super_admin only) ──
-    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin')) {
+    if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin' || currentRole === 'superadmin' || currentRole === 'super admin')) {
       const usrSnap = await getDocs(collection(db,'users'));
       let pendingUsers = 0;
       usrSnap.forEach(d => { if(d.data().status === 'pending') pendingUsers++; });
@@ -1982,7 +2149,7 @@ onAuthStateChanged(auth, async user => {
   }
 
   // Show admin nav items for admin / superadmin
-  if (['admin', 'superadmin'].includes(currentRole)) {
+  if (['admin', 'superadmin', 'super_admin', 'super admin'].includes(currentRole)) {
     $('admin-nav-label').style.display = '';
     $('nav-users').style.display       = '';
     $('nav-settings').style.display    = '';
