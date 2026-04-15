@@ -19,6 +19,8 @@
       --red:hsl(0,84%,50%);--red-bg:hsl(0,84%,96%);--red-text:hsl(0,84%,38%);
       --purple:hsl(262,83%,58%);--purple-bg:hsl(262,83%,96%);--purple-text:hsl(262,83%,42%);
       --gray:hsl(220,9%,46%);--gray-bg:hsl(220,9%,95%);--gray-text:hsl(220,9%,35%);
+      --teal:hsl(174,72%,36%);--teal-bg:hsl(174,72%,95%);--teal-text:hsl(174,72%,25%);
+      --indigo:hsl(230,85%,55%);--indigo-bg:hsl(230,85%,96%);--indigo-text:hsl(230,85%,40%);
       --sidebar-width:260px;--topbar-height:60px;
       --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif
     }
@@ -93,6 +95,9 @@
     .type-btn.active-payment{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue)}
     .type-btn.active-expiry{background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber)}
     .type-btn.active-complaint{background:var(--red-bg);color:var(--red-text);border-color:var(--red)}
+    .type-btn.active-collected{background:var(--teal-bg);color:var(--teal-text);border-color:var(--teal)}
+    .type-btn.active-contract_start{background:var(--green-bg);color:var(--green-text);border-color:var(--primary)}
+    .type-btn.active-renewal{background:var(--indigo-bg);color:var(--indigo-text);border-color:var(--indigo)}
     .controls-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
     .cal-nav-btn{width:34px;height:34px;background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all .15s}
     .cal-nav-btn:hover{background:var(--bg-secondary)}
@@ -124,15 +129,25 @@
     .cal-day-events{display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden}
     .cal-pill{display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .cal-pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+    /* Treatment pills */
     .cal-pill.scheduled{background:var(--blue-bg);color:var(--blue-text)}
     .cal-pill.completed{background:var(--green-bg);color:var(--green-text)}
     .cal-pill.overdue{background:var(--red-bg);color:var(--red-text)}
     .cal-pill.rescheduled{background:var(--amber-bg);color:var(--amber-text)}
-    .cal-pill.cancelled{background:var(--gray-bg);color:var(--gray-text)}
+    .cal-pill.cancelled{background:var(--gray-bg);color:var(--gray-text);opacity:.7}
+    /* Inspection pills — split by outcome */
     .cal-pill.inspection{background:var(--purple-bg);color:var(--purple-text)}
+    .cal-pill.insp-positive{background:var(--green-bg);color:var(--green-text)}
+    .cal-pill.insp-noshow{background:var(--amber-bg);color:var(--amber-text)}
+    .cal-pill.insp-negative{background:var(--gray-bg);color:var(--gray-text)}
+    /* Notif pills */
     .cal-pill.payment{background:var(--blue-bg);color:var(--blue-text);opacity:.8}
     .cal-pill.expiry{background:var(--amber-bg);color:var(--amber-text)}
-    .cal-pill.complaint{background:var(--red-bg);color:var(--red-text);opacity:.8}
+    .cal-pill.complaint{background:var(--red-bg);color:var(--red-text);opacity:.85}
+    /* New notif pills */
+    .cal-pill.collected{background:var(--teal-bg);color:var(--teal-text)}
+    .cal-pill.contract-start{background:var(--green-bg);color:var(--green-text);border:1px solid var(--primary-border)}
+    .cal-pill.renewal{background:var(--indigo-bg);color:var(--indigo-text)}
     .cal-more{font-size:10px;color:var(--text-muted);padding:1px 4px;cursor:pointer}
     .cal-legend{display:flex;gap:10px;padding:9px 14px;background:var(--bg-secondary);border-top:1px solid var(--border);flex-wrap:wrap;flex-shrink:0}
     .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)}
@@ -152,7 +167,7 @@
     .t-card.completed{border-left-color:var(--green)}
     .t-card.overdue{border-left-color:var(--red)}
     .t-card.rescheduled{border-left-color:var(--amber)}
-    .t-card.cancelled{border-left-color:var(--gray)}
+    .t-card.cancelled{border-left-color:var(--gray);opacity:.75}
     .t-card.inspection-scheduled{border-left-color:var(--purple)}
     .t-card.inspection-completed{border-left-color:var(--green)}
     .t-card.inspection-converted{border-left-color:var(--blue)}
@@ -177,22 +192,38 @@
     .t-status-badge.inspection-noshow{background:var(--amber-bg);color:var(--amber-text)}
     .t-status-badge.inspection-lost{background:var(--red-bg);color:var(--red-text)}
     .t-card-no{font-size:10.5px;color:var(--text-muted);font-family:monospace}
+    /* Notif cards */
     .notif-card{border-radius:var(--radius);padding:11px 13px;margin-bottom:9px;border-left:4px solid transparent}
     .notif-card.np{background:var(--blue-bg);border-left-color:var(--blue)}
     .notif-card.ne{background:var(--amber-bg);border-left-color:var(--amber)}
     .notif-card.nc{background:var(--red-bg);border-left-color:var(--red)}
+    .notif-card.nco{background:var(--teal-bg);border-left-color:var(--teal)}
+    .notif-card.ncs{background:var(--green-bg);border-left-color:var(--green)}
+    .notif-card.nrn-pending{background:var(--amber-bg);border-left-color:var(--amber)}
+    .notif-card.nrn-in_progress{background:var(--blue-bg);border-left-color:var(--blue)}
+    .notif-card.nrn-renewed{background:var(--green-bg);border-left-color:var(--green)}
+    .notif-card.nrn-not_renewed,.notif-card.nrn-lost{background:var(--gray-bg);border-left-color:var(--gray)}
+    .notif-card.nrn{background:var(--indigo-bg);border-left-color:var(--indigo)}
     .notif-card-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;opacity:.75;margin-bottom:4px}
     .notif-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
     .notif-card-meta{font-size:11.5px;color:var(--text-secondary);line-height:1.5}
     .notif-card-link{font-size:11px;font-weight:600;color:var(--primary);display:inline-block;margin-top:5px;cursor:pointer}
     .notif-card-link:hover{text-decoration:underline}
+    /* Upcoming section */
     .upcoming-section{margin-top:14px;padding-bottom:16px}
     .upcoming-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
     .upcoming-title::after{content:'';flex:1;height:1px;background:var(--border)}
     .upcoming-item{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-radius:var(--radius);border:1px solid var(--border);background:white;margin-bottom:7px;transition:box-shadow .15s;cursor:pointer}
     .upcoming-item:hover{box-shadow:var(--shadow)}
     .upcoming-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
-    .upcoming-dot.nt{background:var(--green)}.upcoming-dot.ni{background:var(--purple)}.upcoming-dot.np{background:var(--blue)}.upcoming-dot.ne{background:var(--amber)}.upcoming-dot.nc{background:var(--red)}
+    .upcoming-dot.nt{background:var(--green)}
+    .upcoming-dot.ni{background:var(--purple)}
+    .upcoming-dot.np{background:var(--blue)}
+    .upcoming-dot.ne{background:var(--amber)}
+    .upcoming-dot.nc{background:var(--red)}
+    .upcoming-dot.nco{background:var(--teal)}
+    .upcoming-dot.ncs{background:var(--green)}
+    .upcoming-dot.nrn{background:var(--indigo)}
     .upcoming-body{flex:1;min-width:0}
     .upcoming-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .upcoming-meta{font-size:11.5px;color:var(--text-muted);margin-top:1px}
@@ -224,7 +255,7 @@
   <div id="login-card" class="auth-card">
     <div class="auth-logo"><img src="logo.jpg" alt="Pestastic" style="width:36px;height:36px;object-fit:contain" /></div>
     <h1>Pestastic</h1><p>Sign in to continue</p>
-    <button class="btn-google" id="btn-google-signin"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
+    <button class="btn-google" id="btn-google-signin"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
     <div class="auth-error" id="login-error"></div>
   </div>
   <div id="pending-card" class="auth-card" style="display:none">
@@ -285,22 +316,29 @@
       <div class="topbar-spacer"></div>
     </header>
     <div class="page-content">
+      <!-- Month summary stats -->
       <div class="month-stats">
         <div class="month-stat"><div class="month-stat-val" id="ms-total">&#8212;</div><div class="month-stat-lbl">Treatments</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-scheduled" style="color:var(--blue)">&#8212;</div><div class="month-stat-lbl">Scheduled</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-completed" style="color:var(--green)">&#8212;</div><div class="month-stat-lbl">Completed</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-overdue" style="color:var(--red)">&#8212;</div><div class="month-stat-lbl">Overdue</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-inspections" style="color:var(--purple)">&#8212;</div><div class="month-stat-lbl">Inspections</div></div>
+        <div class="month-stat"><div class="month-stat-val" id="ms-collected" style="color:var(--teal)">&#8212;</div><div class="month-stat-lbl">Collected</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-alerts" style="color:var(--amber)">&#8212;</div><div class="month-stat-lbl">Urgent Alerts</div></div>
       </div>
+      <!-- Type filter buttons -->
       <div class="type-filter">
         <button class="type-btn active-all" data-type="all"><span class="type-btn-dot" style="background:#374151"></span>All</button>
         <button class="type-btn" data-type="treatment"><span class="type-btn-dot" style="background:var(--green)"></span>Treatments</button>
         <button class="type-btn" data-type="inspection"><span class="type-btn-dot" style="background:var(--purple)"></span>Inspections</button>
         <button class="type-btn" data-type="payment"><span class="type-btn-dot" style="background:var(--blue)"></span>Payments Due</button>
-        <button class="type-btn" data-type="expiry"><span class="type-btn-dot" style="background:var(--amber)"></span>Contract Expiry</button>
+        <button class="type-btn" data-type="collected"><span class="type-btn-dot" style="background:var(--teal)"></span>Collected</button>
+        <button class="type-btn" data-type="expiry"><span class="type-btn-dot" style="background:var(--amber)"></span>Expiry</button>
+        <button class="type-btn" data-type="renewal"><span class="type-btn-dot" style="background:var(--indigo)"></span>Renewals</button>
+        <button class="type-btn" data-type="contract_start"><span class="type-btn-dot" style="background:var(--green)"></span>Contract Start</button>
         <button class="type-btn" data-type="complaint"><span class="type-btn-dot" style="background:var(--red)"></span>Complaints</button>
       </div>
+      <!-- Controls -->
       <div class="controls-row">
         <button class="cal-nav-btn" id="btn-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
         <span class="cal-month-label" id="month-label">&#8212;</span>
@@ -322,6 +360,7 @@
           <option value="30">Reminders: 30 days</option>
         </select>
       </div>
+      <!-- Calendar layout -->
       <div class="cal-layout">
         <div class="cal-main">
           <div class="cal-grid-wrap">
@@ -335,9 +374,15 @@
             <span class="leg-item"><span class="leg-dot" style="background:var(--green)"></span>Completed</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>Overdue</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--amber)"></span>Rescheduled</span>
-            <span class="leg-item"><span class="leg-dot" style="background:var(--purple)"></span>Inspection</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--gray)"></span>Cancelled</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--purple)"></span>Insp. Scheduled</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--green);opacity:.7"></span>Insp. Converted</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--amber);opacity:.8"></span>Insp. No Show</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--blue);opacity:.6"></span>Pymt Due</span>
-            <span class="leg-item"><span class="leg-dot" style="background:var(--amber);opacity:.7"></span>Expiry</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--teal)"></span>Collected</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--amber)"></span>Expiry</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--indigo)"></span>Renewal</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--green);border:1px solid var(--primary-border)"></span>Contract Start</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--red);opacity:.6"></span>Complaint</span>
           </div>
           <div class="upcoming-section" id="upcoming-section"></div>
@@ -375,77 +420,216 @@ let clientMap={},contractMap={};
 let dayMap={};
 let viewYear=new Date().getFullYear(),viewMonth=new Date().getMonth();
 let selectedDateKey=null,activeType='all';
+
+// All notification types that go through the notif pipeline
+const NOTIF_TYPES=['payment','expiry','complaint','collected','contract_start','renewal'];
+// Collected payment statuses
+const COLLECTED_STATUSES=['Received','Deposited','Remitted','Collected','Paid'];
+
 const $=id=>document.getElementById(id);
 function todayLocal(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
 function toDate(v){if(!v)return null;if(v.toDate){const d=v.toDate();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}if(v instanceof Date)return new Date(v.getFullYear(),v.getMonth(),v.getDate());const d=new Date(v);return isNaN(d)?null:new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function dateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
 function fmtDateFull(d){return d.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
-function fmtDateShort(v){if(!v)return'&#8212;';const d=v.toDate?v.toDate():(v instanceof Date?v:new Date(v));return isNaN(d)?'&#8212;':d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDateShort(v){if(!v)return'&#8212;';const d=v&&v.toDate?v.toDate():(v instanceof Date?v:new Date(v));return isNaN(d)?'&#8212;':d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});}
 function cleanName(n){return(n||'').replace(/\s*\(.*?\)\s*/g,'').trim()||'&#8212;';}
 function daysUntil(d){return Math.round((d-todayLocal())/(1000*60*60*24));}
+function fmtCur(n){return'&#8369;'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2});}
 function dispStatus(t){const today=todayLocal(),d=toDate(t.treatmentDate);if(t.status==='scheduled'&&d&&d<today)return'overdue';return t.status||'scheduled';}
-function typeClass(t){return{treatment:'nt',inspection:'ni',payment:'np',expiry:'ne',complaint:'nc'}[t]||'nt';}
-function typeLabel(t){return{treatment:'Treatment',inspection:'Inspection',payment:'Payment Due',expiry:'Contract Expiry',complaint:'Complaint'}[t]||t;}
-function typeColor(t){return{treatment:'var(--green)',inspection:'var(--purple)',payment:'var(--blue)',expiry:'var(--amber)',complaint:'var(--red)'}[t]||'var(--green)';}
-function typeModule(t){return{treatment:'treatments.html',inspection:'inspections.html',payment:'payments.html',expiry:'renewals.html',complaint:'complaints.html'}[t]||'dashboard.html';}
 
+// ── Type helpers (expanded for all types) ──
+function typeClass(t){
+  return{treatment:'nt',inspection:'ni',payment:'np',expiry:'ne',complaint:'nc',
+         collected:'nco',contract_start:'ncs',renewal:'nrn'}[t]||'nt';
+}
+function typeLabel(t){
+  return{treatment:'Treatment',inspection:'Inspection',payment:'Payment Due',expiry:'Contract Expiry',
+         complaint:'Complaint',collected:'Payment Collected',contract_start:'Contract Start',renewal:'Renewal'}[t]||t;
+}
+function typeColor(t){
+  return{treatment:'var(--green)',inspection:'var(--purple)',payment:'var(--blue)',expiry:'var(--amber)',
+         complaint:'var(--red)',collected:'var(--teal)',contract_start:'var(--green)',renewal:'var(--indigo)'}[t]||'var(--green)';
+}
+// Short pill labels for the calendar grid
+function typeShortLabel(t){
+  return{payment:'due',expiry:'expiry',complaint:'complaint',collected:'paid',contract_start:'started',renewal:'renewal'}[t]||t;
+}
+// Renewal notif card CSS class based on renewal status
+function renewalCardClass(rs){
+  const map={pending:'nrn-pending',in_progress:'nrn-in_progress',renewed:'nrn-renewed',not_renewed:'nrn-not_renewed',lost:'nrn-lost'};
+  return map[rs]||'nrn';
+}
+// Human-friendly "when" text that handles past dates too
+function whenText(daysUntilVal){
+  if(daysUntilVal===0)return'Today';
+  if(daysUntilVal===1)return'Tomorrow';
+  if(daysUntilVal===-1)return'Yesterday';
+  if(daysUntilVal>1)return`In ${daysUntilVal} days`;
+  return`${Math.abs(daysUntilVal)}d ago`;
+}
+
+// ── Main data loader ──
 async function loadAll(){
   const reminderDays=Number($('filter-days').value)||7;
   const today=todayLocal();
+
+  // Core lookups
   const cSnap=await getDocs(collection(db,'clients'));
   clientMap={};cSnap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c;});
+
   const coSnap=await getDocs(collection(db,'contracts'));
   contractMap={};coSnap.forEach(d=>{contractMap[d.id]=d.data();});
+
   const tSnap=await getDocs(collection(db,'teams'));
   const teams=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
   $('filter-team').innerHTML='<option value="">All Teams</option>'+teams.map(t=>`<option>${t}</option>`).join('');
+
+  // Treatments & Inspections
   const trSnap=await getDocs(query(collection(db,'treatments'),orderBy('treatmentDate','asc')));
   allTreatments=trSnap.docs.map(d=>({id:d.id,...d.data()}));
   const inSnap=await getDocs(query(collection(db,'inspections'),orderBy('inspectionDate','asc')));
   allInspections=inSnap.docs.map(d=>({id:d.id,...d.data()}));
+
   allNotifs=[];
-  const pySnap=await getDocs(query(collection(db,'payments'),where('status','==','Pending')));
+
+  // ── 1. PAYMENTS DUE (Pending, within reminder window) ──
+  const pySnap=await getDocs(collection(db,'payments'));
   pySnap.forEach(d=>{
-    const p=d.data();const dDate=toDate(p.dueDate);if(!dDate)return;
-    const days=daysUntil(dDate);if(days>reminderDays)return;
-    const cn=cleanName(clientMap[p.customerNo]?.clientName||p.customerNo||'&#8212;');
-    const fmtCur=n=>'&#8369;'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2});
-    allNotifs.push({id:d.id,type:'payment',date:dDate,dateKey:dateKey(dDate.getFullYear(),dDate.getMonth(),dDate.getDate()),daysUntil:days,title:cn,subtitle:`${fmtCur(p.amount)} due`,meta:`Mode: ${p.paymentMode||'&#8212;'}`,module:'payments.html',isOverdue:days<0,isUrgent:days<=0});
+    const p=d.data();
+    // Pending payments → due-date reminders
+    if(p.status==='Pending'||(!p.status)){
+      const dDate=toDate(p.dueDate);if(!dDate)return;
+      const days=daysUntil(dDate);if(days>reminderDays)return;
+      const cn=cleanName(clientMap[p.customerNo]?.clientName||p.customerNo||'&#8212;');
+      allNotifs.push({id:d.id,type:'payment',date:dDate,
+        dateKey:dateKey(dDate.getFullYear(),dDate.getMonth(),dDate.getDate()),
+        daysUntil:days,title:cn,subtitle:`${fmtCur(p.amount)} due`,
+        meta:`Mode: ${p.paymentMode||'&#8212;'}`,module:'payments.html',
+        isOverdue:days<0,isUrgent:days<=0});
+    }
+    // ── 2. COLLECTED PAYMENTS (show on actual paymentDate) ──
+    if(COLLECTED_STATUSES.includes(p.status)){
+      const pDate=toDate(p.paymentDate);if(!pDate)return;
+      const days=daysUntil(pDate);
+      if(days<-180)return; // only last 6 months
+      const cn=cleanName(clientMap[p.customerNo]?.clientName||p.customerNo||'&#8212;');
+      allNotifs.push({id:'col_'+d.id,type:'collected',date:pDate,
+        dateKey:dateKey(pDate.getFullYear(),pDate.getMonth(),pDate.getDate()),
+        daysUntil:days,title:cn,subtitle:`${fmtCur(p.amount)} collected`,
+        meta:`Mode: ${p.paymentMode||'&#8212;'} &middot; OR#: ${p.orNumber||'&#8212;'}`,
+        module:'payments.html',isOverdue:false,isUrgent:false});
+    }
   });
+
+  // ── Load renewals (to distinguish expiry vs active renewal) ──
+  const rnSnap=await getDocs(collection(db,'renewals'));
+  const renewalsByContractId={};
+  rnSnap.forEach(d=>{
+    const r=d.data();
+    // Keep the latest renewal per contract
+    if(!renewalsByContractId[r.contractId]||
+       (r.updatedAt&&renewalsByContractId[r.contractId].updatedAt&&r.updatedAt>renewalsByContractId[r.contractId].updatedAt)){
+      renewalsByContractId[r.contractId]={id:d.id,...r};
+    }
+  });
+
+  // ── 3. CONTRACTS: Expiry / Renewal + 4. Contract Start ──
   coSnap.forEach(d=>{
-    const c=d.data();if(c.status!=='active')return;
-    const eDate=toDate(c.contractEndDate);if(!eDate)return;
-    const days=daysUntil(eDate);if(days<0||days>90)return;
+    const c=d.data();
     const cn=cleanName(clientMap[c.customerNo]?.clientName||c.customerNo||'&#8212;');
-    allNotifs.push({id:d.id,type:'expiry',date:eDate,dateKey:dateKey(eDate.getFullYear(),eDate.getMonth(),eDate.getDate()),daysUntil:days,title:cn,subtitle:`${c.contractType||'&#8212;'} &middot; ${c.contractNumber||'&#8212;'}`,meta:`Expires ${fmtDateShort(eDate)}`,module:'renewals.html',isOverdue:false,isUrgent:days<=7});
+
+    // Contract Start events (active + expired contracts, within -6 months to +3 months)
+    const sDate=toDate(c.contractStartDate);
+    if(sDate&&(c.status==='active'||c.status==='expired'||!c.status)){
+      const sDays=daysUntil(sDate);
+      if(sDays>=-180&&sDays<=90){
+        allNotifs.push({id:'start_'+d.id,type:'contract_start',date:sDate,
+          dateKey:dateKey(sDate.getFullYear(),sDate.getMonth(),sDate.getDate()),
+          daysUntil:sDays,title:cn,
+          subtitle:`${c.contractType||'&#8212;'} &middot; ${c.contractNumber||'&#8212;'}`,
+          meta:`Ends ${fmtDateShort(c.contractEndDate)}`,
+          module:'contracts.html',isOverdue:false,isUrgent:sDays===0});
+      }
+    }
+
+    // Expiry / Renewal events (active contracts only)
+    if(c.status!=='active')return;
+    const eDate=toDate(c.contractEndDate);if(!eDate)return;
+    const eDays=daysUntil(eDate);
+    const renewal=renewalsByContractId[d.id];
+
+    if(renewal){
+      // Contract has a renewal record — show as renewal type (replaces plain expiry)
+      if(eDays<-30||eDays>90)return; // -30d past to 90d future
+      const rs=(renewal.status||'pending').toLowerCase().replace(' ','_');
+      const rsLabel=rs.charAt(0).toUpperCase()+rs.slice(1).replace('_',' ');
+      const isActionable=['pending','in_progress'].includes(rs);
+      allNotifs.push({id:'ren_'+d.id,type:'renewal',date:eDate,
+        dateKey:dateKey(eDate.getFullYear(),eDate.getMonth(),eDate.getDate()),
+        daysUntil:eDays,title:cn,
+        subtitle:`${c.contractType||'&#8212;'} &middot; ${c.contractNumber||'&#8212;'}`,
+        meta:`Renewal: ${rsLabel}`,
+        module:'renewals.html',
+        isOverdue:isActionable&&eDays<0,
+        isUrgent:isActionable&&eDays<=7,
+        renewalStatus:rs});
+    }else{
+      // No renewal yet — plain expiry warning
+      if(eDays<0||eDays>90)return;
+      allNotifs.push({id:d.id,type:'expiry',date:eDate,
+        dateKey:dateKey(eDate.getFullYear(),eDate.getMonth(),eDate.getDate()),
+        daysUntil:eDays,title:cn,
+        subtitle:`${c.contractType||'&#8212;'} &middot; ${c.contractNumber||'&#8212;'}`,
+        meta:`Expires ${fmtDateShort(eDate)}`,
+        module:'renewals.html',isOverdue:false,isUrgent:eDays<=7});
+    }
   });
+
+  // ── 5. COMPLAINTS — plotted on dateReported (fixed from today-pinning) ──
   const cmSnap=await getDocs(collection(db,'complaints'));
   cmSnap.forEach(d=>{
-    const c=d.data();if(['Completed','Closed'].includes(c.status))return;
+    const c=d.data();
+    if(['Completed','Closed'].includes(c.status))return;
     const rDate=toDate(c.dateReported);if(!rDate)return;
-    const age=Math.abs(daysUntil(rDate));if(age<3)return;
+    const days=daysUntil(rDate); // will be negative for past reports
+    const age=Math.abs(days);
     const cn=cleanName(clientMap[c.customerNo]?.clientName||c.customerNo||'&#8212;');
-    allNotifs.push({id:d.id,type:'complaint',date:today,dateKey:dateKey(today.getFullYear(),today.getMonth(),today.getDate()),daysUntil:0,title:cn,subtitle:`${c.contractType||'&#8212;'} &#8212; ${c.status}`,meta:`Open ${age} day${age===1?'':'s'} &middot; ${c.priority||'&#8212;'} priority`,module:'complaints.html',isOverdue:false,isUrgent:c.priority?.toLowerCase()==='high'});
+    allNotifs.push({id:d.id,type:'complaint',date:rDate,
+      dateKey:dateKey(rDate.getFullYear(),rDate.getMonth(),rDate.getDate()),
+      daysUntil:days,title:cn,
+      subtitle:`${c.status} &#8212; ${c.contractType||'&#8212;'}`,
+      meta:`Reported ${age===0?'today':`${age} day${age===1?'':'s'} ago`} &middot; ${c.priority||'&#8212;'} priority`,
+      module:'complaints.html',isOverdue:false,
+      isUrgent:(c.priority||'').toLowerCase()==='high',
+      complaintStatus:c.status});
   });
+
+  // Update urgent badge
   const urgent=allNotifs.filter(n=>n.isUrgent||n.isOverdue).length;
   const badge=$('notif-count-badge');
   if(urgent>0){badge.textContent=urgent>99?'99+':urgent;badge.style.display='';}else badge.style.display='none';
+
   buildDayMap();renderCalendar();renderUpcoming();
 }
 
+// ── Build the date → events map ──
 function buildDayMap(){
   dayMap={};
   const teamF=$('filter-team').value;
   const statusF=$('filter-status').value;
+
+  // Treatments — now includes cancelled (no longer excluded by default)
   allTreatments.forEach(t=>{
     if(teamF&&t.assignedTeam!==teamF)return;
-    if(t.status==='cancelled'&&statusF!=='cancelled')return;
-    if(statusF&&dispStatus(t)!==statusF)return;
+    // Apply status filter; if no filter, show all including cancelled
+    if(statusF&&dispStatus(t)!==statusF&&t.status!==statusF)return;
     const d=toDate(t.treatmentDate);if(!d)return;
     const k=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
     if(!dayMap[k])dayMap[k]={treatments:[],inspections:[],notifs:[]};
     dayMap[k].treatments.push(t);
   });
+
+  // Inspections
   allInspections.forEach(i=>{
     if(teamF&&i.assignedTeam!==teamF)return;
     const d=toDate(i.inspectionDate);if(!d)return;
@@ -453,6 +637,8 @@ function buildDayMap(){
     if(!dayMap[k])dayMap[k]={treatments:[],inspections:[],notifs:[]};
     dayMap[k].inspections.push(i);
   });
+
+  // All notification types
   const notifsToShow=activeType==='all'?allNotifs:allNotifs.filter(n=>n.type===activeType);
   notifsToShow.forEach(n=>{
     if(!dayMap[n.dateKey])dayMap[n.dateKey]={treatments:[],inspections:[],notifs:[]};
@@ -460,28 +646,36 @@ function buildDayMap(){
   });
 }
 
+// ── Render calendar grid ──
 function renderCalendar(){
   const today=todayLocal();
   const firstDay=new Date(viewYear,viewMonth,1).getDay();
   const daysInMonth=new Date(viewYear,viewMonth+1,0).getDate();
   const daysInPrev=new Date(viewYear,viewMonth,0).getDate();
   $('month-label').textContent=new Date(viewYear,viewMonth,1).toLocaleDateString('en-PH',{month:'long',year:'numeric'});
+
   const monthT=allTreatments.filter(t=>{const d=toDate(t.treatmentDate);return d&&d.getFullYear()===viewYear&&d.getMonth()===viewMonth;});
   const monthI=allInspections.filter(i=>{const d=toDate(i.inspectionDate);return d&&d.getFullYear()===viewYear&&d.getMonth()===viewMonth;});
+  const monthCol=allNotifs.filter(n=>n.type==='collected'&&n.date&&n.date.getFullYear()===viewYear&&n.date.getMonth()===viewMonth);
+
   $('ms-total').textContent=monthT.length;
   $('ms-scheduled').textContent=monthT.filter(t=>dispStatus(t)==='scheduled').length;
   $('ms-completed').textContent=monthT.filter(t=>t.status==='completed').length;
   $('ms-overdue').textContent=monthT.filter(t=>dispStatus(t)==='overdue').length;
   $('ms-inspections').textContent=monthI.length;
+  $('ms-collected').textContent=monthCol.length;
   $('ms-alerts').textContent=allNotifs.filter(n=>n.isUrgent||n.isOverdue).length;
+
   const cells=[];
   for(let i=firstDay-1;i>=0;i--)cells.push({day:daysInPrev-i,m:viewMonth-1,y:viewYear+(viewMonth===0?-1:0),other:true});
   for(let d=1;d<=daysInMonth;d++)cells.push({day:d,m:viewMonth,y:viewYear,other:false});
   const rem=42-cells.length;
   for(let i=1;i<=rem;i++)cells.push({day:i,m:viewMonth+1,y:viewYear+(viewMonth===11?1:0),other:true});
+
   const showT=activeType==='all'||activeType==='treatment';
   const showI=activeType==='all'||activeType==='inspection';
-  const showN=activeType==='all'||['payment','expiry','complaint'].includes(activeType);
+  const showN=activeType==='all'||NOTIF_TYPES.includes(activeType);
+
   $('cal-days').innerHTML=cells.map((cell,idx)=>{
     const isToday=!cell.other&&cell.day===today.getDate()&&viewYear===today.getFullYear()&&viewMonth===today.getMonth();
     const k=dateKey(cell.y,cell.m,cell.day);
@@ -489,30 +683,55 @@ function renderCalendar(){
     const isSelected=k===selectedDateKey;
     const isWe=(idx%7===0)||(idx%7===6);
     const pills=[];
+
+    // Treatment pills
     if(showT&&data.treatments.length){
       const ov=data.treatments.filter(t=>dispStatus(t)==='overdue').length;
       const sc=data.treatments.filter(t=>dispStatus(t)==='scheduled').length;
       const co=data.treatments.filter(t=>t.status==='completed').length;
       const rs=data.treatments.filter(t=>dispStatus(t)==='rescheduled').length;
+      const ca=data.treatments.filter(t=>t.status==='cancelled').length;
       if(ov>0)pills.push(`<div class="cal-pill overdue"><span class="cal-pill-dot"></span>${ov} overdue</div>`);
       if(sc>0)pills.push(`<div class="cal-pill scheduled"><span class="cal-pill-dot"></span>${sc} sched.</div>`);
       if(co>0)pills.push(`<div class="cal-pill completed"><span class="cal-pill-dot"></span>${co} done</div>`);
       if(rs>0)pills.push(`<div class="cal-pill rescheduled"><span class="cal-pill-dot"></span>${rs} resched.</div>`);
+      if(ca>0)pills.push(`<div class="cal-pill cancelled"><span class="cal-pill-dot"></span>${ca} cancel.</div>`);
     }
-    if(showI&&data.inspections.length)pills.push(`<div class="cal-pill inspection"><span class="cal-pill-dot"></span>${data.inspections.length} inspect.</div>`);
+
+    // Inspection pills — split by outcome
+    if(showI&&data.inspections.length){
+      const sc=data.inspections.filter(i=>i.status==='Scheduled').length;
+      const pos=data.inspections.filter(i=>['Completed','Converted'].includes(i.status)).length;
+      const ns=data.inspections.filter(i=>i.status==='No Show').length;
+      const neg=data.inspections.filter(i=>['Cancelled','Lost'].includes(i.status)).length;
+      if(sc>0)pills.push(`<div class="cal-pill inspection"><span class="cal-pill-dot"></span>${sc} inspect.</div>`);
+      if(pos>0)pills.push(`<div class="cal-pill insp-positive"><span class="cal-pill-dot"></span>${pos} converted</div>`);
+      if(ns>0)pills.push(`<div class="cal-pill insp-noshow"><span class="cal-pill-dot"></span>${ns} no-show</div>`);
+      if(neg>0)pills.push(`<div class="cal-pill insp-negative"><span class="cal-pill-dot"></span>${neg} cancel.</div>`);
+    }
+
+    // Notification pills
     if(showN){
       const nShow=activeType==='all'?data.notifs:data.notifs.filter(n=>n.type===activeType);
-      ['payment','expiry','complaint'].forEach(type=>{
+      NOTIF_TYPES.forEach(type=>{
         const cnt=nShow.filter(n=>n.type===type).length;
-        if(cnt>0)pills.push(`<div class="cal-pill ${type}"><span class="cal-pill-dot"></span>${cnt} ${type}</div>`);
+        if(cnt>0){
+          const pillClass=type.replace('_','-');
+          pills.push(`<div class="cal-pill ${pillClass}"><span class="cal-pill-dot"></span>${cnt} ${typeShortLabel(type)}</div>`);
+        }
       });
     }
-    const hasUrgent=!cell.other&&((showT&&data.treatments.some(t=>dispStatus(t)==='overdue'))||(showN&&data.notifs.some(n=>n.isUrgent||n.isOverdue)));
+
+    const hasUrgent=!cell.other&&(
+      (showT&&data.treatments.some(t=>dispStatus(t)==='overdue'))||
+      (showN&&data.notifs.some(n=>n.isUrgent||n.isOverdue))
+    );
     const MAX=3;
     const sp=pills.slice(0,MAX).join('');
     const ex=pills.length>MAX?`<div class="cal-more">+${pills.length-MAX} more</div>`:'';
     return`<div class="cal-day${cell.other?' other-month':''}${isToday?' today-day':''}${isSelected?' selected-day':''}${hasUrgent?' has-urgent':''}${isWe&&!cell.other?' weekend-day':''}" data-key="${k}"><div class="cal-dn">${cell.day}</div><div class="cal-day-events">${sp}${ex}</div></div>`;
   }).join('');
+
   $('cal-days').querySelectorAll('.cal-day').forEach(el=>{
     el.addEventListener('click',()=>{
       const k=el.dataset.key;selectedDateKey=k;
@@ -524,19 +743,27 @@ function renderCalendar(){
   if(selectedDateKey){const[y,m,d]=selectedDateKey.split('-').map(Number);showPanel(new Date(y,m-1,d),selectedDateKey);}
 }
 
+// ── Day panel (right sidebar) ──
 function showPanel(date,key){
   $('panel-date').textContent=fmtDateFull(date);
   const data=dayMap[key]||{treatments:[],inspections:[],notifs:[]};
   const showT=activeType==='all'||activeType==='treatment';
   const showI=activeType==='all'||activeType==='inspection';
-  const showN=activeType==='all'||['payment','expiry','complaint'].includes(activeType);
+  const showN=activeType==='all'||NOTIF_TYPES.includes(activeType);
   const treatments=showT?data.treatments:[];
   const inspections=showI?data.inspections:[];
   const notifs=showN?(activeType==='all'?data.notifs:data.notifs.filter(n=>n.type===activeType)):[];
   const total=treatments.length+inspections.length+notifs.length;
   $('panel-sub').textContent=total===0?'Nothing on this day':`${total} item${total===1?'':'s'}`;
-  if(!total){$('panel-body').innerHTML=`<div class="panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No events or reminders for this day</p></div>`;return;}
+
+  if(!total){
+    $('panel-body').innerHTML=`<div class="panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No events or reminders for this day</p></div>`;
+    return;
+  }
+
   let html='';
+
+  // ── Treatments section ──
   if(treatments.length){
     html+=`<div class="panel-section-label" style="color:var(--green-text)"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> Treatments (${treatments.length})</div>`;
     const order={overdue:0,scheduled:1,completed:2,rescheduled:3,cancelled:4};
@@ -544,48 +771,123 @@ function showPanel(date,key){
       const ds=dispStatus(t);
       const cn=cleanName(clientMap[t.customerNo]?.clientName||t.customerNo||'&#8212;');
       const ct=t.contractType||(contractMap[t.contractId]?.contractType)||'&#8212;';
-      html+=`<div class="t-card ${ds}"><div class="t-card-name">${cn}</div><div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>${ct}</div><div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${t.assignedTeam||'No team'}</div>${t.technician?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t.technician}</div>`:''}<div class="t-card-footer"><span class="t-status-badge ${ds}">${ds}</span><span class="t-card-no">${t.treatmentNo||'&#8212;'}</span></div></div>`;
+      html+=`<div class="t-card ${ds}"><div class="t-card-name">${cn}</div>
+        <div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>${ct}</div>
+        <div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${t.assignedTeam||'No team'}</div>
+        ${t.technician?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t.technician}</div>`:''}
+        <div class="t-card-footer"><span class="t-status-badge ${ds}">${ds}</span><span class="t-card-no">${t.treatmentNo||'&#8212;'}</span></div></div>`;
     });
   }
+
+  // ── Inspections section — colour-coded by outcome ──
   if(inspections.length){
     html+=`<div class="panel-section-label" style="color:var(--purple-text);${treatments.length?'margin-top:14px':''}"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Inspections (${inspections.length})</div>`;
     const iOrd={'Scheduled':0,'No Show':1,'Completed':2,'Converted':3,'Cancelled':4,'Lost':5};
     const iCls={'Scheduled':'inspection-scheduled','Completed':'inspection-completed','Converted':'inspection-converted','Cancelled':'inspection-cancelled','No Show':'inspection-noshow','Lost':'inspection-lost'};
     [...inspections].sort((a,b)=>(iOrd[a.status]??9)-(iOrd[b.status]??9)).forEach(i=>{
       const cls=iCls[i.status]||'inspection-scheduled';
-      html+=`<div class="t-card ${cls}"><div class="t-card-name">${i.clientName||'&#8212;'}</div><div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${i.assignedTeam||'No team'}</div>${i.inspectedBy?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${i.inspectedBy}</div>`:''}${(i.pestProblems||[]).length?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>${i.pestProblems.join(', ')}</div>`:''}<div class="t-card-footer"><span class="t-status-badge ${cls}">${i.status||'Scheduled'}</span><span class="t-card-no" style="color:var(--purple-text)">${i.inspectionNo||'&#8212;'}</span></div></div>`;
+      html+=`<div class="t-card ${cls}"><div class="t-card-name">${i.clientName||'&#8212;'}</div>
+        <div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${i.assignedTeam||'No team'}</div>
+        ${i.inspectedBy?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${i.inspectedBy}</div>`:''}
+        ${(i.pestProblems||[]).length?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>${i.pestProblems.join(', ')}</div>`:''}
+        <div class="t-card-footer"><span class="t-status-badge ${cls}">${i.status||'Scheduled'}</span><span class="t-card-no" style="color:var(--purple-text)">${i.inspectionNo||'&#8212;'}</span></div></div>`;
     });
   }
+
+  // ── Notifications section (payments, expiry, complaints, collected, contract_start, renewal) ──
   if(notifs.length){
     const mt=(treatments.length||inspections.length)?'margin-top:14px':'';
-    html+=`<div class="panel-section-label" style="color:var(--amber-text);${mt}"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Reminders (${notifs.length})</div>`;
-    const sorted=[...notifs].sort((a,b)=>{if((a.isOverdue||a.isUrgent)&&!(b.isOverdue||b.isUrgent))return-1;if(!(a.isOverdue||a.isUrgent)&&(b.isOverdue||b.isUrgent))return 1;return a.daysUntil-b.daysUntil;});
+    html+=`<div class="panel-section-label" style="color:var(--amber-text);${mt}"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Reminders &amp; Events (${notifs.length})</div>`;
+    const sorted=[...notifs].sort((a,b)=>{
+      if((a.isOverdue||a.isUrgent)&&!(b.isOverdue||b.isUrgent))return-1;
+      if(!(a.isOverdue||a.isUrgent)&&(b.isOverdue||b.isUrgent))return 1;
+      return a.daysUntil-b.daysUntil;
+    });
     sorted.forEach(n=>{
       const tc=typeClass(n.type);
-      const badge=n.isOverdue?`<span style="background:var(--red);color:white;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px">${Math.abs(n.daysUntil)}d OVERDUE</span>`:n.isUrgent?`<span style="background:var(--amber);color:var(--amber-text);padding:1px 6px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px">URGENT</span>`:'';
-      const when=n.daysUntil===0?'Today':n.daysUntil===1?'Tomorrow':`In ${n.daysUntil} days`;
-      html+=`<div class="notif-card ${tc}"><div class="notif-card-type" style="color:${typeColor(n.type)}">${typeLabel(n.type)}${badge}</div><div class="notif-card-title">${n.title}</div><div class="notif-card-meta">${n.subtitle}<br>${n.meta}<br><strong>${n.isOverdue?Math.abs(n.daysUntil)+'d overdue':when}</strong></div><a class="notif-card-link" href="${n.module}">View in ${n.module.replace('.html','')} &rarr;</a></div>`;
+      // Determine card class: renewals use status-specific class
+      const cardClass=n.type==='renewal'?renewalCardClass(n.renewalStatus||'pending'):tc;
+      // Only show overdue badge for actionable types (not collected/contract_start)
+      const showOvBadge=n.isOverdue&&!['collected','contract_start','complaint'].includes(n.type);
+      const badge=showOvBadge
+        ?`<span style="background:var(--red);color:white;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px">${Math.abs(n.daysUntil)}d OVERDUE</span>`
+        :n.isUrgent
+          ?`<span style="background:var(--amber);color:white;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px">URGENT</span>`
+          :'';
+      const when=whenText(n.daysUntil);
+      html+=`<div class="notif-card ${cardClass}">
+        <div class="notif-card-type" style="color:${typeColor(n.type)}">${typeLabel(n.type)}${badge}</div>
+        <div class="notif-card-title">${n.title}</div>
+        <div class="notif-card-meta">${n.subtitle}<br>${n.meta}<br><strong>${when}</strong></div>
+        <a class="notif-card-link" href="${n.module}">View in ${n.module.replace('.html','')} &rarr;</a>
+      </div>`;
     });
   }
+
   $('panel-body').innerHTML=html;
 }
 
+// ── Upcoming strip + Open Complaints attention section ──
 function renderUpcoming(){
-  const upcoming=allNotifs.filter(n=>n.daysUntil>=0&&n.daysUntil<=30).filter(n=>activeType==='all'||n.type===activeType).sort((a,b)=>a.daysUntil-b.daysUntil).slice(0,15);
-  if(!upcoming.length){$('upcoming-section').innerHTML='';return;}
-  $('upcoming-section').innerHTML=`<div class="upcoming-title">Upcoming (next 30 days) &#8212; ${upcoming.length} reminder${upcoming.length===1?'':'s'}</div>${upcoming.map(n=>{
-    const days=n.daysUntil===0?'Today':n.daysUntil===1?'Tomorrow':`${n.daysUntil}d`;
-    const ust=n.isUrgent?'font-weight:800;color:var(--red-text)':days==='Today'?'font-weight:700;color:var(--primary)':'color:var(--text-muted)';
-    return`<div class="upcoming-item" onclick="window.location.href='${n.module}'"><span class="upcoming-dot ${typeClass(n.type)}"></span><div class="upcoming-body"><div class="upcoming-name">${n.title}</div><div class="upcoming-meta">${typeLabel(n.type)} &middot; ${n.subtitle}</div></div><div class="upcoming-date" style="${ust}">${days}</div></div>`;
-  }).join('')}`;
+  const section=$('upcoming-section');
+  if(!section)return;
+  let html='';
+
+  // Open Complaints — always shown as a dedicated "Requires Attention" strip
+  // (not time-gated since complaints are now on their historical dateReported)
+  const showComplaints=activeType==='all'||activeType==='complaint';
+  if(showComplaints){
+    const openC=allNotifs
+      .filter(n=>n.type==='complaint')
+      .sort((a,b)=>(b.isUrgent?1:0)-(a.isUrgent?1:0)||(a.daysUntil-b.daysUntil));
+    if(openC.length){
+      html+=`<div class="upcoming-title" style="color:var(--red-text)"><svg style="width:13px;height:13px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Open Complaints &#8212; ${openC.length} requiring attention</div>`;
+      openC.forEach(n=>{
+        const age=Math.abs(n.daysUntil);
+        const ageStr=age===0?'Today':`${age}d ago`;
+        const ust=n.isUrgent?'font-weight:800;color:var(--red-text)':'color:var(--text-muted)';
+        html+=`<div class="upcoming-item" onclick="window.location.href='${n.module}'">
+          <span class="upcoming-dot nc"></span>
+          <div class="upcoming-body"><div class="upcoming-name">${n.title}</div>
+          <div class="upcoming-meta">${n.subtitle}</div></div>
+          <div class="upcoming-date" style="${ust}">${ageStr}</div></div>`;
+      });
+    }
+  }
+
+  // Upcoming events (next 30 days, all types except complaints which are handled above)
+  const upcoming=allNotifs
+    .filter(n=>n.type!=='complaint')
+    .filter(n=>n.daysUntil>=0&&n.daysUntil<=30)
+    .filter(n=>activeType==='all'||n.type===activeType)
+    .sort((a,b)=>a.daysUntil-b.daysUntil)
+    .slice(0,15);
+
+  if(upcoming.length){
+    html+=`<div class="upcoming-title">Upcoming (next 30 days) &#8212; ${upcoming.length} reminder${upcoming.length===1?'':'s'}</div>`;
+    upcoming.forEach(n=>{
+      const days=n.daysUntil===0?'Today':n.daysUntil===1?'Tomorrow':`${n.daysUntil}d`;
+      const ust=n.isUrgent?'font-weight:800;color:var(--red-text)':days==='Today'?'font-weight:700;color:var(--primary)':'color:var(--text-muted)';
+      html+=`<div class="upcoming-item" onclick="window.location.href='${n.module}'">
+        <span class="upcoming-dot ${typeClass(n.type)}"></span>
+        <div class="upcoming-body"><div class="upcoming-name">${n.title}</div>
+        <div class="upcoming-meta">${typeLabel(n.type)} &middot; ${n.subtitle}</div></div>
+        <div class="upcoming-date" style="${ust}">${days}</div></div>`;
+    });
+  }
+
+  section.innerHTML=html;
 }
 
 function onFilterChange(){buildDayMap();renderCalendar();renderUpcoming();}
 
+// Type filter buttons
 document.querySelectorAll('.type-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     activeType=btn.dataset.type;
-    document.querySelectorAll('.type-btn').forEach(b=>{b.className=`type-btn${b.dataset.type===activeType?' active-'+b.dataset.type:''}`;});
+    document.querySelectorAll('.type-btn').forEach(b=>{
+      b.className=`type-btn${b.dataset.type===activeType?' active-'+b.dataset.type:''}`;
+    });
     onFilterChange();
   });
 });
@@ -596,6 +898,7 @@ $('filter-team').addEventListener('change',()=>onFilterChange());
 $('filter-status').addEventListener('change',()=>onFilterChange());
 $('filter-days').addEventListener('change',()=>loadAll());
 
+// ── Sidebar badges ──
 async function loadSidebarBadges(){
   try{
     const today=new Date();today.setHours(0,0,0,0);let nc=0;
@@ -619,6 +922,7 @@ async function loadSidebarBadges(){
   }catch(e){console.warn('[badges]',e.message);}
 }
 
+// ── Auth ──
 onAuthStateChanged(auth,async user=>{
   if(!user){dismissLoadingScreen();window.location.replace('login.html');return;}
   currentUser=user;
