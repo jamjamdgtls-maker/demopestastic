@@ -136,6 +136,7 @@
     .cal-event-pill.overdue{background:var(--red-bg);color:var(--red-text)}
     .cal-event-pill.rescheduled{background:var(--amber-bg);color:var(--amber-text)}
     .cal-event-pill.cancelled{background:var(--gray-bg);color:var(--gray-text)}
+    .cal-event-pill.inspection{background:var(--purple-bg);color:var(--purple-text)}
     .cal-event-pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
     .cal-more{font-size:10.5px;color:var(--text-muted);padding:1px 5px;cursor:pointer;text-align:center}
     .cal-more:hover{color:var(--primary)}
@@ -166,6 +167,12 @@
     .t-card.overdue{border-left-color:var(--red)}
     .t-card.rescheduled{border-left-color:var(--amber)}
     .t-card.cancelled{border-left-color:var(--gray)}
+    .t-card.inspection-scheduled{border-left-color:var(--purple)}
+    .t-card.inspection-completed{border-left-color:var(--green)}
+    .t-card.inspection-converted{border-left-color:var(--blue)}
+    .t-card.inspection-cancelled{border-left-color:var(--gray)}
+    .t-card.inspection-noshow{border-left-color:var(--amber)}
+    .t-card.inspection-lost{border-left-color:var(--red)}
     .t-card-name{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .t-card-meta{display:flex;flex-direction:column;gap:3px}
     .t-card-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
@@ -178,6 +185,12 @@
     .t-status-badge.overdue{background:var(--red-bg);color:var(--red-text)}
     .t-status-badge.rescheduled{background:var(--amber-bg);color:var(--amber-text)}
     .t-status-badge.cancelled{background:var(--gray-bg);color:var(--gray-text)}
+    .t-status-badge.inspection-scheduled{background:var(--purple-bg);color:var(--purple-text)}
+    .t-status-badge.inspection-completed{background:var(--green-bg);color:var(--green-text)}
+    .t-status-badge.inspection-converted{background:var(--blue-bg);color:var(--blue-text)}
+    .t-status-badge.inspection-cancelled{background:var(--gray-bg);color:var(--gray-text)}
+    .t-status-badge.inspection-noshow{background:var(--amber-bg);color:var(--amber-text)}
+    .t-status-badge.inspection-lost{background:var(--red-bg);color:var(--red-text)}
     .t-card-no{font-size:11px;color:var(--text-muted);font-family:monospace}
 
     /* MONTHLY STATS */
@@ -315,6 +328,7 @@
         <div class="month-stat"><div class="month-stat-val" id="ms-completed" style="color:var(--green)">—</div><div class="month-stat-lbl">Completed</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-overdue" style="color:var(--red)">—</div><div class="month-stat-lbl">Overdue</div></div>
         <div class="month-stat"><div class="month-stat-val" id="ms-cancelled" style="color:var(--gray)">—</div><div class="month-stat-lbl">Cancelled</div></div>
+        <div class="month-stat"><div class="month-stat-val" id="ms-inspections" style="color:var(--purple)">—</div><div class="month-stat-lbl">Inspections</div></div>
       </div>
 
       <!-- Calendar controls -->
@@ -363,6 +377,7 @@
             <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Overdue</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Rescheduled</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--gray)"></div>Cancelled</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Inspection</div>
           </div>
         </div>
 
@@ -415,7 +430,7 @@ const db   = getFirestore(app);
 
 /* ── State ── */
 let currentUser = null, currentRole = null;
-let allTreatments = [], clientMap = {}, contractMap = {};
+let allTreatments = [], allInspections = [], clientMap = {}, contractMap = {};
 let viewYear = new Date().getFullYear(), viewMonth = new Date().getMonth();
 let selectedDateKey = null;
 
@@ -463,6 +478,10 @@ async function loadAll() {
   const trSnap=await getDocs(query(collection(db,'treatments'),orderBy('treatmentDate','asc')));
   allTreatments=trSnap.docs.map(d=>({id:d.id,...d.data()}));
 
+  // Inspections
+  const inSnap=await getDocs(query(collection(db,'inspections'),orderBy('inspectionDate','asc')));
+  allInspections=inSnap.docs.map(d=>({id:d.id,...d.data()}));
+
   renderCalendar();
 }
 
@@ -483,15 +502,30 @@ function getFilteredTreatments() {
 function renderCalendar() {
   const treatments=getFilteredTreatments();
   const today=todayLocal();
+  const teamF=$('filter-team').value;
 
-  // Build day → treatments map for the current view month
-  const dayMap = {}; // key: "YYYY-MM-DD" → array of treatments
+  // Filter inspections by team (if team filter set)
+  const filteredInspections=allInspections.filter(i=>{
+    if(teamF && i.assignedTeam!==teamF) return false;
+    return true;
+  });
+
+  // Build day → treatments+inspections map for current view month
+  const dayMap = {};
   treatments.forEach(t=>{
     const d=toDate(t.treatmentDate); if(!d) return;
     if(d.getFullYear()===viewYear&&d.getMonth()===viewMonth){
       const k=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
       if(!dayMap[k]) dayMap[k]=[];
-      dayMap[k].push(t);
+      dayMap[k].push({...t,_type:'treatment'});
+    }
+  });
+  filteredInspections.forEach(i=>{
+    const d=toDate(i.inspectionDate); if(!d) return;
+    if(d.getFullYear()===viewYear&&d.getMonth()===viewMonth){
+      const k=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
+      if(!dayMap[k]) dayMap[k]=[];
+      dayMap[k].push({...i,_type:'inspection'});
     }
   });
 
@@ -504,11 +538,16 @@ function renderCalendar() {
     const d=toDate(t.treatmentDate);
     return d&&d.getFullYear()===viewYear&&d.getMonth()===viewMonth;
   });
+  const monthInspections=filteredInspections.filter(i=>{
+    const d=toDate(i.inspectionDate);
+    return d&&d.getFullYear()===viewYear&&d.getMonth()===viewMonth;
+  });
   $('ms-total').textContent=monthTreatments.length;
   $('ms-scheduled').textContent=monthTreatments.filter(t=>dispStatus(t)==='scheduled').length;
   $('ms-completed').textContent=monthTreatments.filter(t=>t.status==='completed').length;
   $('ms-overdue').textContent=monthTreatments.filter(t=>dispStatus(t)==='overdue').length;
   $('ms-cancelled').textContent=monthTreatments.filter(t=>t.status==='cancelled').length;
+  $('ms-inspections').textContent=monthInspections.length;
 
   // Build calendar grid
   const firstDay=new Date(viewYear,viewMonth,1).getDay(); // 0=Sun
@@ -538,7 +577,11 @@ function renderCalendar() {
     const isWeekend=(cells.indexOf(cell)%7===0)||(cells.indexOf(cell)%7===6);
 
     const statusCounts={scheduled:0,completed:0,overdue:0,rescheduled:0,cancelled:0};
-    dayTs.forEach(t=>{const ds=dispStatus(t);statusCounts[ds]=(statusCounts[ds]||0)+1;});
+    const inspectionCount={total:0};
+    dayTs.forEach(item=>{
+      if(item._type==='inspection'){inspectionCount.total++;}
+      else{const ds=dispStatus(item);statusCounts[ds]=(statusCounts[ds]||0)+1;}
+    });
 
     // Build event pills (max 3 shown, rest as "+N more")
     const MAX_SHOW=3;
@@ -548,6 +591,7 @@ function renderCalendar() {
     if(statusCounts.completed>0) pills.push(`<div class="cal-event-pill completed"><div class="cal-event-pill-dot"></div>${statusCounts.completed} done</div>`);
     if(statusCounts.rescheduled>0) pills.push(`<div class="cal-event-pill rescheduled"><div class="cal-event-pill-dot"></div>${statusCounts.rescheduled} rescheduled</div>`);
     if(statusCounts.cancelled>0) pills.push(`<div class="cal-event-pill cancelled"><div class="cal-event-pill-dot"></div>${statusCounts.cancelled} cancelled</div>`);
+    if(inspectionCount.total>0)  pills.push(`<div class="cal-event-pill inspection"><div class="cal-event-pill-dot"></div>${inspectionCount.total} inspect.</div>`);
 
     const showPills=pills.slice(0,MAX_SHOW).join('');
     const extra=dayTs.length>0&&pills.length>MAX_SHOW?`<div class="cal-more">+${pills.length-MAX_SHOW} more</div>`:'';
@@ -586,49 +630,91 @@ function renderCalendar() {
 
 function showPanelEmpty(){
   $('panel-date').textContent='Select a day';
-  $('panel-subtitle').textContent='Click any day to view treatments';
-  $('panel-body').innerHTML=`<div class="cal-panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>Click a day on the calendar to see scheduled treatments</p></div>`;
+  $('panel-subtitle').textContent='Click any day to view treatments & inspections';
+  $('panel-body').innerHTML=`<div class="cal-panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>Click a day on the calendar to see scheduled treatments &amp; inspections</p></div>`;
 }
 
-function showDayPanel(date, treatments) {
+function showDayPanel(date, items) {
   const dayStr=date.toLocaleDateString('en-PH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   $('panel-date').textContent=dayStr;
-  $('panel-subtitle').textContent=`${treatments.length} treatment${treatments.length===1?'':'s'}`;
 
-  if(!treatments.length) {
-    $('panel-body').innerHTML=`<div class="cal-panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No treatments on this day</p></div>`;
+  const treatments=items.filter(x=>x._type==='treatment');
+  const inspections=items.filter(x=>x._type==='inspection');
+  $('panel-subtitle').textContent=`${treatments.length} treatment${treatments.length===1?'':'s'}, ${inspections.length} inspection${inspections.length===1?'':'s'}`;
+
+  if(!items.length) {
+    $('panel-body').innerHTML=`<div class="cal-panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No treatments or inspections on this day</p></div>`;
     return;
   }
 
-  // Sort: overdue first, then scheduled, then completed, then others
-  const order={overdue:0,scheduled:1,completed:2,rescheduled:3,cancelled:4};
-  const sorted=[...treatments].sort((a,b)=>(order[dispStatus(a)]??9)-(order[dispStatus(b)]??9));
+  let html='';
 
-  $('panel-body').innerHTML=sorted.map(t=>{
-    const ds=dispStatus(t);
-    const clientData=clientMap[t.customerNo];
-    const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
-    const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
-    return `<div class="t-card ${ds}">
-      <div class="t-card-name" title="${clientName}">${clientName}</div>
-      <div class="t-card-meta">
-        <div class="t-card-row">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
-          ${contractType}
+  // ── TREATMENTS SECTION ──
+  if(treatments.length>0){
+    const order={overdue:0,scheduled:1,completed:2,rescheduled:3,cancelled:4};
+    const sorted=[...treatments].sort((a,b)=>(order[dispStatus(a)]??9)-(order[dispStatus(b)]??9));
+    html+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;margin-top:4px">Treatments (${treatments.length})</div>`;
+    html+=sorted.map(t=>{
+      const ds=dispStatus(t);
+      const clientData=clientMap[t.customerNo];
+      const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
+      const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
+      return `<div class="t-card ${ds}">
+        <div class="t-card-name" title="${clientName}">${clientName}</div>
+        <div class="t-card-meta">
+          <div class="t-card-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            ${contractType}
+          </div>
+          <div class="t-card-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            ${t.assignedTeam||'No team'}
+          </div>
+          ${t.technician?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t.technician}</div>`:''}
+          ${t.chemicalsUsed?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 18.1A2 2 0 0 0 6.5 21h11a2 2 0 0 0 1.78-2.9l-5.069-7.677A2 2 0 0 1 14 9.527V2"/></svg>${t.chemicalsUsed}</div>`:''}
         </div>
-        <div class="t-card-row">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          ${t.assignedTeam||'No team'}
+        <div class="t-card-footer">
+          <span class="t-status-badge ${ds}">${ds}</span>
+          <span class="t-card-no">${t.treatmentNo||'—'}</span>
         </div>
-        ${t.technician?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t.technician}</div>`:''}
-        ${t.chemicalsUsed?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 18.1A2 2 0 0 0 6.5 21h11a2 2 0 0 0 1.78-2.9l-5.069-7.677A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>${t.chemicalsUsed}</div>`:''}
-      </div>
-      <div class="t-card-footer">
-        <span class="t-status-badge ${ds}">${ds}</span>
-        <span class="t-card-no">${t.treatmentNo||'—'}</span>
-      </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── INSPECTIONS SECTION ──
+  if(inspections.length>0){
+    html+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--purple-text);margin-bottom:8px;margin-top:${treatments.length>0?'16px':'4px'}">
+      <svg style="width:11px;height:11px;display:inline;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Inspections (${inspections.length})
     </div>`;
-  }).join('');
+    const inspStatusOrder={'Scheduled':0,'Completed':1,'Converted':2,'No Show':3,'Lost':4,'Cancelled':5};
+    const sortedInsp=[...inspections].sort((a,b)=>(inspStatusOrder[a.status]??9)-(inspStatusOrder[b.status]??9));
+    const inspStatusClass=s=>{const m={'Scheduled':'inspection-scheduled','Completed':'inspection-completed','Converted':'inspection-converted','Cancelled':'inspection-cancelled','No Show':'inspection-noshow','Lost':'inspection-lost'};return m[s]||'inspection-scheduled';};
+    html+=sortedInsp.map(i=>{
+      const cls=inspStatusClass(i.status);
+      return `<div class="t-card ${cls}">
+        <div class="t-card-name" title="${i.clientName||'—'}">${i.clientName||'—'}</div>
+        <div class="t-card-meta">
+          <div class="t-card-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            ${i.assignedTeam||'No team'}</div>
+          ${i.inspectedBy?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${i.inspectedBy}</div>`:''}
+          ${(i.pestProblems||[]).length?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>${(i.pestProblems).join(', ')}</div>`:''}
+          ${i.address?`<div class="t-card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${i.address}</div>`:''}
+        </div>
+        <div class="t-card-footer">
+          <span class="t-status-badge ${cls}">${i.status||'Scheduled'}</span>
+          <span class="t-card-no" style="color:var(--purple-text)">${i.inspectionNo||'—'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if(!html) {
+    $('panel-body').innerHTML=`<div class="cal-panel-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No items on this day</p></div>`;
+    return;
+  }
+  $('panel-body').innerHTML=html;
 }
 
 /* ── Month navigation ── */

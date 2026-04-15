@@ -97,6 +97,7 @@
     .type-btn.active-payment{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue)}
     .type-btn.active-expiry{background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber)}
     .type-btn.active-complaint{background:var(--red-bg);color:var(--red-text);border-color:var(--red)}
+    .type-btn.active-inspection{background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple)}
     .type-btn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     /* CONTROLS */
     .controls-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
@@ -133,6 +134,7 @@
     .notif-pill.np{background:var(--blue-bg);color:var(--blue-text)}
     .notif-pill.ne{background:var(--amber-bg);color:var(--amber-text)}
     .notif-pill.nc{background:var(--red-bg);color:var(--red-text)}
+    .notif-pill.ni{background:var(--purple-bg);color:var(--purple-text)}
     .notif-pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
     .cal-more{font-size:10px;color:var(--text-muted);text-align:center;padding:1px}
     /* CAL LEGEND */
@@ -155,6 +157,7 @@
     .notif-card.np{background:var(--blue-bg);border-left-color:var(--blue)}
     .notif-card.ne{background:var(--amber-bg);border-left-color:var(--amber)}
     .notif-card.nc{background:var(--red-bg);border-left-color:var(--red)}
+    .notif-card.ni{background:var(--purple-bg);border-left-color:var(--purple)}
     .notif-card-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;opacity:.75;margin-bottom:4px;display:flex;align-items:center;gap:5px}
     .notif-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
     .notif-card-meta{font-size:12px;color:var(--text-secondary);line-height:1.5}
@@ -171,6 +174,7 @@
     .upcoming-dot.np{background:var(--blue)}
     .upcoming-dot.ne{background:var(--amber)}
     .upcoming-dot.nc{background:var(--red)}
+    .upcoming-dot.ni{background:var(--purple)}
     .upcoming-body{flex:1;min-width:0}
     .upcoming-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .upcoming-meta{font-size:12px;color:var(--text-muted);margin-top:1px}
@@ -287,16 +291,16 @@
       <div class="page-header">
         <div class="page-header-left">
           <h2>Notification Calendar</h2>
-          <p>Upcoming reminders for treatments, payments, contract expiry, and complaints</p>
+          <p>Upcoming reminders for treatments, payments, contract expiry, complaints, and inspections</p>
         </div>
       </div>
       <!-- Type filter -->
       <div class="type-filter">
         <button class="type-btn active-all" data-type="all"><span class="type-btn-dot" style="background:#374151"></span>All</button>
-        <button class="type-btn" data-type="treatment"><span class="type-btn-dot" style="background:var(--green)"></span>Treatments</button>
-        <button class="type-btn" data-type="payment"><span class="type-btn-dot" style="background:var(--blue)"></span>Payments</button>
+        <button class="type-btn" data-type="treatment"><span class="type-btn-dot" style="background:var(--green)"></span>Treatments</button>        <button class="type-btn" data-type="payment"><span class="type-btn-dot" style="background:var(--blue)"></span>Payments</button>
         <button class="type-btn" data-type="expiry"><span class="type-btn-dot" style="background:var(--amber)"></span>Contract Expiry</button>
         <button class="type-btn" data-type="complaint"><span class="type-btn-dot" style="background:var(--red)"></span>Complaints</button>
+        <button class="type-btn" data-type="inspection"><span class="type-btn-dot" style="background:var(--purple)"></span>Inspections</button>
       </div>
       <!-- Month nav -->
       <div class="controls-row">
@@ -328,6 +332,7 @@
             <span class="leg-item"><span class="leg-dot" style="background:var(--blue)"></span>Payment Due</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--amber)"></span>Contract Expiry</span>
             <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>Complaint</span>
+            <span class="leg-item"><span class="leg-dot" style="background:var(--purple)"></span>Inspection</span>
           </div>
           <!-- Upcoming list -->
           <div class="upcoming-section" id="upcoming-section"></div>
@@ -382,10 +387,10 @@ function fmtDateShort(d){if(!d)return '—';return d.toLocaleDateString('en-PH',
 function daysUntil(d){const today=todayLocal();return Math.round((d-today)/(1000*60*60*24));}
 function cleanName(n){return(n||'').replace(/\s*\(.*?\)\s*/g,'').trim()||'—';}
 
-function typeClass(t){return {treatment:'nt',payment:'np',expiry:'ne',complaint:'nc'}[t]||'nt';}
-function typeLabel(t){return {treatment:'Treatment',payment:'Payment Due',expiry:'Contract Expiry',complaint:'Complaint'}[t]||t;}
-function typeColor(t){return {treatment:'var(--green)',payment:'var(--blue)',expiry:'var(--amber)',complaint:'var(--red)'}[t]||'var(--green)';}
-function typeModule(t){return {treatment:'treatments.html',payment:'payments.html',expiry:'renewals.html',complaint:'complaints.html'}[t]||'dashboard.html';}
+function typeClass(t){return {treatment:'nt',payment:'np',expiry:'ne',complaint:'nc',inspection:'ni'}[t]||'nt';}
+function typeLabel(t){return {treatment:'Treatment',payment:'Payment Due',expiry:'Contract Expiry',complaint:'Complaint',inspection:'Inspection'}[t]||t;}
+function typeColor(t){return {treatment:'var(--green)',payment:'var(--blue)',expiry:'var(--amber)',complaint:'var(--red)',inspection:'var(--purple)'}[t]||'var(--green)';}
+function typeModule(t){return {treatment:'treatments.html',payment:'payments.html',expiry:'renewals.html',complaint:'complaints.html',inspection:'inspections.html'}[t]||'dashboard.html';}
 
 // Load all data and build notifications
 async function loadAll(){
@@ -465,6 +470,24 @@ async function loadAll(){
     });
   });
 
+  // 5. Scheduled inspection reminders: upcoming + overdue
+  const inspSnap=await getDocs(collection(db,'inspections'));
+  inspSnap.forEach(d=>{
+    const i=d.data();
+    if(i.status==='Completed'||i.status==='Converted'||i.status==='Cancelled'||i.status==='Lost') return;
+    const iDate=toLocalDate(i.inspectionDate);if(!iDate)return;
+    const days=daysUntil(iDate);
+    if(days>reminderDays) return; // too far ahead
+    allNotifs.push({
+      id:d.id, type:'inspection', date:iDate, dateKey:dateKey(iDate), daysUntil:days,
+      title:`${i.clientName||'—'}`,
+      subtitle:`${(i.pestProblems||[]).join(', ')||'—'} · ${i.inspectionNo||'—'}`,
+      meta:`Inspector: ${i.inspectedBy||'—'} · Team: ${i.assignedTeam||'—'}`,
+      module:'inspections.html',
+      isOverdue:days<0, isUrgent:days<=0
+    });
+  });
+
   // Update badge
   const urgent=allNotifs.filter(n=>n.isUrgent||n.isOverdue).length;
   const badge=$('notif-count-badge');
@@ -511,7 +534,7 @@ function renderCalendar(){
     const isWe=(idx%7===0)||(idx%7===6);
     const MAX=3;
     const pills=[];
-    ['treatment','payment','expiry','complaint'].forEach(type=>{
+    ['treatment','payment','expiry','complaint','inspection'].forEach(type=>{
       const count=notifs.filter(n=>n.type===type).length;
       if(count>0) pills.push(`<div class="notif-pill ${typeClass(type)}"><span class="notif-pill-dot"></span>${count} ${typeLabel(type).split(' ')[0].toLowerCase()}</div>`);
     });
