@@ -620,7 +620,7 @@
               <!-- Treatment Types -->
               <div class="form-group" style="margin-bottom:20px">
                 <label class="form-label">Treatment Types</label>
-                <div class="chip-hint" style="margin-bottom:8px">System defaults (QT, MT, etc.) cannot be removed. You can add custom types for your operations.</div>
+                <div class="chip-hint" style="margin-bottom:8px">Add treatment types for your operations.</div>
                 <div class="chip-list" id="treatment-types-list"></div>
                 <div class="add-agent-row">
                   <input type="text" id="new-treatment-type-input" placeholder="Add custom treatment type (e.g. Soil Poisoning)" />
@@ -631,18 +631,6 @@
                 </div>
               </div>
 
-              <!-- Treatment Statuses -->
-              <div class="form-group" style="margin-bottom:0">
-                <label class="form-label">Treatment / Booking Statuses</label>
-                <div class="chip-list" id="treatment-statuses-list"></div>
-                <div class="add-agent-row">
-                  <input type="text" id="new-treatment-status-input" placeholder="Add custom status (e.g. On Hold)" />
-                  <button class="btn btn-primary" id="btn-add-treatment-status">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Add Status
-                  </button>
-                </div>
-              </div>
 
             </div>
           </div>
@@ -745,7 +733,7 @@
             </div>
             <div class="settings-card-body">
               <div class="form-group" style="margin-bottom:0">
-                <div class="chip-hint" style="margin-bottom:8px">System statuses (Pending, Received) are always kept. Add custom statuses to match your collection workflow. <em>Overdue</em> is computed automatically and cannot be removed.</div>
+                <div class="chip-hint" style="margin-bottom:8px">Add payment statuses to match your collection workflow.</div>
                 <div class="chip-list" id="payment-statuses-list"></div>
                 <div class="add-agent-row">
                   <input type="text" id="new-payment-status-input" placeholder="Add status (e.g. Waived)" />
@@ -767,7 +755,7 @@
             </div>
             <div class="settings-card-body">
               <div class="form-group" style="margin-bottom:0">
-                <div class="chip-hint" style="margin-bottom:8px">System statuses (Open, In Progress, Scheduled, Completed, Closed) cannot be removed.</div>
+                <div class="chip-hint" style="margin-bottom:8px">Add or remove complaint statuses to match your workflow.</div>
                 <div class="chip-list" id="complaint-statuses-list"></div>
                 <div class="add-agent-row">
                   <input type="text" id="new-complaint-status-input" placeholder="Add status (e.g. Escalated)" />
@@ -835,7 +823,7 @@
             </div>
             <div class="settings-card-body">
               <div class="form-group" style="margin-bottom:0">
-                <div class="chip-hint" style="margin-bottom:8px">System frequencies (Monthly, Quarterly, Annual, One-Time) cannot be removed. Add custom intervals your business uses.</div>
+                <div class="chip-hint" style="margin-bottom:8px">Add contract frequency intervals your business uses.</div>
                 <div class="chip-list" id="contract-frequencies-list"></div>
                 <div class="add-agent-row">
                   <input type="text" id="new-contract-freq-input" placeholder="Add frequency (e.g. Bi-Weekly)" />
@@ -1084,24 +1072,24 @@ let complaintPriorities = [];
 let contractStatuses = [];
 let bookingStatuses = [];
 
-const SYSTEM_TREATMENT_TYPES     = ['QT','MT','INS','FU','AGS','CIT','OTCIT','Fogging','GT','Mound Demolition','GPC','OTGPC','PRECON','Other'];
-const SYSTEM_TREATMENT_STATUSES  = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking', 'Need Schedule'];
-const SYSTEM_PAYMENT_STATUSES    = ['Pending','Received'];
-const SYSTEM_COMPLAINT_STATUSES  = ['Open','In Progress','Scheduled','Completed','Closed'];
-const SYSTEM_CONTRACT_FREQS      = ['Monthly','Annual','One-Time'];
+const SYSTEM_TREATMENT_TYPES     = [];
+const SYSTEM_TREATMENT_STATUSES  = [];
+const SYSTEM_PAYMENT_STATUSES    = [];
+const SYSTEM_COMPLAINT_STATUSES  = [];
+const SYSTEM_CONTRACT_FREQS      = [];
 
-const DEFAULT_COMM_SOURCES      = ['Cavite Page','Parañaque Page','Main Page','Batangas Page','Phone Number','Email','Walk-in','Referral'];
-const DEFAULT_PAYMENT_MODES     = ['cash','check','bank-transfer','credit-card','gcash','maya'];
-const DEFAULT_PAYMENT_STATUSES  = ['Pending','Received','Deposited','Remitted','Collected'];
-const DEFAULT_COMPLAINT_STATUSES= ['Open','In Progress','Scheduled','Completed','Closed'];
-const DEFAULT_CONTRACT_FREQS    = ['Monthly','Bi-Monthly','Quarterly','Semi-Annual','Annual','One-Time'];
-const DEFAULT_CANCEL_REASONS    = ['Client request','No show / not available','Weather conditions','Team unavailable','Contract terminated'];
-const DEFAULT_RESCHEDULE_REASONS= ['Client request','Team unavailable','Weather conditions','Equipment issue','Holiday / non-working day'];
+const DEFAULT_COMM_SOURCES      = [];
+const DEFAULT_PAYMENT_MODES     = [];
+const DEFAULT_PAYMENT_STATUSES  = [];
+const DEFAULT_COMPLAINT_STATUSES= [];
+const DEFAULT_CONTRACT_FREQS    = [];
+const DEFAULT_CANCEL_REASONS    = [];
+const DEFAULT_RESCHEDULE_REASONS= [];
 
-const DEFAULT_CONTRACT_TYPES    = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
-const DEFAULT_BOOKING_STATUSES  = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
-const DEFAULT_COMPLAINT_PRIORITIES = ['Low','Medium','High'];
-const DEFAULT_CONTRACT_STATUSES   = ['Active','Expired','Renewed','Cancelled'];
+const DEFAULT_CONTRACT_TYPES    = [];
+const DEFAULT_BOOKING_STATUSES  = [];
+const DEFAULT_COMPLAINT_PRIORITIES = [];
+const DEFAULT_CONTRACT_STATUSES   = [];
 
 let settings = {};
 
@@ -1173,10 +1161,8 @@ async function loadSettings() {
   $('default-payment-notify-days').value = settings.defaultPaymentNotifyDays ?? 30;
 
   /* Treatment Configuration */
-  treatmentTypes = [...(settings.treatmentTypes || SYSTEM_TREATMENT_TYPES)];
-  treatmentStatuses = [...(settings.treatmentStatuses || DEFAULT_TREATMENT_STATUSES)];
-  renderTreatmentTypes();
-  renderTreatmentStatuses();
+  treatmentTypes = [...(settings.treatmentTypes || [])];
+  renderChipList('treatment-types-list', treatmentTypes, [], 'removeTreatmentType');
 
   /* Communication Sources */
   commSources = [...(settings.commSources || DEFAULT_COMM_SOURCES)];
@@ -1222,7 +1208,6 @@ async function loadSettings() {
   renderChipList('booking-statuses-list', bookingStatuses, [], 'removeBookingStatus');
 }
 
-const DEFAULT_TREATMENT_STATUSES_DEFAULT = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking'];
 
 /* ── Render agents ── */
 function renderAgents(){
@@ -1231,46 +1216,7 @@ function renderAgents(){
     : '<span style="font-size:13px;color:var(--text-muted)">No agents added yet</span>';
 }
 
-/* ── Render Treatment Types ── */
-function renderTreatmentTypes(){
-  const list=$('treatment-types-list');
-  if(!list)return;
-  list.innerHTML=treatmentTypes.map(t=>{
-    const isSystem=SYSTEM_TREATMENT_TYPES.includes(t);
-    return `<div class="chip chip-green${isSystem?' system-chip':''}" title="${isSystem?'System default — cannot be removed':''}">
-      ${t}
-      ${!isSystem?`<button onclick="removeTreatmentType('${encodeURIComponent(t)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
-    </div>`;
-  }).join('') || '<span style="font-size:13px;color:var(--text-muted)">No types configured</span>';
-}
-
-/* ── Render Treatment Statuses ── */
-function renderTreatmentStatuses(){
-  const list=$('treatment-statuses-list');
-  if(!list)return;
-  const allStatuses=[...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses.filter(s=>!SYSTEM_TREATMENT_STATUSES.includes(s))];
-  list.innerHTML=allStatuses.map(s=>{
-    const isSystem=SYSTEM_TREATMENT_STATUSES.includes(s);
-    return `<div class="chip ${isSystem?'chip-blue system-chip':'chip-amber'}" title="${isSystem?'System status — cannot be removed':''}">
-      ${s}
-      ${!isSystem?`<button onclick="removeTreatmentStatus('${encodeURIComponent(s)}')" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
-    </div>`;
-  }).join('') || '<span style="font-size:13px;color:var(--text-muted)">No custom statuses yet</span>';
-}
-
-window.removeTreatmentType=function(encoded){
-  const name=decodeURIComponent(encoded);
-  if(SYSTEM_TREATMENT_TYPES.includes(name)){showToast('System defaults cannot be removed.','warning');return;}
-  treatmentTypes=treatmentTypes.filter(t=>t!==name);
-  renderTreatmentTypes();
-};
-
-window.removeTreatmentStatus=function(encoded){
-  const name=decodeURIComponent(encoded);
-  if(SYSTEM_TREATMENT_STATUSES.includes(name)){showToast('System statuses cannot be removed.','warning');return;}
-  treatmentStatuses=treatmentStatuses.filter(s=>s!==name);
-  renderTreatmentStatuses();
-};
+/* Treatment type/status removal now uses generic makeRemoveFn */
 
 /* ── Generic chip-list renderer ── */
 function renderChipList(listId, items, systemItems, removeFn){
@@ -1308,60 +1254,35 @@ function makeRemoveFn(fnName, arr, systemItems, renderListId, removeFn){
 }
 
 /* register remove fns */
-makeRemoveFn('removeCommSource',     commSources,        [],                      'comm-sources-list',        'removeCommSource');
-makeRemoveFn('removePaymentMode',    paymentModes,       [],                      'payment-modes-list',       'removePaymentMode');
-makeRemoveFn('removePaymentStatus',  paymentStatuses,    SYSTEM_PAYMENT_STATUSES, 'payment-statuses-list',    'removePaymentStatus');
-makeRemoveFn('removeComplaintStatus',complaintStatuses,  SYSTEM_COMPLAINT_STATUSES,'complaint-statuses-list', 'removeComplaintStatus');
-makeRemoveFn('removeContractFreq',   contractFrequencies,SYSTEM_CONTRACT_FREQS,   'contract-frequencies-list','removeContractFreq');
-makeRemoveFn('removeCancelReason',   cancelReasons,      [],                      'cancel-reasons-list',      'removeCancelReason');
-makeRemoveFn('removeRescheduleReason',rescheduleReasons, [],                      'reschedule-reasons-list',  'removeRescheduleReason');
-makeRemoveFn('removeContractType',    contractTypesList,
-    complaintPriorities,
-    contractStatuses,  [],                      'contract-types-list',      'removeContractType');
-makeRemoveFn('removeBookingStatus',   bookingStatuses,    [],                      'booking-statuses-list',    'removeBookingStatus');
-makeRemoveFn('removeComplaintPriority',complaintPriorities,[],                      'complaint-priorities-list','removeComplaintPriority');
-makeRemoveFn('removeContractStatus',  contractStatuses,   [],                      'contract-statuses-list',  'removeContractStatus');
+makeRemoveFn('removeTreatmentType',  treatmentTypes,     [],  'treatment-types-list',     'removeTreatmentType');
+makeRemoveFn('removeCommSource',     commSources,        [],  'comm-sources-list',        'removeCommSource');
+makeRemoveFn('removePaymentMode',    paymentModes,       [],  'payment-modes-list',       'removePaymentMode');
+makeRemoveFn('removePaymentStatus',  paymentStatuses,    [],  'payment-statuses-list',    'removePaymentStatus');
+makeRemoveFn('removeComplaintStatus',complaintStatuses,  [],  'complaint-statuses-list',  'removeComplaintStatus');
+makeRemoveFn('removeContractFreq',   contractFrequencies,[],  'contract-frequencies-list','removeContractFreq');
+makeRemoveFn('removeCancelReason',   cancelReasons,      [],  'cancel-reasons-list',      'removeCancelReason');
+makeRemoveFn('removeRescheduleReason',rescheduleReasons, [],  'reschedule-reasons-list',  'removeRescheduleReason');
+makeRemoveFn('removeContractType',   contractTypesList,  [],  'contract-types-list',      'removeContractType');
+makeRemoveFn('removeBookingStatus',  bookingStatuses,    [],  'booking-statuses-list',    'removeBookingStatus');
+makeRemoveFn('removeComplaintPriority',complaintPriorities,[],'complaint-priorities-list','removeComplaintPriority');
+makeRemoveFn('removeContractStatus', contractStatuses,   [],  'contract-statuses-list',   'removeContractStatus');
 
 document.addEventListener('DOMContentLoaded',()=>{
-  const ttInput=$('new-treatment-type-input');
-  const tsInput=$('new-treatment-status-input');
-  const ttBtn=$('btn-add-treatment-type');
-  const tsBtn=$('btn-add-treatment-status');
-
-  if(ttBtn) ttBtn.addEventListener('click',()=>{
-    const val=ttInput.value.trim();
-    if(!val)return;
-    if(treatmentTypes.includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
-    treatmentTypes.push(val);
-    ttInput.value='';
-    renderTreatmentTypes();
-  });
-  if(ttInput) ttInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(ttBtn)ttBtn.click();}});
-
-  if(tsBtn) tsBtn.addEventListener('click',()=>{
-    const val=tsInput.value.trim();
-    if(!val)return;
-    if([...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses].includes(val)){showToast(`"${val}" already exists.`,'warning');return;}
-    treatmentStatuses.push(val);
-    tsInput.value='';
-    renderTreatmentStatuses();
-  });
-  if(tsInput) tsInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(tsBtn)tsBtn.click();}});
+  /* treatment types uses generic handler */
+  makeAddHandler('new-treatment-type-input', 'btn-add-treatment-type', treatmentTypes, [], 'treatment-types-list', 'removeTreatmentType');
 
   /* new list add handlers */
-  makeAddHandler('new-comm-source-input',      'btn-add-comm-source',      commSources,        [],                       'comm-sources-list',        'removeCommSource');
-  makeAddHandler('new-payment-mode-input',     'btn-add-payment-mode',     paymentModes,       [],                       'payment-modes-list',       'removePaymentMode');
-  makeAddHandler('new-payment-status-input',   'btn-add-payment-status',   paymentStatuses,    SYSTEM_PAYMENT_STATUSES,  'payment-statuses-list',    'removePaymentStatus');
-  makeAddHandler('new-complaint-status-input', 'btn-add-complaint-status', complaintStatuses,  SYSTEM_COMPLAINT_STATUSES,'complaint-statuses-list',  'removeComplaintStatus');
-  makeAddHandler('new-contract-freq-input',    'btn-add-contract-freq',    contractFrequencies,SYSTEM_CONTRACT_FREQS,    'contract-frequencies-list','removeContractFreq');
-  makeAddHandler('new-cancel-reason-input',    'btn-add-cancel-reason',    cancelReasons,      [],                       'cancel-reasons-list',      'removeCancelReason');
-  makeAddHandler('new-reschedule-reason-input','btn-add-reschedule-reason',rescheduleReasons,  [],                       'reschedule-reasons-list',  'removeRescheduleReason');
-  makeAddHandler('new-contract-type-input',   'btn-add-contract-type',    contractTypesList,
-    complaintPriorities,
-    contractStatuses,  [],                       'contract-types-list',      'removeContractType');
-  makeAddHandler('new-booking-status-input',  'btn-add-booking-status',   bookingStatuses,    [],                       'booking-statuses-list',    'removeBookingStatus');
-  makeAddHandler('new-complaint-priority-input','btn-add-complaint-priority',complaintPriorities,[],                       'complaint-priorities-list','removeComplaintPriority');
-  makeAddHandler('new-contract-status-input',  'btn-add-contract-status',  contractStatuses,   [],                       'contract-statuses-list',  'removeContractStatus');
+  makeAddHandler('new-comm-source-input',      'btn-add-comm-source',      commSources,        [],  'comm-sources-list',        'removeCommSource');
+  makeAddHandler('new-payment-mode-input',     'btn-add-payment-mode',     paymentModes,       [],  'payment-modes-list',       'removePaymentMode');
+  makeAddHandler('new-payment-status-input',   'btn-add-payment-status',   paymentStatuses,    [],  'payment-statuses-list',    'removePaymentStatus');
+  makeAddHandler('new-complaint-status-input', 'btn-add-complaint-status', complaintStatuses,  [],  'complaint-statuses-list',  'removeComplaintStatus');
+  makeAddHandler('new-contract-freq-input',    'btn-add-contract-freq',    contractFrequencies,[],  'contract-frequencies-list','removeContractFreq');
+  makeAddHandler('new-cancel-reason-input',    'btn-add-cancel-reason',    cancelReasons,      [],  'cancel-reasons-list',      'removeCancelReason');
+  makeAddHandler('new-reschedule-reason-input','btn-add-reschedule-reason',rescheduleReasons,  [],  'reschedule-reasons-list',  'removeRescheduleReason');
+  makeAddHandler('new-contract-type-input',   'btn-add-contract-type',    contractTypesList,   [],  'contract-types-list',      'removeContractType');
+  makeAddHandler('new-booking-status-input',  'btn-add-booking-status',   bookingStatuses,     [],  'booking-statuses-list',    'removeBookingStatus');
+  makeAddHandler('new-complaint-priority-input','btn-add-complaint-priority',complaintPriorities,[],  'complaint-priorities-list','removeComplaintPriority');
+  makeAddHandler('new-contract-status-input',  'btn-add-contract-status',  contractStatuses,   [],  'contract-statuses-list',   'removeContractStatus');
 });
 
 window.removeAgent=function(encoded){
@@ -1432,13 +1353,12 @@ $('btn-save-system').addEventListener('click', async()=>{
     defaultPaymentNotifyDays:Number($('default-payment-notify-days').value)||30,
     /* Treatment Configuration */
     treatmentTypes,
-    treatmentStatuses:[...SYSTEM_TREATMENT_STATUSES,...treatmentStatuses.filter(s=>!SYSTEM_TREATMENT_STATUSES.includes(s))],
     /* Configurable dropdown lists */
     commSources,
     paymentModes,
-    paymentStatuses:[...SYSTEM_PAYMENT_STATUSES,...paymentStatuses.filter(s=>!SYSTEM_PAYMENT_STATUSES.includes(s))],
-    complaintStatuses:[...SYSTEM_COMPLAINT_STATUSES,...complaintStatuses.filter(s=>!SYSTEM_COMPLAINT_STATUSES.includes(s))],
-    contractFrequencies:[...SYSTEM_CONTRACT_FREQS,...contractFrequencies.filter(f=>!SYSTEM_CONTRACT_FREQS.includes(f))],
+    paymentStatuses,
+    complaintStatuses,
+    contractFrequencies,
     cancelReasons,
     rescheduleReasons,
     contractTypesList,
