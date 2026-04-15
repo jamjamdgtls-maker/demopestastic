@@ -90,7 +90,6 @@
     .topbar-btn svg{width:16px;height:16px}
     .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
     .page-content{flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column}
-    
 
     /* BUTTONS */
     .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -229,7 +228,6 @@
     .toast-close svg{width:14px;height:14px}
     @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
-
     /* TREATMENT TYPE RECONFIGURE */
     .inline-type-select{border:1px solid transparent;background:var(--green-bg);color:var(--green-text);font-size:11.5px;font-weight:600;cursor:pointer;border-radius:14px;padding:3px 22px 3px 8px;outline:none;font-family:var(--font);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2316a34a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;background-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s,box-shadow .15s}
     .inline-type-select:hover{border-color:var(--primary)}
@@ -264,7 +262,7 @@
     }
     @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
     @media(max-width:480px){.summary-grid{grid-template-columns:1fr}}
-  
+
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
 
     /* Inline status select */
@@ -279,7 +277,6 @@
     .inline-status-select.status-completed  { background:var(--green-bg); color:var(--green-text);}
     .inline-status-select.status-rescheduled{ background:var(--amber-bg); color:var(--amber-text);}
     .inline-status-select.status-cancelled  { background:var(--gray-bg);  color:var(--gray-text); }
-
 
     /* Column header dropdown menu (Google Sheets style) */
     .col-header { position:relative; cursor:pointer; user-select:none; white-space:nowrap; }
@@ -497,7 +494,7 @@
               </tr>
             </thead>
             <tbody id="treatments-tbody">
-              <tr><td colspan="9" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              <tr><td colspan="11" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -735,14 +732,12 @@
 <div id="toast-container"></div>
 
 <script>
-  // Dismiss loading screen helper (accessible before module loads)
   function dismissLoadingScreen() {
     const ls = document.getElementById('loading-screen');
     if (!ls) return;
     ls.classList.add('fade-out');
     setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 280);
   }
-  // Hard failsafe — always dismiss after 8s no matter what
   setTimeout(dismissLoadingScreen, 8000);
 </script>
 
@@ -756,7 +751,6 @@ import {
   query, orderBy, serverTimestamp, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-/* ── Firebase init ── */
 const app = initializeApp({
   apiKey:            "AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y",
   authDomain:        "pestaticdatabase.firebaseapp.com",
@@ -769,7 +763,6 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-/* ── App state ── */
 let currentUser = null, currentRole = null;
 let allTreatments = [], filteredTreatments = [];
 let clientMap = {}, contractMap = {};
@@ -784,9 +777,10 @@ const DEFAULT_CONTRACT_TYPES = ['Termite Control','General Pest Control','Rodent
 const DEFAULT_BOOKING_STATUSES = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
 let teamsData = [];
 let sortField = 'treatmentDate', sortDir = 'asc';
-const SYSTEM_STATUSES = [];
 
-/* ── DOM helper ── */
+/* ── Terminal statuses: these two are the only ones where actions are hidden ── */
+const TERMINAL_STATUSES = ['completed', 'cancelled'];
+
 const $ = id => document.getElementById(id);
 
 /* ── Toast ── */
@@ -842,11 +836,20 @@ function cleanName(n) {
   return (n || '').replace(/\s*\(.*?\)\s*/g, '').trim() || '—';
 }
 
-/* ── Display status (overdue computed client-side) ── */
+/* ── isTerminal: drives action button visibility ──
+   Only 'completed' and 'cancelled' (actual DB field values) hide actions.
+   All other statuses — including booking statuses, custom statuses, rescheduled, etc. — show actions.
+── */
+function isTerminalStatus(t) {
+  return TERMINAL_STATUSES.includes((t.status || '').toLowerCase());
+}
+
+/* ── dispStatus: used ONLY for visual display / overdue styling ── */
 function dispStatus(t) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = toDate(t.treatmentDate);
-  if (t.status === 'scheduled' && d && d < today) return 'overdue';
+  // Compute overdue for display only when DB status is 'scheduled' and date is past
+  if ((t.status || '').toLowerCase() === 'scheduled' && d && d < today) return 'overdue';
   return t.status || 'scheduled';
 }
 
@@ -880,7 +883,6 @@ async function logAction(action, entityType, entityId, description) {
 /* ── Load all data ── */
 async function loadAll() {
   try {
-    // Clients
     const cSnap = await getDocs(collection(db, 'clients'));
     clientMap = {};
     cSnap.forEach(d => {
@@ -894,12 +896,10 @@ async function loadAll() {
       };
     });
 
-    // Contracts
     const coSnap = await getDocs(collection(db, 'contracts'));
     contractMap = {};
     coSnap.forEach(d => { contractMap[d.id] = d.data(); });
 
-    // Settings
     let cancelReasons    = [];
     let rescheduleReasons= [];
     try {
@@ -909,8 +909,7 @@ async function loadAll() {
         treatmentTypesList    = s.treatmentTypes || [];
         contractTypesFromSettings = s.contractTypesList || DEFAULT_CONTRACT_TYPES;
         bookingStatuses       = s.bookingStatuses || DEFAULT_BOOKING_STATUSES;
-        treatmentStatusesList = (s.treatmentStatuses || [])
-          .filter(st => !SYSTEM_STATUSES.includes(st.toLowerCase()));
+        treatmentStatusesList = s.treatmentStatuses || [];
         if (s.cancelReasons    && s.cancelReasons.length)    cancelReasons    = s.cancelReasons;
         if (s.rescheduleReasons && s.rescheduleReasons.length) rescheduleReasons = s.rescheduleReasons;
       } else {
@@ -923,23 +922,19 @@ async function loadAll() {
       bookingStatuses = DEFAULT_BOOKING_STATUSES;
     }
 
-    /* Populate cancel / reschedule reason dropdowns */
     const cancelOpts = cancelReasons.map(r=>`<option>${r}</option>`).join('') + '<option>Other</option>';
     $('cancel-reason-select').innerHTML    = '<option value="">— Select reason —</option>' + cancelOpts;
     const reschedOpts = rescheduleReasons.map(r=>`<option>${r}</option>`).join('') + '<option>Other</option>';
     $('reschedule-reason-select').innerHTML = '<option value="">— Select reason —</option>' + reschedOpts;
 
-    // Populate type filter
     $('filter-type').innerHTML = '<option value="">All Types</option>' +
       treatmentTypesList.map(t => `<option value="${t}">${t}</option>`).join('');
 
-    // Populate status filter (system + custom + booking statuses)
     $('filter-status').innerHTML = `
       <option value="">All Status</option>
       ${bookingStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}
       ${treatmentStatusesList.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('')}`;
 
-    // Teams
     const tSnap = await getDocs(collection(db, 'teams'));
     teamsData = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const teamNames = [...new Set(teamsData.map(d => d.teamName).filter(Boolean))].sort();
@@ -948,7 +943,6 @@ async function loadAll() {
     $('reschedule-new-team').innerHTML = '<option value="">— Keep current team —</option>' + teamOpts;
     $('new-treatment-team').innerHTML  = '<option value="">— Select Team —</option>'      + teamOpts;
 
-    // Treatments — sorted ascending by date then time
     const trSnap = await getDocs(query(collection(db, 'treatments'), orderBy('treatmentDate', 'asc')));
     allTreatments = trSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     allTreatments.sort((a, b) => {
@@ -964,7 +958,6 @@ async function loadAll() {
   } catch (err) {
     showToast('Failed to load data: ' + err.message, 'error', 'Load Error');
     console.error('[loadAll]', err);
-    // Show empty state instead of endless spinner
     $('treatments-tbody').innerHTML = `<tr><td colspan="11"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <h3>Could not load treatments</h3>
@@ -974,17 +967,32 @@ async function loadAll() {
   }
 }
 
-/* ── Summary counters ── */
+/* ── Summary counters ──
+   Counts are based purely on actual DB field values (t.status).
+   Overdue is the one derived count: status === 'scheduled' AND date is in the past.
+── */
 function computeSummary() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
   let total = 0, completed = 0, scheduled = 0, overdue = 0, cancelled = 0;
+
   allTreatments.forEach(t => {
     total++;
-    const s = dispStatus(t);
-    if      (s === 'completed') completed++;
-    else if (s === 'scheduled') scheduled++;
-    else if (s === 'overdue')   overdue++;
-    else if (s === 'cancelled') cancelled++;
+    const s = (t.status || '').toLowerCase();
+    const d = toDate(t.treatmentDate);
+
+    if (s === 'completed') {
+      completed++;
+    } else if (s === 'cancelled') {
+      cancelled++;
+    } else if (s === 'scheduled') {
+      // Split 'scheduled' into overdue (past) vs upcoming
+      if (d && d < today) overdue++;
+      else scheduled++;
+    }
+    // All other statuses (booking statuses, custom statuses, rescheduled, etc.)
+    // are intentionally not counted in any summary bucket — they show in Total only
   });
+
   $('sc-total').textContent     = total;
   $('sc-completed').textContent = completed;
   $('sc-scheduled').textContent = scheduled;
@@ -1004,9 +1012,9 @@ function applyFilters() {
   filteredTreatments = allTreatments.filter(t => {
     const ds         = dispStatus(t);
     const clientName = (clientMap[t.customerNo]?.name || '').toLowerCase();
-    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType, contractMap[t.contractId]?.contractNumber || '', t.technician || '', ds, t.treatmentType || '']
+    const matchQ     = !q || [t.treatmentNo, clientName, t.customerNo, t.assignedTeam, t.contractType, contractMap[t.contractId]?.contractNumber || '', t.technician || '', ds, t.treatmentType || '', t.status || '']
                               .some(f => (f || '').toLowerCase().includes(q));
-    const matchS     = !status || ds === status || t.status === status;
+    const matchS     = !status || ds === status || (t.status || '').toLowerCase() === status;
     const matchT     = !team   || t.assignedTeam === team;
     const matchType  = !type   || t.contractType === type;
     let   matchD     = true;
@@ -1017,7 +1025,6 @@ function applyFilters() {
         if (dateTo)   { const to = new Date(dateTo);  to.setHours(23,59,59,999); if (td > to) matchD = false; }
       } else { matchD = false; }
     }
-    // Column-level filters from header dropdowns
     let matchColFilters = true;
     for (const [col, allowedSet] of Object.entries(columnFilters)) {
       const val = getColValue(t, col).toString().trim();
@@ -1068,7 +1075,7 @@ function renderTable() {
     : `Showing ${start + 1}–${end} of ${total} treatments`;
 
   if (!page.length) {
-    $('treatments-tbody').innerHTML = `<tr><td colspan="9"><div class="empty-state">
+    $('treatments-tbody').innerHTML = `<tr><td colspan="11"><div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
       <h3>No treatments found</h3><p>Try adjusting your search or filters.</p>
     </div></td></tr>`;
@@ -1076,26 +1083,42 @@ function renderTable() {
     return;
   }
 
-  const customStatusKeys = treatmentStatusesList.map(s => s.toLowerCase());
-
   $('treatments-tbody').innerHTML = page.map(t => {
-    const ds          = dispStatus(t);
+    const ds          = dispStatus(t);        // for display/styling only
+    const rawStatus   = (t.status || '').toLowerCase();
     const isOverdue   = ds === 'overdue';
-    const clientName  = cleanName(clientMap[t.customerNo]?.name || t.customerNo || '—');
+
+    // ── Action availability: blacklist approach using actual DB field values only ──
+    // Show Complete / Reschedule / Cancel for ANY status that is NOT 'completed' or 'cancelled'
+    const isTerminal  = TERMINAL_STATUSES.includes(rawStatus);
+    const canComplete   = !isTerminal;
+    const canCancel     = !isTerminal;
+    const canReschedule = !isTerminal;
+
+    const clientName   = cleanName(clientMap[t.customerNo]?.name || t.customerNo || '—');
     const contractType = t.contractType || (contractMap[t.contractId]?.contractType) || '—';
-    const timeStr     = t.treatmentTime
+    const timeStr      = t.treatmentTime
       ? `<br><span style="font-size:11.5px;color:var(--text-muted)">${t.treatmentTime}</span>` : '';
     const reschedCount = (t.rescheduleHistory || []).length;
     const reschedBadge = reschedCount > 0
       ? `<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);border:1px solid #fcd34d;border-radius:10px;padding:1px 5px;margin-left:4px" title="${reschedCount} reschedule(s)">↺${reschedCount}</span>` : '';
 
-    const canComplete   = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
-    const canCancel     = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
-    const canReschedule = ['scheduled','overdue','rescheduled'].includes(ds) || customStatusKeys.includes(ds);
-
     const treatmentType = t.treatmentType || '—';
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
-    const allStatuses   = [...new Set(['scheduled','overdue','rescheduled','completed','cancelled',...bookingStatuses.map(s=>s.toLowerCase()),...treatmentStatusesList.map(s=>s.toLowerCase())])];
+
+    // Build the full status options list from actual DB values used across all treatments
+    // plus the known status keys from settings — all lowercase
+    const allStatusOptions = [
+      ...new Set([
+        ...bookingStatuses.map(s => s.toLowerCase()),
+        ...treatmentStatusesList.map(s => s.toLowerCase()),
+        'scheduled', 'rescheduled', 'completed', 'cancelled'
+      ])
+    ];
+
+    // Determine the CSS class for the inline status select based on the actual stored value
+    const statusCssClass = 'status-' + rawStatus.replace(/\s+/g, '-');
+
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
       <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
       <td>${(() => {
@@ -1118,8 +1141,8 @@ function renderTable() {
       <td style="white-space:nowrap">${fmtDate(t.treatmentDate)}${timeStr}</td>
       <td class="muted" style="font-size:12.5px">${t.assignedTeam || '—'}</td>
       <td class="muted" style="font-size:12.5px">${t.technician   || '—'}</td>
-      <td><select class="inline-status-select status-${ds}" data-id="${t.id}" data-current="${ds}">
-        ${allStatuses.map(s => `<option value="${s}" ${s===ds?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+      <td><select class="inline-status-select ${statusCssClass}" data-id="${t.id}" data-current="${rawStatus}">
+        ${allStatusOptions.map(s => `<option value="${s}" ${s === rawStatus ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
       </select></td>
       <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)" title="${t.notes||''}">${notePreview}</td>
       <td>
@@ -1129,14 +1152,13 @@ function renderTable() {
           ${canReschedule ? `<button class="btn btn-sm btn-amber   btn-reschedule" data-id="${t.id}" title="Reschedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>` : ''}
           ${canCancel     ? `<button class="btn btn-sm btn-danger  btn-cancel"     data-id="${t.id}" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
           ${t.serviceReportUrl ? `<a href="${t.serviceReportUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary" title="View service report" style="padding:5px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></a>` : ''}
-          ${ds === 'completed' && !t.serviceReportUrl ? `<span style="font-size:12px;color:var(--green-text);font-weight:600">✓ Done</span>`     : ''}
-          ${ds === 'cancelled'                        ? `<span style="font-size:12px;color:var(--gray-text)">Cancelled</span>` : ''}
+          ${rawStatus === 'completed' && !t.serviceReportUrl ? `<span style="font-size:12px;color:var(--green-text);font-weight:600">✓ Done</span>` : ''}
+          ${rawStatus === 'cancelled' ? `<span style="font-size:12px;color:var(--gray-text)">Cancelled</span>` : ''}
         </div>
       </td>
     </tr>`;
   }).join('');
 
-  // Pagination controls
   const ctrl = $('pagination-controls');
   if (totalPages <= 1) { ctrl.innerHTML = ''; return; }
   const pages = [];
@@ -1184,11 +1206,9 @@ function openCompleteModal(id) {
   $('complete-subtitle').textContent = `${cleanName(clientMap[t.customerNo]?.name || '')} · ${t.treatmentNo || ''}`;
   $('complete-context').innerHTML   = contextBanner(t);
   $('complete-date').value          = toInputDate(new Date());
-  // Populate technician dropdown from team members
   const teamForTech = t.assignedTeam || '';
   const teamObj = teamsData.find(td => td.teamName === teamForTech);
   const members = teamObj?.members || teamObj?.technicians || [];
-  // Also gather all members across all teams as fallback
   const allMembers = [...new Set(teamsData.flatMap(td => td.members || td.technicians || []).filter(Boolean))].sort();
   const memberList = members.length > 0 ? members : allMembers;
   $('complete-technician').innerHTML = '<option value="">— Select Technician —</option>' +
@@ -1407,7 +1427,7 @@ $('btn-confirm-reschedule').addEventListener('click', async () => {
    COLUMN HEADER DROPDOWNS (Google Sheets style)
 ══════════════════════════════════ */
 let activeColDropdown = null;
-let columnFilters = {}; // { colName: Set of allowed values } — empty means all
+let columnFilters = {};
 
 function getColValue(t, col) {
   if (col === 'treatmentNo')    return t.treatmentNo || '';
@@ -1418,7 +1438,7 @@ function getColValue(t, col) {
   if (col === 'treatmentDate')  return fmtDate(t.treatmentDate);
   if (col === 'assignedTeam')   return t.assignedTeam || '';
   if (col === 'technician')     return t.technician || '';
-  if (col === 'status')         return dispStatus(t);
+  if (col === 'status')         return t.status || '';  // actual DB field value
   if (col === 'notes')          return t.notes || '';
   return '';
 }
@@ -1480,7 +1500,6 @@ function openColDropdown(col, th) {
   th.appendChild(dd);
   activeColDropdown = dd;
 
-  // Search within values
   dd.querySelector('#col-search-input').addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
     dd.querySelectorAll('#col-values-list label').forEach(lbl => {
@@ -1489,7 +1508,6 @@ function openColDropdown(col, th) {
     });
   });
 
-  // Sort actions
   dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const field = th.dataset.sort;
@@ -1503,7 +1521,6 @@ function openColDropdown(col, th) {
     });
   });
 
-  // Select all / none
   dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
     dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
   });
@@ -1511,7 +1528,6 @@ function openColDropdown(col, th) {
     dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
   });
 
-  // Apply filter
   dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
     const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
     const allChecked = checked.length === values.length;
@@ -1520,7 +1536,6 @@ function openColDropdown(col, th) {
     } else {
       columnFilters[col] = new Set(checked);
     }
-    // Update header style to show active filter
     th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
     closeColDropdown();
     applyFilters();
@@ -1530,7 +1545,6 @@ function openColDropdown(col, th) {
   dd.querySelector('#col-search-input').focus();
 }
 
-// Attach click handlers to column menu buttons
 document.querySelectorAll('.col-menu-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     e.stopPropagation();
@@ -1540,7 +1554,6 @@ document.querySelectorAll('.col-menu-btn').forEach(btn => {
   });
 });
 
-// Click on header text sorts
 document.querySelectorAll('th.col-header').forEach(th => {
   th.addEventListener('click', e => {
     if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
@@ -1572,8 +1585,8 @@ function doSort() {
       av = (clientMap[a.customerNo]?.name || '').toLowerCase();
       bv = (clientMap[b.customerNo]?.name || '').toLowerCase();
     } else if (sortField === 'status') {
-      av = dispStatus(a).toLowerCase();
-      bv = dispStatus(b).toLowerCase();
+      av = (a.status || '').toLowerCase();
+      bv = (b.status || '').toLowerCase();
     } else {
       av = (a[sortField] || '').toString().toLowerCase();
       bv = (b[sortField] || '').toString().toLowerCase();
@@ -1596,8 +1609,6 @@ $('treatments-tbody').addEventListener('change', async e => {
   const newStatus = sel.value;
   const oldStatus = sel.dataset.current;
   if (!id || newStatus === oldStatus) return;
-  // 'overdue' is computed (stored as 'scheduled' in Firestore); don't save 'overdue' directly
-  if (newStatus === 'overdue') return;
 
   try {
     await updateDoc(doc(db, 'treatments', id), {
@@ -1606,19 +1617,19 @@ $('treatments-tbody').addEventListener('change', async e => {
     });
     const t = allTreatments.find(x => x.id === id);
     if (t) t.status = newStatus;
-    // Update the select's class and data-current
     sel.dataset.current = newStatus;
-    sel.className = 'inline-status-select status-' + newStatus;
-    await logAction('updated', 'treatment', id, `Status changed from ${oldStatus} to ${newStatus}`);
+    // Update CSS class to reflect new status
+    sel.className = 'inline-status-select status-' + newStatus.replace(/\s+/g, '-');
+    await logAction('updated', 'treatment', id, `Status changed from "${oldStatus}" to "${newStatus}"`);
     showToast(`Status updated to "${newStatus}".`);
     computeSummary();
+    applyFilters();
     loadSidebarBadges();
   } catch (err) {
     showToast('Failed to update status: ' + err.message, 'error');
-    sel.value = oldStatus; // revert
+    sel.value = oldStatus;
   }
 });
-
 
 /* ══════════════════════════════════
    INLINE TREATMENT TYPE EDIT
@@ -1643,7 +1654,7 @@ $('treatments-tbody').addEventListener('change', async e => {
     showToast(`Treatment type updated to "${newType || '—'}".`);
   } catch (err) {
     showToast('Failed to update type: ' + err.message, 'error');
-    sel.value = oldType; // revert
+    sel.value = oldType;
   }
 });
 
@@ -1658,40 +1669,33 @@ function openEditModal(id) {
   $('edit-modal').querySelector('.modal-subtitle').textContent =
     `${t.treatmentNo || id.slice(0,8)} — ${cleanName(clientMap[t.customerNo]?.name || t.customerNo)}`;
 
-  /* Treatment Type — build options: settings list + any extra from this record */
   const existing = t.treatmentType || '';
   const allTypes = [...new Set([...treatmentTypesList, ...(existing && existing !== '—' ? [existing] : [])])];
   $('edit-treatment-type').innerHTML =
     '<option value="">— Select Type —</option>' +
     allTypes.map(tp => `<option value="${tp}" ${tp === existing ? 'selected' : ''}>${tp}</option>`).join('');
 
-  /* Contract Type (text) */
   $('edit-contract-type').value = t.contractType || (contractMap[t.contractId]?.contractType) || '';
 
-  /* Date & Time */
   const d = toDate(t.treatmentDate);
   $('edit-date').value = d ? d.toISOString().slice(0,10) : '';
   $('edit-time').value = t.treatmentTime || '';
 
-  /* Team */
   const teamNames = [...new Set(teamsData.map(x => x.teamName).filter(Boolean))].sort();
   $('edit-team').innerHTML = '<option value="">— Select Team —</option>' +
     teamNames.map(tn => `<option value="${tn}" ${tn === (t.assignedTeam||'') ? 'selected' : ''}>${tn}</option>`).join('');
 
-  /* Technician */
   const team = teamsData.find(x => x.teamName === t.assignedTeam);
   const members = team ? (team.members || []) : [];
   const allMembers = [...new Set([...members, ...(t.technician && !members.includes(t.technician) ? [t.technician] : [])])];
   $('edit-technician').innerHTML = '<option value="">— Select Technician —</option>' +
     allMembers.map(m => `<option value="${m}" ${m === (t.technician||'') ? 'selected' : ''}>${m}</option>`).join('');
 
-  /* Notes */
   $('edit-notes').value = t.notes || '';
 
   $('edit-modal').classList.add('open');
 }
 
-/* Refresh technician list when team changes in edit modal */
 $('edit-team').addEventListener('change', () => {
   const teamName = $('edit-team').value;
   const team = teamsData.find(x => x.teamName === teamName);
@@ -1732,7 +1736,6 @@ $('btn-save-edit').addEventListener('click', async () => {
 
     await updateDoc(doc(db, 'treatments', id), updates);
 
-    /* Update local cache */
     if (t) Object.assign(t, {
       treatmentType:  newType,
       contractType:   updates.contractType,
@@ -1771,7 +1774,6 @@ async function getNextTreatmentNo() {
 }
 
 $('btn-new-treatment').addEventListener('click', () => {
-  // Reset form
   $('nt-customer-no').value   = '';
   $('nt-client-hint').textContent = '';
   $('nt-treatment-no').value  = 'Auto-generated';
@@ -1787,30 +1789,24 @@ $('btn-new-treatment').addEventListener('click', () => {
   $('nt-notes').value = '';
   $('nt-btn-text').textContent = 'Create Treatment';
 
-  // Populate datalist for customer lookup
   $('nt-customer-list').innerHTML = Object.entries(clientMap)
     .map(([no, c]) => `<option value="${no}">${no} — ${c.name || ''}</option>`).join('');
 
   openModal('new-treatment-modal');
 });
 
-// Customer lookup hint + populate contracts dropdown
 $('nt-customer-no').addEventListener('input', () => {
   const val = $('nt-customer-no').value.trim();
   const client = clientMap[val];
   $('nt-client-hint').textContent = client ? `✓ ${client.name}${client.address ? ' · ' + client.address : ''}` : '';
 
-  // Reset contract and type dropdowns
-  $('nt-contract-select').innerHTML = '<option value="">— Select Contract —</option>';
-  $('nt-contract-type').value = '';
   $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
-  $('nt-contract-hint').textContent = '';
+  $('nt-contract-type').value = '';
   $('nt-contract-hint').textContent = '';
   $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
     treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
 
   if(client && val) {
-    // Populate contract dropdown with this customer's contracts
     const customerContracts = Object.entries(contractMap)
       .filter(([id, c]) => c.customerNo === val)
       .map(([id, c]) => ({ id, ...c }));
@@ -1832,13 +1828,10 @@ $('nt-customer-no').addEventListener('input', () => {
   }
 });
 
-// When contract is selected, auto-fill contract type and filter treatment types
 $('nt-contract-select').addEventListener('change', () => {
   const contractId = $('nt-contract-select').value;
   if(!contractId) {
     $('nt-contract-type').value = '';
-  $('nt-contract-select').innerHTML = '<option value="">— Select a client first —</option>';
-  $('nt-contract-hint').textContent = '';
     $('nt-contract-hint').textContent = '';
     $('nt-treatment-type').innerHTML = '<option value="">— Select Type —</option>' +
       treatmentTypesList.map(t => '<option>'+t+'</option>').join('');
@@ -1847,12 +1840,10 @@ $('nt-contract-select').addEventListener('change', () => {
   const contract = contractMap[contractId];
   if(!contract) return;
 
-  // Auto-fill contract type
   $('nt-contract-type').value = contract.contractType || '';
   const contractNo = contract.contractNumber || contractId.slice(0,8).toUpperCase();
   $('nt-contract-hint').innerHTML = '<a href="contracts.html?id='+contractId+'" target="_blank" rel="noopener" style="color:var(--primary);font-size:11.5px">View contract '+contractNo+' →</a>';
 
-  // Populate treatment types from contract
   const contractTypeSet = new Set();
   if(Array.isArray(contract.contractTypes)) contract.contractTypes.forEach(t => contractTypeSet.add(t));
   else if(contract.contractType) contract.contractType.split(',').map(s=>s.trim()).filter(Boolean).forEach(t => contractTypeSet.add(t));
@@ -1869,7 +1860,6 @@ $('nt-contract-select').addEventListener('change', () => {
   $('nt-treatment-type').innerHTML = opts;
 });
 
-// Team change updates technician dropdown in new treatment modal
 $('new-treatment-team').addEventListener('change', () => {
   const teamName = $('new-treatment-team').value;
   const teamObj  = teamsData.find(t => t.teamName === teamName);
@@ -1945,7 +1935,6 @@ $('btn-export-csv').addEventListener('click', () => {
   const headers = ['Treatment #','Customer No','Client Name','Contract Type','Date','Time','Team','Technician','Status','Chemicals Used','Notes','Service Report URL'];
   const rows = filteredTreatments.map(t => {
     const clientName = cleanName(clientMap[t.customerNo]?.name || t.customerNo || '');
-    const ds         = dispStatus(t);
     return [
       t.treatmentNo      || '',
       t.customerNo       || '',
@@ -1955,7 +1944,7 @@ $('btn-export-csv').addEventListener('click', () => {
       t.treatmentTime    || '',
       t.assignedTeam     || '',
       t.technician       || '',
-      ds,
+      t.status           || '',
       t.chemicalsUsed    || '',
       (t.notes || '').replace(/\n/g, ' '),
       t.serviceReportUrl || ''
@@ -1991,28 +1980,22 @@ $('sidebar-overlay').addEventListener('click', () => {
 ══════════════════════════════════ */
 $('btn-signout').addEventListener('click', () => signOut(auth).then(() => window.location.replace('login.html')));
 
-/* ══════════════════════════════════
-   AUTH STATE — THIS IS WHAT DRIVES
-   THE ENTIRE APP STARTUP
-══════════════════════════════════ */
 /* ── Sidebar & topbar notification badges ── */
 async function loadSidebarBadges() {
   try {
     const today = new Date(); today.setHours(0,0,0,0);
     let notifCount = 0;
 
-    // ── Overdue treatments ──
     const trSnap = await getDocs(collection(db,'treatments'));
     let overdueT = 0;
     trSnap.forEach(d => {
       const t = d.data();
-      if(t.status === 'scheduled') {
+      if((t.status||'').toLowerCase() === 'scheduled') {
         const td = t.treatmentDate?.toDate ? t.treatmentDate.toDate() : new Date(t.treatmentDate||0);
         if(td < today) { overdueT++; notifCount++; }
       }
     });
 
-    // ── Overdue payments ──
     const pySnap = await getDocs(collection(db,'payments'));
     let overdueP = 0;
     pySnap.forEach(d => {
@@ -2023,7 +2006,6 @@ async function loadSidebarBadges() {
       }
     });
 
-    // ── Overdue nav badge = overdue treatments + overdue payments ──
     const overdueTotal = overdueT + overdueP;
     const bdOverdue = document.getElementById('badge-overdue');
     if(bdOverdue && overdueTotal > 0) {
@@ -2031,7 +2013,6 @@ async function loadSidebarBadges() {
       bdOverdue.style.display = '';
     }
 
-    // ── Contracts expiring within 7 days ──
     const coSnap = await getDocs(collection(db,'contracts'));
     coSnap.forEach(d => {
       const c = d.data();
@@ -2041,7 +2022,6 @@ async function loadSidebarBadges() {
       if(daysLeft >= 0 && daysLeft <= 7) notifCount++;
     });
 
-    // ── Open complaints ──
     const cmpSnap = await getDocs(collection(db,'complaints'));
     let openComplaints = 0;
     cmpSnap.forEach(d => {
@@ -2060,7 +2040,6 @@ async function loadSidebarBadges() {
       bdComplaints.style.display = '';
     }
 
-    // ── Scheduled inspections ──
     const inSnap = await getDocs(collection(db,'inspections'));
     let scheduledInspections = 0;
     inSnap.forEach(d => { if((d.data().status||'') === 'Scheduled') scheduledInspections++; });
@@ -2070,18 +2049,15 @@ async function loadSidebarBadges() {
       bdInspections.style.display = '';
     }
 
-    // ── Notifications nav badge (total urgent items) ──
     const bdNotif = document.getElementById('notif-count-badge');
     if(bdNotif && notifCount > 0) {
       bdNotif.textContent = notifCount > 99 ? '99+' : notifCount;
       bdNotif.style.display = '';
     }
 
-    // ── Topbar bell dot ──
     const notifDot = document.getElementById('notif-dot');
     if(notifDot && notifCount > 0) notifDot.style.display = '';
 
-    // ── Pending users (admin/super_admin only) ──
     if(typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'super_admin' || currentRole === 'superadmin' || currentRole === 'super admin')) {
       const usrSnap = await getDocs(collection(db,'users'));
       let pendingUsers = 0;
@@ -2096,21 +2072,17 @@ async function loadSidebarBadges() {
 }
 
 onAuthStateChanged(auth, async user => {
-  // Always dismiss loading screen once Firebase responds
   dismissLoadingScreen();
 
   if (!user) {
-    dismissLoadingScreen();
     window.location.replace('login.html');
     return;
   }
 
-  // Check user record in Firestore
   let userData = null;
   try {
     const userSnap = await getDoc(doc(db, 'users', user.uid));
     if (!userSnap.exists()) {
-      // No record yet — show pending
       $('auth-screen').style.display  = 'flex';
       $('login-card').style.display   = 'none';
       $('pending-card').style.display = 'block';
@@ -2136,11 +2108,9 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  // ── Approved user — boot the app ──
   currentUser = user;
   currentRole = userData.role || 'staff';
 
-  // Sidebar user info
   $('user-display-name').textContent = user.displayName || user.email;
   $('user-role-label').textContent   = currentRole;
   $('user-initials').textContent     = (user.displayName || user.email || '?')[0].toUpperCase();
@@ -2148,38 +2118,30 @@ onAuthStateChanged(auth, async user => {
     $('user-avatar').innerHTML = `<img src="${user.photoURL}" alt="avatar">`;
   }
 
-  // Show admin nav items for admin / superadmin
   if (['admin', 'superadmin', 'super_admin', 'super admin'].includes(currentRole)) {
     $('admin-nav-label').style.display = '';
     $('nav-users').style.display       = '';
     $('nav-settings').style.display    = '';
   }
 
-  // Show app shell, hide auth
   $('auth-screen').style.display = 'none';
   $('app-shell').style.display   = 'flex';
   loadSidebarBadges();
 
-  // Load data
   await loadAll();
 });
 
-/* ══════════════════════════════════
-   GOOGLE SIGN-IN
-══════════════════════════════════ */
 $('btn-google-signin').addEventListener('click', async () => {
   const errEl = $('login-error');
   errEl.style.display = 'none';
   try {
     await signInWithPopup(auth, new GoogleAuthProvider());
-    // onAuthStateChanged will handle the rest
   } catch (err) {
     errEl.textContent    = err.message;
     errEl.style.display  = 'block';
   }
 });
 
-/* ── Pending card buttons ── */
 $('btn-check-status')?.addEventListener('click',    () => location.reload());
 $('btn-signout-pending')?.addEventListener('click', () => signOut(auth).then(() => window.location.replace('login.html')));
 
@@ -2269,7 +2231,6 @@ $('btn-signout-pending')?.addEventListener('click', () => signOut(auth).then(() 
     </div>
   </div>
 </div>
-
 
 </body>
 </html>
