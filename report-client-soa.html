@@ -566,7 +566,7 @@ async function generateSOA() {
   // Compute running balance (debits increase balance, credits decrease)
   let runningBalance=0;
   const ledgerWithBalance=ledger.map(entry=>{
-    if(entry.type==='debit'||entry.type==='debit-pending') runningBalance+=entry.amount;
+    if(entry.type==='debit') runningBalance+=entry.amount;
     else if(entry.type==='credit') runningBalance-=entry.amount;
     return {...entry,balance:runningBalance};
   });
@@ -692,7 +692,7 @@ async function generateSOA() {
       const isCredit=entry.type==='credit';
       const isPending=entry.type==='debit-pending';
       const rowCls=isCredit?'row-credit':'row-debit';
-      const debitAmt=!isCredit?fmtCur(entry.amount):'—';
+      const debitAmt=entry.type==='debit'?fmtCur(entry.amount):(isPending?'—':'—');
       const creditAmt=isCredit?fmtCur(entry.amount):'—';
       const balCls=entry.balance>0?'balance-positive':entry.balance<0?'balance-negative':'';
       html+=`<tr class="${rowCls}">
@@ -703,7 +703,7 @@ async function generateSOA() {
         <td>
           <span class="type-tag ${isCredit?'credit':'debit'}">${isCredit?'CREDIT':'DEBIT'}</span>
           <span style="font-size:12px;margin-left:6px;color:#374151">${entry.description}</span>
-          ${isPending?'<span style="font-size:10.5px;color:#f59e0b;margin-left:4px;font-weight:700">(PENDING)</span>':''}
+          ${isPending?'<span style="font-size:10.5px;color:#f59e0b;margin-left:4px;font-weight:700">(PENDING - '+fmtCur(entry.amount)+')</span>':''}
         </td>
         <td class="right">${debitAmt}</td>
         <td class="right" style="color:#15803d">${creditAmt}</td>
@@ -711,7 +711,7 @@ async function generateSOA() {
       </tr>`;
     });
 
-    const ledgerDebitTotal=ledgerWithBalance.filter(e=>e.type==='debit'||e.type==='debit-pending').reduce((s,e)=>s+e.amount,0);
+    const ledgerDebitTotal=ledgerWithBalance.filter(e=>e.type==='debit').reduce((s,e)=>s+e.amount,0);
     const ledgerCreditTotal=ledgerWithBalance.filter(e=>e.type==='credit').reduce((s,e)=>s+e.amount,0);
     const ledgerFinalBalance=ledgerWithBalance.length?ledgerWithBalance[ledgerWithBalance.length-1].balance:0;
     html+=`</tbody><tfoot><tr>
