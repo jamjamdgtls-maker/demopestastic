@@ -299,8 +299,7 @@
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
 
-
-    /* ── Column sort icon ── */
+    /* ── Sort icon ── */
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
 
     /* ── Column header (Google Sheets style) ── */
@@ -327,7 +326,7 @@
     .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
     .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
 
-    /* ── Table scrollbar ── */
+    /* ── Scrollbars inside table ── */
     .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
     .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
     .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
@@ -497,7 +496,7 @@
           <table>
             <thead>
               <tr>
-                <th class="col-header" data-sort="dateReported" data-col="dateReported"><div class="col-header-inner"><span>Date Reported</span><span class="sort-icon" id="sort-dateReported">▲</span><button class="col-menu-btn" data-col="dateReported">▾</button></div></th>
+                <th class="col-header" data-sort="dateReported" data-col="dateReported"><div class="col-header-inner"><span>Date Reported</span><span class="sort-icon" id="sort-dateReported">▼</span><button class="col-menu-btn" data-col="dateReported">▾</button></div></th>
                 <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
                 <th class="col-header" data-sort="contractType" data-col="contractType"><div class="col-header-inner"><span>Contract Type</span><span class="sort-icon" id="sort-contractType"></span><button class="col-menu-btn" data-col="contractType">▾</button></div></th>
                 <th class="col-header" data-sort="priority" data-col="priority"><div class="col-header-inner"><span>Priority</span><span class="sort-icon" id="sort-priority"></span><button class="col-menu-btn" data-col="priority">▾</button></div></th>
@@ -887,19 +886,7 @@ async function loadAll() {
   let complaintPriorities = [];
   try { const ss2 = await getDoc(doc(db,'config','settings')); if(ss2.exists() && ss2.data().complaintPriorities) complaintPriorities = ss2.data().complaintPriorities; } catch(e){}
   if (!complaintPriorities.length) complaintPriorities = ['Low','Medium','High'];
-  $('filter-priority').innerHTML = '<option value="">All Priorities</option>' + complaintPriorities.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('');
   $('form-priority').innerHTML = '<option value="">— Select Priority —</option>' + complaintPriorities.map(p => `<option value="${p.toLowerCase()}">${p}</option>`).join('');
-
-  // Month filter populate
-  const months=[];
-  const now=new Date();
-  for(let i=0;i<12;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const val=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const lbl=d.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
-    months.push(`<option value="${val}">${lbl}</option>`);
-  }
-  $('filter-month').innerHTML='<option value="">All Months</option>'+months.join('');
 
   // Complaints
   const compSnap=await getDocs(query(collection(db,'complaints'),orderBy('dateReported','desc')));
@@ -977,172 +964,191 @@ window.setStatusFilter=function(statuses){
   updateStatusFilterLabel(); applyFilters();
 };
 
-/* ── Filters ── */
+/* ══════════════════════════════════
+   COLUMN SORT + FILTER ENGINE
+   (mirrors treatments.html behaviour)
+══════════════════════════════════ */
+let sortField = 'dateReported', sortDir = 'desc';
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values }
 
-  /* ══════════════════════════════════
-     COLUMN SORT + FILTER ENGINE
-  ══════════════════════════════════ */
-  let sortField = 'dateReported', sortDir = 'desc';
-  let activeColDropdown = null;
-  let columnFilters = {}; // { colName: Set of allowed values }
+function getColValue(c, col) {
+  if (col === 'dateReported') return fmtDate(c.dateReported);
+  if (col === 'clientName')   return cleanName(clientMap[c.customerNo]?.clientName || '');
+  if (col === 'contractType') return c.contractType || '';
+  if (col === 'priority')     return c.priority || '';
+  if (col === 'status')       return c.status || '';
+  if (col === 'assignedTo')   return c.assignedTo || '';
+  return '';
+}
 
-  function getColValue(row, col) {
-        if (col === 'dateReported') { const d=row.dateReported?.toDate?row.dateReported.toDate():new Date(row.dateReported||0); return isNaN(d)?'':d.toISOString(); }
-    if (col === 'clientName')   return (typeof cleanName!=='undefined'&&typeof clientMap!=='undefined'?cleanName(clientMap[row.customerNo]?.clientName||''):'') || '';
-    if (col === 'contractType') return row.contractType || '';
-    if (col === 'priority')     return row.priority || '';
-    if (col === 'status')       return row.status || '';
-    if (col === 'assignedTo')   return row.assignedTo || '';
-    return '';
-  }
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allComplaints.forEach(c => {
+    const v = getColValue(c, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
 
-  function getUniqueColValues(col) {
-    const vals = new Set();
-    allComplaints.forEach(row => {
-      const v = getColValue(row, col).toString().trim();
-      if (v && v !== '—') vals.add(v);
-    });
-    return [...vals].sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
-  }
-
-  function closeColDropdown() {
-    if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
-    document.removeEventListener('click', onDocClickCloseDropdown, true);
-  }
-  function onDocClickCloseDropdown(e) {
-    if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn')) closeColDropdown();
-  }
-
-  function openColDropdown(col, th) {
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn'))
     closeColDropdown();
-    const values = getUniqueColValues(col);
-    const currentFilter = columnFilters[col];
-    const hasSortField = th.dataset.sort;
-    const dd = document.createElement('div');
-    dd.className = 'col-dropdown';
-    dd.innerHTML = `
-      ${hasSortField ? `
-        <div class="col-dropdown-item" data-action="sort-asc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
-        </div>
-        <div class="col-dropdown-item" data-action="sort-desc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
-        </div>
-        <div class="col-dropdown-sep"></div>` : ''}
-      <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
-      <div class="col-dropdown-values" id="col-values-list">
-        ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
-      </div>
-      <div class="col-dropdown-actions">
-        <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
-        <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
-        <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
-      </div>
-    `;
-    th.style.position = 'relative';
-    th.appendChild(dd);
-    activeColDropdown = dd;
+}
 
-    dd.querySelector('#col-search-input').addEventListener('input', e => {
-      const q = e.target.value.toLowerCase();
-      dd.querySelectorAll('#col-values-list label').forEach(lbl => {
-        lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
-      });
-    });
-    dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        sortField = th.dataset.sort;
-        sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
-        document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
-        const icon = document.getElementById('sort-' + sortField);
-        if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
-        doSort(); closeColDropdown();
-      });
-    });
-    dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
-      dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
-    });
-    dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
-      dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
-    });
-    dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
-      const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
-      const allChecked = checked.length === values.length;
-      if (allChecked) delete columnFilters[col];
-      else columnFilters[col] = new Set(checked);
-      th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
-      closeColDropdown();
-      applyFilters();
-    });
-    setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
-    dd.querySelector('#col-search-input').focus();
-  }
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
 
-  document.querySelectorAll('.col-menu-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      openColDropdown(btn.dataset.col, btn.closest('th'));
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>` : ''}
+    <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   });
 
-  document.querySelectorAll('th.col-header').forEach(th => {
-    th.addEventListener('click', e => {
-      if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
-      const field = th.dataset.sort;
-      if (!field) return;
-      if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      else { sortField = field; sortDir = 'asc'; }
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortField = th.dataset.sort;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
       document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
-      const icon = document.getElementById('sort-' + field);
+      const icon = document.getElementById('sort-' + sortField);
       if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
       doSort();
+      closeColDropdown();
     });
   });
 
-  function doSort() {
-        filteredComplaints.sort((a, b) => {
-      let av, bv;
-      if (sortField === 'dateReported') {
-        const da = a.dateReported?.toDate ? a.dateReported.toDate() : new Date(a.dateReported||0);
-        const db2 = b.dateReported?.toDate ? b.dateReported.toDate() : new Date(b.dateReported||0);
-        av = da.getTime(); bv = db2.getTime();
-      } else {
-        av = getColValue(a, sortField).toString().toLowerCase();
-        bv = getColValue(b, sortField).toString().toLowerCase();
-      }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ?  1 : -1;
-      return 0;
-    });
-    currentPage = 1;
-    renderTable();
-  }
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
 
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) delete columnFilters[col];
+    else columnFilters[col] = new Set(checked);
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// ▾ button opens dropdown
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openColDropdown(btn.dataset.col, btn.closest('th'));
+  });
+});
+
+// Click header text → sort toggle
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
+    const field = th.dataset.sort;
+    if (!field) return;
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+    doSort();
+  });
+});
+
+function doSort() {
+  filteredComplaints.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'dateReported') {
+      const da  = a.dateReported?.toDate ? a.dateReported.toDate() : new Date(a.dateReported||0);
+      const db2 = b.dateReported?.toDate ? b.dateReported.toDate() : new Date(b.dateReported||0);
+      av = da.getTime(); bv = db2.getTime();
+    } else {
+      av = getColValue(a, sortField).toString().toLowerCase();
+      bv = getColValue(b, sortField).toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+/* ── Filters ── */
 function applyFilters(){
-  const q=$('search-input').value.toLowerCase().trim();
+  const q = $('search-input').value.toLowerCase().trim();
+
   filteredComplaints=allComplaints.filter(c=>{
     const clientName=cleanName(clientMap[c.customerNo]?.clientName||'');
-    const matchQ=!q||[c.id,clientName,(c.description||''),(c.priority||''),(c.status||''),(c.assignedTo||'')].some(f=>f.toLowerCase().includes(q));
+    const matchQ=!q||[c.id,clientName,(c.description||''),(c.priority||''),(c.status||''),(c.assignedTo||'')]
+      .some(f=>f.toLowerCase().includes(q));
+
+    // Multi-status filter widget (kept)
     let matchS=true;
     if(selectedStatuses.length){
       const inSelected=selectedStatuses.includes(c.status);
       matchS=excludeMode?!inSelected:inSelected;
     }
+
+    // Column header filters
     let matchCol=true;
-    for(const [col,allowed] of Object.entries(columnFilters)){
+    for(const [col, allowed] of Object.entries(columnFilters)){
       if(!allowed.has(getColValue(c,col).toString().trim())){matchCol=false;break;}
     }
+
     return matchQ&&matchS&&matchCol;
   });
   currentPage=1; doSort();
 }
 
-$('search-input').addEventListener('input',applyFilters);
+$('search-input').addEventListener('input', applyFilters);
 
 $('btn-clear-filters').addEventListener('click',()=>{
   $('search-input').value='';
   document.querySelectorAll('.status-cb').forEach(cb=>cb.checked=false);
   $('exclude-mode-cb').checked=false; selectedStatuses=[]; excludeMode=false;
+  columnFilters={};
+  document.querySelectorAll('thead th').forEach(th=>th.style.background='');
   updateStatusFilterLabel(); applyFilters();
 });
 
