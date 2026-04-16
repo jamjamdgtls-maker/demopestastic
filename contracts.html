@@ -278,8 +278,7 @@
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
 
-
-    /* ── Column sort icon ── */
+    /* ── Sort icon ── */
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
 
     /* ── Column header (Google Sheets style) ── */
@@ -306,7 +305,7 @@
     .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
     .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
 
-    /* ── Table scrollbar ── */
+    /* ── Scrollbars inside table ── */
     .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
     .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
     .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
@@ -951,14 +950,11 @@ async function loadAll() {
   /* Populate Contract Type dropdown (single select) */
   $('form-contract-type').innerHTML = '<option value="">— Select Contract Type —</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
 
-  /* Populate filter-type dropdown */
-  $('filter-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
 
   /* Populate contract statuses from settings */
   let contractStatuses = [];
   try { const ss = await getDoc(doc(db,'config','settings')); if(ss.exists() && ss.data().contractStatuses) contractStatuses = ss.data().contractStatuses; } catch(e){}
   if (!contractStatuses.length) contractStatuses = ['Active','Expired','Renewed','Cancelled'];
-  $('filter-status').innerHTML = '<option value="">All Status</option>' + contractStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
   $('form-status').innerHTML = contractStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
 
   $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentTypesList.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -1006,168 +1002,191 @@ function computeStats() {
   $('stat-value').textContent   = '₱'+totalVal.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
+/* ══════════════════════════════════
+   COLUMN SORT + FILTER ENGINE
+   (mirrors treatments.html behaviour)
+══════════════════════════════════ */
+let sortField = 'contractNumber', sortDir = 'asc';
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values }
 
-  /* ══════════════════════════════════
-     COLUMN SORT + FILTER ENGINE
-  ══════════════════════════════════ */
-  let sortField = 'contractNumber', sortDir = 'asc';
-  let activeColDropdown = null;
-  let columnFilters = {}; // { colName: Set of allowed values }
-
-  function getColValue(row, col) {
-        if (col === 'contractNumber')    return row.contractNumber || '';
-    if (col === 'customerNo')        return row.customerNo || '';
-    if (col === 'clientName')        return (typeof clientMap !== 'undefined' ? clientMap[row.customerNo]?.name : '') || '';
-    if (col === 'contractType')      return row.contractType || '';
-    if (col === 'contractStartDate') { const d=row.contractStartDate?.toDate?row.contractStartDate.toDate():new Date(row.contractStartDate||0); return isNaN(d)?'':d.toISOString(); }
-    if (col === 'contractEndDate')   { const d=row.contractEndDate?.toDate?row.contractEndDate.toDate():new Date(row.contractEndDate||0); return isNaN(d)?'':d.toISOString(); }
-    if (col === 'totalAmount')       return row.totalAmount || 0;
-    if (col === 'status')            return (typeof computeStatus!=='undefined'?computeStatus(row):'') || '';
-    return '';
+function getColValue(c, col) {
+  if (col === 'contractNumber')    return c.contractNumber || '';
+  if (col === 'customerNo')        return c.customerNo || '';
+  if (col === 'clientName')        return (clientMap[c.customerNo]?.name || '').replace(/\s*\(.*?\)\s*/g,'').trim();
+  if (col === 'contractType')      return c.contractType || '';
+  if (col === 'contractStartDate') {
+    const d = c.contractStartDate?.toDate ? c.contractStartDate.toDate() : new Date(c.contractStartDate||0);
+    return isNaN(d) ? '' : d.toISOString();
   }
-
-  function getUniqueColValues(col) {
-    const vals = new Set();
-    allContracts.forEach(row => {
-      const v = getColValue(row, col).toString().trim();
-      if (v && v !== '—') vals.add(v);
-    });
-    return [...vals].sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
+  if (col === 'contractEndDate') {
+    const d = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
+    return isNaN(d) ? '' : d.toISOString();
   }
+  if (col === 'totalAmount') return Number(c.totalAmount) || 0;
+  if (col === 'status')      return computeStatus(c);
+  return '';
+}
 
-  function closeColDropdown() {
-    if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
-    document.removeEventListener('click', onDocClickCloseDropdown, true);
-  }
-  function onDocClickCloseDropdown(e) {
-    if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn')) closeColDropdown();
-  }
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allContracts.forEach(c => {
+    const v = getColValue(c, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
 
-  function openColDropdown(col, th) {
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn'))
     closeColDropdown();
-    const values = getUniqueColValues(col);
-    const currentFilter = columnFilters[col];
-    const hasSortField = th.dataset.sort;
-    const dd = document.createElement('div');
-    dd.className = 'col-dropdown';
-    dd.innerHTML = `
-      ${hasSortField ? `
-        <div class="col-dropdown-item" data-action="sort-asc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
-        </div>
-        <div class="col-dropdown-item" data-action="sort-desc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
-        </div>
-        <div class="col-dropdown-sep"></div>` : ''}
-      <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
-      <div class="col-dropdown-values" id="col-values-list">
-        ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
-      </div>
-      <div class="col-dropdown-actions">
-        <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
-        <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
-        <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
-      </div>
-    `;
-    th.style.position = 'relative';
-    th.appendChild(dd);
-    activeColDropdown = dd;
+}
 
-    dd.querySelector('#col-search-input').addEventListener('input', e => {
-      const q = e.target.value.toLowerCase();
-      dd.querySelectorAll('#col-values-list label').forEach(lbl => {
-        lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
-      });
-    });
-    dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        sortField = th.dataset.sort;
-        sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
-        document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
-        const icon = document.getElementById('sort-' + sortField);
-        if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
-        doSort(); closeColDropdown();
-      });
-    });
-    dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
-      dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
-    });
-    dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
-      dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
-    });
-    dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
-      const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
-      const allChecked = checked.length === values.length;
-      if (allChecked) delete columnFilters[col];
-      else columnFilters[col] = new Set(checked);
-      th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
-      closeColDropdown();
-      applyFilters();
-    });
-    setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
-    dd.querySelector('#col-search-input').focus();
-  }
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
 
-  document.querySelectorAll('.col-menu-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      openColDropdown(btn.dataset.col, btn.closest('th'));
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>` : ''}
+    <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   });
 
-  document.querySelectorAll('th.col-header').forEach(th => {
-    th.addEventListener('click', e => {
-      if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
-      const field = th.dataset.sort;
-      if (!field) return;
-      if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-      else { sortField = field; sortDir = 'asc'; }
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortField = th.dataset.sort;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
       document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
-      const icon = document.getElementById('sort-' + field);
+      const icon = document.getElementById('sort-' + sortField);
       if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
       doSort();
+      closeColDropdown();
     });
   });
 
-  function doSort() {
-        filteredContracts.sort((a, b) => {
-      let av, bv;
-      if (sortField === 'contractStartDate' || sortField === 'contractEndDate') {
-        const da = a[sortField]?.toDate ? a[sortField].toDate() : new Date(a[sortField]||0);
-        const db2 = b[sortField]?.toDate ? b[sortField].toDate() : new Date(b[sortField]||0);
-        av = da.getTime(); bv = db2.getTime();
-      } else if (sortField === 'totalAmount') {
-        av = Number(a.totalAmount)||0; bv = Number(b.totalAmount)||0;
-      } else {
-        av = getColValue(a, sortField).toString().toLowerCase();
-        bv = getColValue(b, sortField).toString().toLowerCase();
-      }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ?  1 : -1;
-      return 0;
-    });
-    currentPage = 1;
-    renderTable();
-  }
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
+
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) delete columnFilters[col];
+    else columnFilters[col] = new Set(checked);
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// ▾ button opens dropdown
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openColDropdown(btn.dataset.col, btn.closest('th'));
+  });
+});
+
+// Click header text → sort toggle
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
+    const field = th.dataset.sort;
+    if (!field) return;
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+    doSort();
+  });
+});
+
+function doSort() {
+  filteredContracts.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'contractStartDate' || sortField === 'contractEndDate') {
+      const da  = a[sortField]?.toDate ? a[sortField].toDate() : new Date(a[sortField]||0);
+      const db2 = b[sortField]?.toDate ? b[sortField].toDate() : new Date(b[sortField]||0);
+      av = da.getTime(); bv = db2.getTime();
+    } else if (sortField === 'totalAmount') {
+      av = Number(a.totalAmount)||0; bv = Number(b.totalAmount)||0;
+    } else {
+      av = getColValue(a, sortField).toString().toLowerCase();
+      bv = getColValue(b, sortField).toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
 
 function applyFilters() {
   const q = $('search-input').value.toLowerCase().trim();
+
   filteredContracts = allContracts.filter(c=>{
     const dispStatus = computeStatus(c);
     const clientName = (clientMap[c.customerNo]?.name||'').toLowerCase();
-    const matchQ=!q||[c.customerNo,clientName,c.contractNumber,c.contractType,dispStatus].some(f=>(f||'').toLowerCase().includes(q));
-    let matchCol=true;
-    for(const [col,allowed] of Object.entries(columnFilters)){
-      if(!allowed.has(getColValue(c,col).toString().trim())){matchCol=false;break;}
+    const matchQ = !q||[c.customerNo,clientName,c.contractNumber,c.contractType,dispStatus]
+      .some(f=>(f||'').toLowerCase().includes(q));
+    let matchCol = true;
+    for (const [col, allowed] of Object.entries(columnFilters)) {
+      if (!allowed.has(getColValue(c, col).toString().trim())) { matchCol = false; break; }
     }
-    return matchQ&&matchCol;
+    return matchQ && matchCol;
   });
   currentPage=1;
   doSort();
 }
 
-$('search-input').addEventListener('input',applyFilters);
-$('btn-clear-filters').addEventListener('click',()=>{ $('search-input').value=''; applyFilters(); });
+$('search-input').addEventListener('input', applyFilters);
+$('btn-clear-filters').addEventListener('click', () => {
+  $('search-input').value = '';
+  columnFilters = {};
+  document.querySelectorAll('thead th').forEach(th => th.style.background = '');
+  applyFilters();
+});
 
 document.getElementById('contracts-tbody').addEventListener('click', function(e) {
   const viewBtn = e.target.closest('.btn-view, .contract-no-link');
