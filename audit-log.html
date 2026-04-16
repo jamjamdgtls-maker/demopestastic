@@ -139,8 +139,8 @@
     .date-range span{font-size:12px;color:var(--text-muted)}
 
     /* TABLE */
-    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-    .table-wrapper{overflow-x:auto}
+    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:calc(100vh - 260px)}
+    .table-wrapper{overflow:auto;flex:1;min-height:0}
     table{width:100%;border-collapse:collapse}
     thead th{padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);white-space:nowrap;text-align:left;position:sticky;top:0;z-index:1}
     tbody tr{border-bottom:1px solid var(--bg-tertiary);transition:background .1s}
@@ -209,47 +209,15 @@
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
 
-    /* ── ENHANCED TABLE: Fixed dimensions + scrollbars ── */
-    .table-wrapper{overflow:auto;max-height:calc(100vh - 340px);max-width:100%;scrollbar-color:var(--border) transparent}
-    .table-wrapper::-webkit-scrollbar{width:8px;height:8px}
-    .table-wrapper::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-    .table-wrapper::-webkit-scrollbar-thumb:hover{background:var(--border-hover,#bbb)}
-    .table-wrapper::-webkit-scrollbar-track{background:transparent}
-    .table-wrapper::-webkit-scrollbar-corner{background:transparent}
-
     /* ── SORTABLE HEADERS ── */
-    thead th{cursor:pointer;user-select:none;position:relative;padding-right:28px!important}
-    thead th .sort-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);opacity:.35;font-size:10px;pointer-events:none;transition:opacity .15s}
-    thead th.sort-asc .sort-icon,thead th.sort-desc .sort-icon{opacity:1;color:var(--primary)}
-    thead th:hover .sort-icon{opacity:.65}
-    thead th.no-sort{cursor:default;padding-right:14px!important}
-    thead th.no-sort .sort-icon{display:none}
-
-    /* ── COLUMN FILTER DROPDOWNS ── */
-    .col-filter-wrap{position:relative;display:inline-block}
-    .col-filter-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;cursor:pointer;transition:background .15s;vertical-align:middle;margin-left:4px;opacity:.45}
-    .col-filter-icon:hover,.col-filter-icon.active{opacity:1;background:rgba(34,197,94,.15);color:var(--primary)}
-    .col-filter-icon svg{width:12px;height:12px}
-    .col-filter-dd{position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:500;min-width:200px;max-height:260px;display:none;flex-direction:column}
-    .col-filter-dd.open{display:flex}
-    .col-filter-dd .cfd-search{padding:8px;border-bottom:1px solid var(--border)}
-    .col-filter-dd .cfd-search input{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;outline:none}
-    .col-filter-dd .cfd-search input:focus{border-color:var(--primary)}
-    .col-filter-dd .cfd-list{overflow-y:auto;flex:1;max-height:180px;padding:4px 0}
-    .col-filter-dd .cfd-item{display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12.5px;cursor:pointer;transition:background .1s}
-    .col-filter-dd .cfd-item:hover{background:var(--bg-secondary)}
-    .col-filter-dd .cfd-item input{width:14px;height:14px;accent-color:var(--primary);cursor:pointer}
-    .col-filter-dd .cfd-actions{display:flex;gap:6px;padding:8px;border-top:1px solid var(--border);justify-content:flex-end}
-    .col-filter-dd .cfd-actions button{padding:4px 10px;font-size:11.5px;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font);border:1px solid var(--border);background:white;color:var(--text-secondary);transition:all .15s}
-    .col-filter-dd .cfd-actions button:hover{background:var(--bg-secondary)}
-    .col-filter-dd .cfd-actions button.apply{background:var(--primary);color:white;border-color:var(--primary)}
-    .col-filter-dd .cfd-actions button.apply:hover{background:var(--primary-hover)}
-
-    /* ── UNIFIED SEARCH (larger, prominent) ── */
-    .unified-search-bar{margin-bottom:14px}
-    .unified-search-bar .search-wrap{min-width:100%;max-width:100%}
-    .unified-search-bar .search-input{font-size:14px;padding:10px 14px 10px 38px}
-
+    thead th.sortable{cursor:pointer;user-select:none}
+    thead th.sortable:hover{background:var(--border-hover,#d1d5db);color:var(--text)}
+    thead th.sort-asc::after{content:' ▲';font-size:9px;opacity:.7;vertical-align:middle;margin-left:2px}
+    thead th.sort-desc::after{content:' ▼';font-size:9px;opacity:.7;vertical-align:middle;margin-left:2px}
+    thead th.sortable:not(.sort-asc):not(.sort-desc)::after{content:' ⇅';font-size:9px;opacity:.25;vertical-align:middle;margin-left:2px}
+    /* ── FIXED TABLE SIZE ── */
+    .table-card{display:flex;flex-direction:column;max-height:calc(100vh - 260px)}
+    .table-wrapper{overflow:auto;flex:1;min-height:0}
   </style>
 </head>
 <body>
@@ -380,25 +348,27 @@
         </div>
       </div>
 
-            <!-- Unified Search -->
-      <div class="unified-search-bar">
+      <!-- Filters -->
+      <div class="filters-bar">
         <div class="search-wrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" class="search-input" id="search-input" placeholder="Search description, entity ID…" />
         </div>
+        <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
-<!-- Table -->
+
+      <!-- Table -->
       <div class="table-card">
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Timestamp</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Entity Type</th>
-                <th>Entity ID</th>
-                <th>Description</th>
+                <th class="sortable" data-sort="createdAt">Timestamp</th>
+                <th class="sortable" data-sort="performedBy">User</th>
+                <th class="sortable" data-sort="action">Action</th>
+                <th class="sortable" data-sort="entityType">Entity Type</th>
+                <th class="sortable" data-sort="entityId">Entity ID</th>
+                <th class="sortable" data-sort="description">Description</th>
               </tr>
             </thead>
             <tbody id="log-tbody">
@@ -515,11 +485,6 @@ async function loadLogs() {
       })
       .slice(0, 500); // cap at 500
 
-    // Collect unique users for filter dropdown
-    const userSet = new Set(allLogs.map(l=>l.performedBy).filter(Boolean));
-    $('filter-user').innerHTML = '<option value="">All Users</option>' +
-      [...userSet].sort().map(u => `<option value="${u}">${u.split('@')[0]}</option>`).join('');
-
     computeStats();
     applyFilters();
   } catch(err) {
@@ -554,43 +519,47 @@ function computeStats() {
 }
 
 /* ── Filters ── */
-function applyFilters() {
-  const q      = $('search-input').value.toLowerCase().trim();
-  const action = $('filter-action').value;
-  const entity = $('filter-entity').value;
-  const user   = $('filter-user').value;
-  const dfrom  = $('filter-date-from').value;
-  const dto    = $('filter-date-to').value;
-
-  filteredLogs = allLogs.filter(l => {
-    const matchQ = !q || [l.description, l.entityId, l.performedBy, l.action, l.entityType]
-      .some(f => (f||'').toLowerCase().includes(q));
-    const matchA = !action || (l.action||'').toLowerCase().includes(action.toLowerCase());
-    const matchE = !entity || (l.entityType||'').toLowerCase() === entity.toLowerCase();
-    const matchU = !user || l.performedBy === user;
-    let matchD = true;
-    if(dfrom || dto) {
-      const d = l.createdAt?.toDate ? l.createdAt.toDate() : new Date(l.createdAt||0);
-      if(dfrom) { const f=new Date(dfrom); f.setHours(0,0,0,0); if(d<f) matchD=false; }
-      if(dto)   { const t=new Date(dto);   t.setHours(23,59,59,999); if(d>t) matchD=false; }
-    }
-    return matchQ && matchA && matchE && matchU && matchD;
+  /* ── Column Sorting ── */
+  let sortCol=null,sortDir=1;
+  function getSortVal(obj,col){
+    const v=obj[col];
+    if(v==null)return'';
+    if(typeof v==='object'&&typeof v.toDate==='function')return v.toDate().getTime();
+    return v;
+  }
+  function sortData(arr,col,dir){
+    if(!col)return arr;
+    return[...arr].sort((a,b)=>{
+      const va=getSortVal(a,col),vb=getSortVal(b,col);
+      const na=parseFloat(va),nb=parseFloat(vb);
+      if(!isNaN(na)&&!isNaN(nb))return(na-nb)*dir;
+      if(va instanceof Date||typeof va==='number')return(va-vb)*dir;
+      return String(va).localeCompare(String(vb))*dir;
+    });
+  }
+  document.querySelector('thead').addEventListener('click',e=>{
+    const th=e.target.closest('th[data-sort]');
+    if(!th)return;
+    const col=th.dataset.sort;
+    if(sortCol===col)sortDir=-sortDir;else{sortCol=col;sortDir=1;}
+    document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(sortDir===1?'sort-asc':'sort-desc');
+    currentPage=1;renderTable();
   });
 
+function applyFilters() {
+  const q = $('search-input').value.toLowerCase().trim();
+  filteredLogs = allLogs.filter(l => {
+    return !q || [l.description, l.entityId, l.performedBy, l.action, l.entityType]
+      .some(f => (f||'').toLowerCase().includes(q));
+  });
   currentPage = 1;
   renderTable();
 }
 
-['search-input','filter-action','filter-entity','filter-user','filter-date-from','filter-date-to'].forEach(id => {
-  $(id).addEventListener('input', applyFilters);
-  $(id).addEventListener('change', applyFilters);
-});
+$('search-input').addEventListener('input', applyFilters);
 
-$('btn-clear-filters').addEventListener('click', () => {
-  $('search-input').value=''; $('filter-action').value=''; $('filter-entity').value='';
-  $('filter-user').value=''; $('filter-date-from').value=''; $('filter-date-to').value='';
-  applyFilters();
-});
+$('btn-clear-filters').addEventListener('click', () => { $('search-input').value=''; applyFilters(); });
 
 /* ── Render table ── */
 function renderTable() {
@@ -599,7 +568,8 @@ function renderTable() {
   currentPage      = Math.min(currentPage, totalPages);
   const start      = (currentPage-1)*PER_PAGE;
   const end        = Math.min(start+PER_PAGE, total);
-  const page       = filteredLogs.slice(start, end);
+  const sorted     = sortData(filteredLogs, sortCol, sortDir);
+  const page       = sorted.slice(start, end);
 
   $('pagination-info').textContent = total===0 ? 'No records found' : `Showing ${start+1}–${end} of ${total} events`;
 
@@ -763,199 +733,5 @@ const sidebar=$('sidebar'), overlay=$('sidebar-overlay'), hamburger=$('hamburger
 hamburger.addEventListener('click', () => sidebar.classList.contains('open') ? (sidebar.classList.remove('open'),overlay.classList.remove('open')) : (sidebar.classList.add('open'),overlay.classList.add('open')));
 overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
 </script>
-
-<script>
-/* ═══════════════════════════════════════
-   TABLE ENHANCEMENTS: Sort + Column Filter
-   ═══════════════════════════════════════ */
-(function(){
-  'use strict';
-
-  // Find the main data table
-  const tables = document.querySelectorAll('.table-card table');
-  if(!tables.length) return;
-
-  tables.forEach(function(table){
-    const thead = table.querySelector('thead');
-    const tbody = table.querySelector('tbody');
-    if(!thead || !tbody) return;
-
-    const ths = Array.from(thead.querySelectorAll('th'));
-    const actionsIdx = ths.findIndex(th => th.textContent.trim().toLowerCase() === 'actions');
-
-    // State
-    let sortCol = -1, sortDir = 'asc';
-    let colFilters = {}; // colIdx -> Set of allowed values
-
-    // Add sort icons to headers
-    ths.forEach(function(th, idx){
-      if(idx === actionsIdx){
-        th.classList.add('no-sort');
-        return;
-      }
-      // Sort icon
-      const icon = document.createElement('span');
-      icon.className = 'sort-icon';
-      icon.innerHTML = '▲▼';
-      th.appendChild(icon);
-
-      // Filter dropdown
-      const filterWrap = document.createElement('span');
-      filterWrap.className = 'col-filter-wrap';
-      filterWrap.style.position = 'relative';
-      filterWrap.style.display = 'inline-block';
-
-      const filterIcon = document.createElement('span');
-      filterIcon.className = 'col-filter-icon';
-      filterIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
-
-      const dd = document.createElement('div');
-      dd.className = 'col-filter-dd';
-      dd.innerHTML = '<div class="cfd-search"><input type="text" placeholder="Search values…"/></div><div class="cfd-list"></div><div class="cfd-actions"><button class="clear-btn">Clear</button><button class="apply">Apply</button></div>';
-
-      filterWrap.appendChild(filterIcon);
-      filterWrap.appendChild(dd);
-      th.appendChild(filterWrap);
-
-      // Open/close filter
-      filterIcon.addEventListener('click', function(e){
-        e.stopPropagation();
-        // Close all other dropdowns
-        document.querySelectorAll('.col-filter-dd.open').forEach(d => { if(d!==dd) d.classList.remove('open'); });
-        const isOpen = dd.classList.toggle('open');
-        if(isOpen) populateFilterDropdown(dd, idx);
-      });
-
-      // Sort on header click
-      th.addEventListener('click', function(e){
-        if(e.target.closest('.col-filter-wrap')) return;
-        if(sortCol === idx){
-          sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-        } else {
-          sortCol = idx;
-          sortDir = 'asc';
-        }
-        ths.forEach(h => h.classList.remove('sort-asc','sort-desc'));
-        th.classList.add('sort-' + sortDir);
-        sortTable();
-      });
-    });
-
-    function getRows(){
-      return Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelectorAll('td').length > 1);
-    }
-
-    function getCellText(row, idx){
-      const cells = row.querySelectorAll('td');
-      if(idx >= cells.length) return '';
-      return (cells[idx].textContent || '').trim();
-    }
-
-    function populateFilterDropdown(dd, colIdx){
-      const listEl = dd.querySelector('.cfd-list');
-      const searchInput = dd.querySelector('.cfd-search input');
-      searchInput.value = '';
-
-      const allRows = getRows();
-      const values = [...new Set(allRows.map(r => getCellText(r, colIdx)).filter(Boolean))].sort((a,b) => a.localeCompare(b,undefined,{numeric:true}));
-      const selected = colFilters[colIdx] || null;
-
-      function renderList(filter){
-        listEl.innerHTML = '';
-        const filtered = filter ? values.filter(v => v.toLowerCase().includes(filter.toLowerCase())) : values;
-        filtered.forEach(function(val){
-          const item = document.createElement('label');
-          item.className = 'cfd-item';
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.value = val;
-          if(!selected || selected.has(val)) cb.checked = true;
-          item.appendChild(cb);
-          item.appendChild(document.createTextNode(val));
-          listEl.appendChild(item);
-        });
-      }
-      renderList('');
-
-      searchInput.oninput = function(){ renderList(this.value); };
-
-      // Clear button
-      dd.querySelector('.clear-btn').onclick = function(e){
-        e.stopPropagation();
-        delete colFilters[colIdx];
-        dd.classList.remove('open');
-        ths[colIdx].querySelector('.col-filter-icon').classList.remove('active');
-        applyFilters();
-      };
-
-      // Apply button
-      dd.querySelector('.apply').onclick = function(e){
-        e.stopPropagation();
-        const checked = Array.from(listEl.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
-        const allVals = Array.from(listEl.querySelectorAll('input[type=checkbox]')).map(cb => cb.value);
-        if(checked.length === allVals.length || checked.length === 0){
-          delete colFilters[colIdx];
-          ths[colIdx].querySelector('.col-filter-icon').classList.remove('active');
-        } else {
-          colFilters[colIdx] = new Set(checked);
-          ths[colIdx].querySelector('.col-filter-icon').classList.add('active');
-        }
-        dd.classList.remove('open');
-        applyFilters();
-      };
-    }
-
-    function sortTable(){
-      if(sortCol < 0) return;
-      const rows = getRows();
-      rows.sort(function(a,b){
-        let va = getCellText(a, sortCol);
-        let vb = getCellText(b, sortCol);
-        // Try numeric
-        const na = parseFloat(va.replace(/[₱,]/g,''));
-        const nb = parseFloat(vb.replace(/[₱,]/g,''));
-        if(!isNaN(na) && !isNaN(nb)){
-          return sortDir === 'asc' ? na - nb : nb - na;
-        }
-        // Try date
-        const da = Date.parse(va), db = Date.parse(vb);
-        if(!isNaN(da) && !isNaN(db)){
-          return sortDir === 'asc' ? da - db : db - da;
-        }
-        // String
-        const cmp = va.localeCompare(vb, undefined, {numeric:true, sensitivity:'base'});
-        return sortDir === 'asc' ? cmp : -cmp;
-      });
-      rows.forEach(r => tbody.appendChild(r));
-    }
-
-    function applyFilters(){
-      const rows = getRows();
-      rows.forEach(function(row){
-        let show = true;
-        for(const [colIdx, allowed] of Object.entries(colFilters)){
-          const val = getCellText(row, parseInt(colIdx));
-          if(!allowed.has(val)){ show = false; break; }
-        }
-        row.style.display = show ? '' : 'none';
-      });
-      // Update pagination info if present
-      const vis = rows.filter(r => r.style.display !== 'none').length;
-      const info = document.getElementById('pagination-info');
-      if(info && Object.keys(colFilters).length > 0){
-        info.textContent = 'Showing ' + vis + ' of ' + rows.length + ' (column filter active)';
-      }
-    }
-
-    // Close dropdowns on outside click
-    document.addEventListener('click', function(e){
-      if(!e.target.closest('.col-filter-wrap')){
-        document.querySelectorAll('.col-filter-dd.open').forEach(d => d.classList.remove('open'));
-      }
-    });
-  });
-})();
-</script>
-
 </body>
 </html>
