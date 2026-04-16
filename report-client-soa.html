@@ -517,75 +517,54 @@ async function generateSOA() {
   }
   payments.sort((a,b)=>{const da=toLocalDate(a.dueDate),db2=toLocalDate(b.dueDate);return da&&db2?da-db2:0;});
 
-  // Build SOA ledger: debit (billed) + credit (collected)
-  const COLLECTED=['Received','Deposited','Remitted','Collected'];
-  const ledger=[];
+  // ── Per-contract SOA logic ──
+  // Pending status = NOT received. Everything else = received.
+  const PENDING_STATUSES=['Pending'];
+  const isReceived=(p)=>!PENDING_STATUSES.includes(p.status);
 
-  // Add contract billings as debit entries
-  contracts.forEach(c=>{
-    // Include if contract period OVERLAPS the report date range
-    const startDate=toLocalDate(c.contractStartDate);
-    const endDate=toLocalDate(c.contractEndDate);
-    const shouldInclude=!fromDate&&!toDate||
-      (startDate&&endDate&&(!toDate||startDate<=toDate)&&(!fromDate||endDate>=fromDate))||
-      (startDate&&!endDate&&(!toDate||startDate<=toDate))||
-      (!startDate);
-
-    if(shouldInclude) {
-      ledger.push({
-        date:c.contractStartDate,
-        orNo:'—',
-        description:`Contract Billed: ${c.contractNumber||c.id.slice(0,8)} (${c.contractType})`,
-        type:'debit',
-        amount:Number(c.totalAmount||0),
-        contractId:c.id
-      });
-    }
+  // Group ALL payments (unfiltered) by contractId for accurate totals
+  const paymentsByContract={};
+  allPaymentsUnfiltered.forEach(p=>{
+    const cid=p.contractId||'_unassigned';
+    if(!paymentsByContract[cid])paymentsByContract[cid]=[];
+    paymentsByContract[cid].push(p);
   });
 
-  // Add payments as credit entries
+  // Group date-filtered payments by contractId for ledger display
+  const filteredPaymentsByContract={};
   payments.forEach(p=>{
-    const isPaid=COLLECTED.includes(p.status);
-    const pContract=soaContractMap[p.contractId];
-    const contractLabel=pContract?(pContract.contractNumber||p.contractId?.slice(0,8)?.toUpperCase()||''):'';
-    ledger.push({
-      date:p.paymentDate||p.dueDate,
-      dueDate:p.dueDate,
-      orNo:p.orNumber||'—',
-      description:`Payment ${isPaid?'Received':'Due'}: ${p.paymentMode||'—'}${p.orNumber?' (OR# '+p.orNumber+')':''}${contractLabel?' · '+contractLabel:''}`,
-      type:isPaid?'credit':'debit-pending',
-      amount:Number(p.amount||0),
-      status:p.status,
-      contractId:p.contractId
-    });
+    const cid=p.contractId||'_unassigned';
+    if(!filteredPaymentsByContract[cid])filteredPaymentsByContract[cid]=[];
+    filteredPaymentsByContract[cid].push(p);
   });
 
-  // Sort by date
-  ledger.sort((a,b)=>{const da=toLocalDate(a.date),db2=toLocalDate(b.date);return da&&db2?da-db2:0;});
-
-  // Compute running balance (debits increase balance, credits decrease)
-  let runningBalance=0;
-  const ledgerWithBalance=ledger.map(entry=>{
-    if(entry.type==='debit') runningBalance+=entry.amount;
-    else if(entry.type==='credit') runningBalance-=entry.amount;
-    return {...entry,balance:runningBalance};
+  // Build per-contract summaries using ALL payments (not date-filtered)
+  const contractSummaries=contracts.map(c=>{
+    const allPmts=paymentsByContract[c.id]||[];
+    const contractAmt=Number(c.totalAmount||0);
+    const totalReceived=allPmts.filter(p=>isReceived(p)).reduce((s,p)=>s+Number(p.amount||0),0);
+    const totalPendingC=allPmts.filter(p=>!isReceived(p)).reduce((s,p)=>s+Number(p.amount||0),0);
+    // Addendum = any received amount beyond original contract price
+    const addendum=Math.max(0,totalReceived+totalPendingC-contractAmt);
+    const effectiveBilled=contractAmt+addendum;
+    const balance=effectiveBilled-totalReceived;
+    return {contract:c, contractAmt, totalReceived, totalPendingC, addendum, effectiveBilled, balance};
   });
 
-  // Summary totals
-  // totalBilled: sum of contracts shown in the ledger
-  const totalBilled=contracts
-    .filter(c=>{
-      const sd=toLocalDate(c.contractStartDate);const ed=toLocalDate(c.contractEndDate);
-      return!fromDate&&!toDate||(sd&&ed&&(!toDate||sd<=toDate)&&(!fromDate||ed>=fromDate))||(sd&&!ed&&(!toDate||sd<=toDate))||(!sd);
-    })
-    .reduce((s,c)=>s+Number(c.totalAmount||0),0);
-  const totalBilledAll=contracts.reduce((s,c)=>s+Number(c.totalAmount||0),0);
-  // totalPaid/totalPending: computed from ALL payments for this customer (not just date-filtered)
-  // so outstanding always reflects the true account balance
-  const totalPaidAll=allPaymentsUnfiltered.filter(p=>COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
-  const totalPaid=payments.filter(p=>COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
-  const totalPending=payments.filter(p=>!COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
+  // Unassigned payments (not linked to any contract)
+  const unassignedAll=paymentsByContract['_unassigned']||[];
+  const unassignedFiltered=filteredPaymentsByContract['_unassigned']||[];
+
+  // Grand totals from ALL payments
+  const totalBilledAll=contractSummaries.reduce((s,cs)=>s+cs.effectiveBilled,0)+unassignedAll.filter(p=>!isReceived(p)).reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalPaidAll=contractSummaries.reduce((s,cs)=>s+cs.totalReceived,0)+unassignedAll.filter(p=>isReceived(p)).reduce((s,p)=>s+Number(p.amount||0),0);
+  const totalPendingAll=contractSummaries.reduce((s,cs)=>s+cs.totalPendingC,0)+unassignedAll.filter(p=>!isReceived(p)).reduce((s,p)=>s+Number(p.amount||0),0);
   const outstanding=totalBilledAll-totalPaidAll;
+
+  // For the filtered view
+  const totalBilled=contractSummaries.reduce((s,cs)=>s+cs.effectiveBilled,0);
+  const totalPaid=contractSummaries.reduce((s,cs)=>s+cs.totalReceived,0);
+  const totalPending=contractSummaries.reduce((s,cs)=>s+cs.totalPendingC,0);
 
   /* ── Build HTML ── */
   let html=`
@@ -653,77 +632,154 @@ async function generateSOA() {
   }
   html+=`</div>`;
 
-  /* ── Per-contract balance summary ── */
-  if(contracts.length>1){
-    html+=`<div class="contracts-section"><div class="section-title">Balance per Contract</div>`;
-    contracts.forEach(c=>{
-      const cPaid=payments.filter(p=>p.contractId===c.id&&COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
-      const cBal=Number(c.totalAmount||0)-cPaid;
-      html+=`<div class="contract-card" style="gap:16px">
-        <div class="cc-left">
-          <div class="cc-no">${c.contractNumber||c.id.slice(0,8)}</div>
-          <div class="cc-type">${c.contractType||'—'}</div>
-        </div>
-        <div style="flex:1;font-size:12px;color:#6b7280">
-          Billed: <strong>${fmtCur(c.totalAmount)}</strong> · Paid: <strong style="color:#15803d">${fmtCur(cPaid)}</strong>
-        </div>
-        <div class="cc-right">
-          <div class="cc-amount" style="font-size:13px;color:${cBal>0?'#dc2626':'#15803d'}">${fmtCur(Math.abs(cBal))}</div>
-          <span class="cc-status ${cBal>0?'expired':'active'}">${cBal>0?'Outstanding':'Settled'}</span>
-        </div>
-      </div>`;
+  /* ── Per-contract SOA sections ── */
+  let grandRunningBalance=0;
+  let rowNum=0;
+
+  contractSummaries.forEach(cs=>{
+    const c=cs.contract;
+    const cPayments=(filteredPaymentsByContract[c.id]||[]).sort((a,b)=>{
+      const da=toLocalDate(a.dueDate||a.paymentDate),db2=toLocalDate(b.dueDate||b.paymentDate);
+      return da&&db2?da-db2:0;
     });
-    html+=`</div>`;
-  }
 
-  /* ── SOA ledger table ── */
-  html+=`<div class="soa-section">
-    <div class="section-title">Transaction Ledger — ${dateRangeLabel}</div>`;
+    html+=`<div class="soa-section" style="margin-bottom:24px">
+      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>${c.contractNumber||c.id.slice(0,8)} — ${c.contractType||'—'}</span>
+        <span style="font-size:11px;font-weight:600;color:${cs.balance>0?'#dc2626':'#15803d'}">Balance: ${fmtCur(cs.balance)}</span>
+      </div>`;
 
-  if(ledgerWithBalance.length){
+    // Contract info bar
+    html+=`<div style="display:flex;gap:16px;padding:8px 12px;background:#f8f9fa;border:1px solid #e5e7eb;border-radius:4px;margin-bottom:8px;font-size:12px;color:#6b7280;flex-wrap:wrap">
+      <span>Contract Amount: <strong style="color:#111">${fmtCur(cs.contractAmt)}</strong></span>
+      ${cs.addendum>0?`<span>Addendum: <strong style="color:#1d4ed8">+${fmtCur(cs.addendum)}</strong></span>`:''}
+      <span>Effective Billed: <strong style="color:#111">${fmtCur(cs.effectiveBilled)}</strong></span>
+      <span>Received: <strong style="color:#15803d">${fmtCur(cs.totalReceived)}</strong></span>
+      <span>Pending: <strong style="color:#f59e0b">${fmtCur(cs.totalPendingC)}</strong></span>
+      <span>Period: ${fmtDate(c.contractStartDate)} – ${fmtDate(c.contractEndDate)}</span>
+    </div>`;
+
+    // Ledger table for this contract
     html+=`<table class="soa-table"><thead><tr>
-      <th>#</th><th>Date</th><th>Due Date</th><th>OR No.</th><th>Description</th>
-      <th class="right">Debit (Billed) ₱</th>
-      <th class="right">Credit (Paid) ₱</th>
+      <th>#</th><th>Date</th><th>Due Date</th><th>OR No.</th><th>Description</th><th>Status</th>
+      <th class="right">Debit ₱</th>
+      <th class="right">Credit ₱</th>
       <th class="right">Running Balance ₱</th>
     </tr></thead><tbody>`;
 
-    ledgerWithBalance.forEach((entry,i)=>{
-      const isCredit=entry.type==='credit';
-      const isPending=entry.type==='debit-pending';
-      const rowCls=isCredit?'row-credit':'row-debit';
-      const debitAmt=entry.type==='debit'?fmtCur(entry.amount):(isPending?'—':'—');
-      const creditAmt=isCredit?fmtCur(entry.amount):'—';
-      const balCls=entry.balance>0?'balance-positive':entry.balance<0?'balance-negative':'';
-      html+=`<tr class="${rowCls}">
-        <td class="num">${i+1}</td>
-        <td class="nowrap">${fmtDate(entry.date)}</td>
-        <td class="nowrap" style="color:${isPending?'#f59e0b':'#9ca3af'}">${entry.dueDate?fmtDate(entry.dueDate):'—'}</td>
-        <td class="mono">${entry.orNo}</td>
+    // First row: contract billing
+    let contractBalance=Number(cs.contractAmt);
+    grandRunningBalance+=contractBalance;
+    rowNum++;
+    html+=`<tr class="row-debit">
+      <td class="num">${rowNum}</td>
+      <td class="nowrap">${fmtDate(c.contractStartDate)}</td>
+      <td class="nowrap" style="color:#9ca3af">—</td>
+      <td class="mono">—</td>
+      <td><span class="type-tag debit">DEBIT</span> <span style="font-size:12px;margin-left:6px;color:#374151">Contract Billed: ${c.contractType||'—'}</span></td>
+      <td><span style="font-size:11px;color:#6b7280">—</span></td>
+      <td class="right">${fmtCur(cs.contractAmt)}</td>
+      <td class="right" style="color:#15803d">—</td>
+      <td class="right balance-positive">${fmtCur(grandRunningBalance)}</td>
+    </tr>`;
+
+    // Addendum row if applicable
+    if(cs.addendum>0){
+      grandRunningBalance+=cs.addendum;
+      contractBalance+=cs.addendum;
+      rowNum++;
+      html+=`<tr class="row-debit" style="background:#eff6ff!important">
+        <td class="num">${rowNum}</td>
+        <td class="nowrap">${fmtDate(c.contractStartDate)}</td>
+        <td class="nowrap" style="color:#9ca3af">—</td>
+        <td class="mono">—</td>
+        <td><span class="type-tag debit" style="background:#dbeafe;color:#1d4ed8">ADDENDUM</span> <span style="font-size:12px;margin-left:6px;color:#374151">Additional charges beyond contract</span></td>
+        <td><span style="font-size:11px;color:#6b7280">—</span></td>
+        <td class="right" style="color:#1d4ed8">${fmtCur(cs.addendum)}</td>
+        <td class="right" style="color:#15803d">—</td>
+        <td class="right balance-positive">${fmtCur(grandRunningBalance)}</td>
+      </tr>`;
+    }
+
+    // Payment rows
+    cPayments.forEach(p=>{
+      const paid=isReceived(p);
+      const isPending=!paid;
+      rowNum++;
+      const modeLabel={'cash':'Cash','check':'Check','bank-transfer':'Bank Transfer','credit-card':'Credit Card','gcash':'GCash','maya':'Maya'}[p.paymentMode]||p.paymentMode||'—';
+
+      if(paid){
+        grandRunningBalance-=Number(p.amount||0);
+        contractBalance-=Number(p.amount||0);
+      }
+
+      const statusColor=isPending?'#f59e0b':'#15803d';
+      const statusLabel=isPending?'Pending':(p.status||'Received');
+      const statusBadge=`<span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10.5px;font-weight:700;background:${isPending?'#fef3c7':'#dcfce7'};color:${statusColor}">${statusLabel}</span>`;
+
+      html+=`<tr class="${paid?'row-credit':'row-debit'}">
+        <td class="num">${rowNum}</td>
+        <td class="nowrap">${fmtDate(p.paymentDate||p.dueDate)}</td>
+        <td class="nowrap" style="color:${isPending?'#f59e0b':'#9ca3af'}">${p.dueDate?fmtDate(p.dueDate):'—'}</td>
+        <td class="mono">${p.orNumber||'—'}</td>
         <td>
-          <span class="type-tag ${isCredit?'credit':'debit'}">${isCredit?'CREDIT':'DEBIT'}</span>
-          <span style="font-size:12px;margin-left:6px;color:#374151">${entry.description}</span>
-          ${isPending?'<span style="font-size:10.5px;color:#f59e0b;margin-left:4px;font-weight:700">(PENDING - '+fmtCur(entry.amount)+')</span>':''}
+          <span class="type-tag ${paid?'credit':'debit'}">${paid?'CREDIT':'PENDING'}</span>
+          <span style="font-size:12px;margin-left:6px;color:#374151">Payment: ${modeLabel}${p.orNumber?' (OR# '+p.orNumber+')':''}</span>
         </td>
-        <td class="right">${debitAmt}</td>
-        <td class="right" style="color:#15803d">${creditAmt}</td>
-        <td class="right ${balCls}">${fmtCur(entry.balance)}</td>
+        <td>${statusBadge}</td>
+        <td class="right">${isPending?fmtCur(p.amount):'—'}</td>
+        <td class="right" style="color:#15803d">${paid?fmtCur(p.amount):'—'}</td>
+        <td class="right ${grandRunningBalance>0?'balance-positive':grandRunningBalance<0?'balance-negative':''}">${paid?fmtCur(grandRunningBalance):'<span style="color:#f59e0b;font-style:italic">'+fmtCur(grandRunningBalance)+'</span>'}</td>
       </tr>`;
     });
 
-    const ledgerDebitTotal=ledgerWithBalance.filter(e=>e.type==='debit').reduce((s,e)=>s+e.amount,0);
-    const ledgerCreditTotal=ledgerWithBalance.filter(e=>e.type==='credit').reduce((s,e)=>s+e.amount,0);
-    const ledgerFinalBalance=ledgerWithBalance.length?ledgerWithBalance[ledgerWithBalance.length-1].balance:0;
+    // Contract subtotal
     html+=`</tbody><tfoot><tr>
-      <td colspan="5" style="font-weight:700;text-align:right">TOTALS</td>
-      <td class="right">${fmtCur(ledgerDebitTotal)}</td>
-      <td class="right" style="color:#15803d">${fmtCur(ledgerCreditTotal)}</td>
-      <td class="right ${ledgerFinalBalance>0?'balance-positive':''}">${fmtCur(ledgerFinalBalance)}</td>
-    </tr></tfoot></table>`;
-  } else {
-    html+=`<p style="color:#9ca3af;font-size:13px;padding:12px 0">No transactions found for the selected period.</p>`;
+      <td colspan="6" style="font-weight:700;text-align:right">Subtotal — ${c.contractNumber||c.id.slice(0,8)}</td>
+      <td class="right">${fmtCur(cs.effectiveBilled)}</td>
+      <td class="right" style="color:#15803d">${fmtCur(cs.totalReceived)}</td>
+      <td class="right ${cs.balance>0?'balance-positive':''}">${fmtCur(cs.balance)}</td>
+    </tr></tfoot></table></div>`;
+  });
+
+  // Unassigned payments section
+  if(unassignedFiltered.length){
+    html+=`<div class="soa-section" style="margin-bottom:24px">
+      <div class="section-title">Unassigned Payments (No Contract Linked)</div>
+      <table class="soa-table"><thead><tr>
+        <th>#</th><th>Date</th><th>Due Date</th><th>OR No.</th><th>Description</th><th>Status</th>
+        <th class="right">Debit ₱</th><th class="right">Credit ₱</th><th class="right">Balance ₱</th>
+      </tr></thead><tbody>`;
+    unassignedFiltered.forEach(p=>{
+      const paid=isReceived(p);
+      rowNum++;
+      if(paid) grandRunningBalance-=Number(p.amount||0);
+      else grandRunningBalance+=Number(p.amount||0);
+      const modeLabel={'cash':'Cash','check':'Check','bank-transfer':'Bank Transfer','credit-card':'Credit Card','gcash':'GCash','maya':'Maya'}[p.paymentMode]||p.paymentMode||'—';
+      html+=`<tr class="${paid?'row-credit':'row-debit'}">
+        <td class="num">${rowNum}</td>
+        <td class="nowrap">${fmtDate(p.paymentDate||p.dueDate)}</td>
+        <td class="nowrap">${p.dueDate?fmtDate(p.dueDate):'—'}</td>
+        <td class="mono">${p.orNumber||'—'}</td>
+        <td><span class="type-tag ${paid?'credit':'debit'}">${paid?'CREDIT':'PENDING'}</span> <span style="font-size:12px;margin-left:6px;color:#374151">${modeLabel}</span></td>
+        <td><span style="font-size:10.5px;font-weight:700;color:${paid?'#15803d':'#f59e0b'}">${paid?(p.status||'Received'):'Pending'}</span></td>
+        <td class="right">${!paid?fmtCur(p.amount):'—'}</td>
+        <td class="right" style="color:#15803d">${paid?fmtCur(p.amount):'—'}</td>
+        <td class="right">${fmtCur(grandRunningBalance)}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
   }
-  html+=`</div>`;
+
+  // Grand totals table
+  html+=`<div class="soa-section">
+    <table class="soa-table"><tfoot><tr style="background:#1f2937!important">
+      <td colspan="6" style="font-weight:800;text-align:right;color:white;font-size:13px;border-color:#374151">GRAND TOTAL</td>
+      <td class="right" style="color:#fca5a5;border-color:#374151">${fmtCur(totalBilledAll)}</td>
+      <td class="right" style="color:#86efac;border-color:#374151">${fmtCur(totalPaidAll)}</td>
+      <td class="right" style="color:white;font-weight:900;border-color:#374151">${fmtCur(outstanding)}</td>
+    </tr></tfoot></table>
+  </div>`;
 
   /* ── Summary box ── */
   html+=`
@@ -733,11 +789,11 @@ async function generateSOA() {
         <div class="sum-col-lbl">Total Billed</div>
       </div>
       <div class="sum-col">
-        <div class="sum-col-val green">${fmtCur(totalPaid)}</div>
-        <div class="sum-col-lbl">Total Collected</div>
+        <div class="sum-col-val green">${fmtCur(totalPaidAll)}</div>
+        <div class="sum-col-lbl">Total Received</div>
       </div>
       <div class="sum-col">
-        <div class="sum-col-val" style="color:#f59e0b">${fmtCur(totalPending)}</div>
+        <div class="sum-col-val" style="color:#f59e0b">${fmtCur(totalPendingAll)}</div>
         <div class="sum-col-lbl">Total Pending</div>
       </div>
       <div class="sum-col">
