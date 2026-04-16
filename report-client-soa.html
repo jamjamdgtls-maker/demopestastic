@@ -494,6 +494,9 @@ async function generateSOA() {
   const coSnap=await getDocs(query(collection(db,'contracts'),where('customerNo','==',selectedCustomerNo)));
   const contracts=coSnap.docs.map(d=>({id:d.id,...d.data()}))
     .sort((a,b)=>{const da=toLocalDate(a.contractStartDate),db2=toLocalDate(b.contractStartDate);return da&&db2?da-db2:0;});
+  // Build contractMap for fast lookup by contractId
+  const soaContractMap={};
+  contracts.forEach(c=>soaContractMap[c.id]=c);
 
   // Fetch all payments for this customer
   const pySnap=await getDocs(query(collection(db,'payments'),where('customerNo','==',selectedCustomerNo)));
@@ -539,13 +542,17 @@ async function generateSOA() {
   // Add payments as credit entries
   payments.forEach(p=>{
     const isPaid=COLLECTED.includes(p.status);
+    const pContract=soaContractMap[p.contractId];
+    const contractLabel=pContract?(pContract.contractNumber||p.contractId?.slice(0,8)?.toUpperCase()||''):'';
     ledger.push({
       date:p.paymentDate||p.dueDate,
+      dueDate:p.dueDate,
       orNo:p.orNumber||'—',
-      description:`Payment ${isPaid?'Received':'Due'}: ${p.paymentMode||'—'}${p.orNumber?' (OR# '+p.orNumber+')':''}`,
+      description:`Payment ${isPaid?'Received':'Due'}: ${p.paymentMode||'—'}${p.orNumber?' (OR# '+p.orNumber+')':''}${contractLabel?' · '+contractLabel:''}`,
       type:isPaid?'credit':'debit-pending',
       amount:Number(p.amount||0),
-      status:p.status
+      status:p.status,
+      contractId:p.contractId
     });
   });
 
@@ -560,10 +567,15 @@ async function generateSOA() {
     return {...entry,balance:runningBalance};
   });
 
-  // Summary totals
-  const totalBilled=contracts.reduce((s,c)=>s+Number(c.totalAmount||0),0);
+  // Summary totals — scoped to what's shown in the ledger
+  const includedContractIds=new Set(ledger.filter(e=>e.type==='debit'&&e.contractId).map(e=>e.contractId));
+  const totalBilled=contracts
+    .filter(c=>{const sd=toLocalDate(c.contractStartDate);return!fromDate&&!toDate||(fromDate&&toDate&&sd>=fromDate&&sd<=toDate)||(!fromDate&&toDate&&sd<=toDate)||(fromDate&&!toDate&&sd>=fromDate);})
+    .reduce((s,c)=>s+Number(c.totalAmount||0),0);
+  const totalBilledAll=contracts.reduce((s,c)=>s+Number(c.totalAmount||0),0);
   const totalPaid=payments.filter(p=>COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
-  const outstanding=totalBilled-totalPaid;
+  const totalPending=payments.filter(p=>!COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
+  const outstanding=totalBilledAll-totalPaid;
 
   /* ── Build HTML ── */
   let html=`
@@ -631,13 +643,36 @@ async function generateSOA() {
   }
   html+=`</div>`;
 
+  /* ── Per-contract balance summary ── */
+  if(contracts.length>1){
+    html+=`<div class="contracts-section"><div class="section-title">Balance per Contract</div>`;
+    contracts.forEach(c=>{
+      const cPaid=payments.filter(p=>p.contractId===c.id&&COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
+      const cBal=Number(c.totalAmount||0)-cPaid;
+      html+=`<div class="contract-card" style="gap:16px">
+        <div class="cc-left">
+          <div class="cc-no">${c.contractNumber||c.id.slice(0,8)}</div>
+          <div class="cc-type">${c.contractType||'—'}</div>
+        </div>
+        <div style="flex:1;font-size:12px;color:#6b7280">
+          Billed: <strong>${fmtCur(c.totalAmount)}</strong> · Paid: <strong style="color:#15803d">${fmtCur(cPaid)}</strong>
+        </div>
+        <div class="cc-right">
+          <div class="cc-amount" style="font-size:13px;color:${cBal>0?'#dc2626':'#15803d'}">${fmtCur(Math.abs(cBal))}</div>
+          <span class="cc-status ${cBal>0?'expired':'active'}">${cBal>0?'Outstanding':'Settled'}</span>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
   /* ── SOA ledger table ── */
   html+=`<div class="soa-section">
     <div class="section-title">Transaction Ledger — ${dateRangeLabel}</div>`;
 
   if(ledgerWithBalance.length){
     html+=`<table class="soa-table"><thead><tr>
-      <th>#</th><th>Date</th><th>OR No.</th><th>Description</th>
+      <th>#</th><th>Date</th><th>Due Date</th><th>OR No.</th><th>Description</th>
       <th class="right">Debit (Billed) ₱</th>
       <th class="right">Credit (Paid) ₱</th>
       <th class="right">Running Balance ₱</th>
@@ -653,11 +688,12 @@ async function generateSOA() {
       html+=`<tr class="${rowCls}">
         <td class="num">${i+1}</td>
         <td class="nowrap">${fmtDate(entry.date)}</td>
+        <td class="nowrap" style="color:${isPending?'#f59e0b':'#9ca3af'}">${entry.dueDate?fmtDate(entry.dueDate):'—'}</td>
         <td class="mono">${entry.orNo}</td>
         <td>
           <span class="type-tag ${isCredit?'credit':'debit'}">${isCredit?'CREDIT':'DEBIT'}</span>
           <span style="font-size:12px;margin-left:6px;color:#374151">${entry.description}</span>
-          ${isPending?'<span style="font-size:10.5px;color:#f59e0b;margin-left:4px">(Pending)</span>':''}
+          ${isPending?'<span style="font-size:10.5px;color:#f59e0b;margin-left:4px;font-weight:700">(PENDING)</span>':''}
         </td>
         <td class="right">${debitAmt}</td>
         <td class="right" style="color:#15803d">${creditAmt}</td>
@@ -666,7 +702,7 @@ async function generateSOA() {
     });
 
     html+=`</tbody><tfoot><tr>
-      <td colspan="4" style="font-weight:700;text-align:right">TOTALS</td>
+      <td colspan="5" style="font-weight:700;text-align:right">TOTALS</td>
       <td class="right">${fmtCur(totalBilled)}</td>
       <td class="right" style="color:#15803d">${fmtCur(totalPaid)}</td>
       <td class="right ${outstanding>0?'balance-positive':''}">${fmtCur(outstanding)}</td>
@@ -680,16 +716,20 @@ async function generateSOA() {
   html+=`
     <div class="summary-box">
       <div class="sum-col">
-        <div class="sum-col-val">${fmtCur(totalBilled)}</div>
+        <div class="sum-col-val">${fmtCur(totalBilledAll)}</div>
         <div class="sum-col-lbl">Total Billed</div>
       </div>
       <div class="sum-col">
         <div class="sum-col-val green">${fmtCur(totalPaid)}</div>
-        <div class="sum-col-lbl">Total Paid</div>
+        <div class="sum-col-lbl">Total Collected</div>
+      </div>
+      <div class="sum-col">
+        <div class="sum-col-val" style="color:#f59e0b">${fmtCur(totalPending)}</div>
+        <div class="sum-col-lbl">Total Pending</div>
       </div>
       <div class="sum-col">
         <div class="sum-col-val ${outstanding>0?'red':''}">${fmtCur(outstanding)}</div>
-        <div class="sum-col-lbl">${outstanding>0?'Outstanding Balance':'Balance'}</div>
+        <div class="sum-col-lbl">${outstanding>0?'Outstanding':'Settled'}</div>
       </div>
       <div class="sum-col">
         <div class="sum-col-val neutral">${contracts.length}</div>
@@ -795,6 +835,18 @@ onAuthStateChanged(auth, async user=>{
     if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
     if(data.role==='super_admin')$('nav-settings').style.display='';
     await loadRefData();
+
+    // ── Auto-select client from URL param (e.g. from payments.html link) ──
+    const _urlParams = new URLSearchParams(window.location.search);
+    const _initCustomer = _urlParams.get('customer');
+    if (_initCustomer) {
+      const _c = allClients.find(x => x.customerNo === _initCustomer);
+      if (_c) {
+        selectedCustomerNo = _initCustomer;
+        searchInput.value = `${cleanName(_c.clientName)} (${_initCustomer})`;
+        generateSOA();
+      }
+    }
   }catch(err){dismissLoadingScreen();console.error(err);}
 });
 
