@@ -88,7 +88,7 @@
     .topbar-spacer{flex:1}
     .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;position:relative}
     .topbar-btn svg{width:16px;height:16px}
-    .page-content{flex:1;overflow-y:auto;padding:24px}
+    .page-content{flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column}
     .page-content::-webkit-scrollbar{width:6px}
     .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
@@ -119,13 +119,13 @@
     .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
 
     /* PAGE */
-    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap;flex-shrink:0}
     .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
     .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
     .page-header-right{display:flex;gap:8px;flex-wrap:wrap}
 
     /* SUMMARY CARDS */
-    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;flex-shrink:0}
     .sum-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s;cursor:default}
     .sum-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
     .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
@@ -140,13 +140,13 @@
     .sum-card-icon svg{width:52px;height:52px}
 
     /* DAYS FILTER TABS */
-    .days-filter{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:14px;width:fit-content}
+    .days-filter{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:14px;width:fit-content;flex-shrink:0}
     .days-btn{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;border:none;cursor:pointer;color:var(--text-secondary);background:none;transition:all .15s;font-family:var(--font)}
     .days-btn.active{background:var(--primary);color:white;font-weight:600}
     .days-btn:hover:not(.active){background:var(--bg-secondary);color:var(--text)}
 
     /* FILTERS */
-    .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;flex-shrink:0}
     .search-wrap{position:relative;flex:1;min-width:220px}
     .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none}
     .search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white;outline:none;transition:border-color .15s,box-shadow .15s}
@@ -155,8 +155,8 @@
     .filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
 
     /* TABLE */
-    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-    .table-wrapper{overflow-x:auto}
+    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
+    .table-wrapper{overflow:auto;flex:1;min-height:0}
     table{width:100%;border-collapse:collapse}
     thead th{padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);white-space:nowrap;text-align:left;position:sticky;top:0;z-index:1}
     tbody tr{border-bottom:1px solid var(--bg-tertiary);transition:background .1s}
@@ -264,6 +264,40 @@
     .ls-logo svg{width:34px;height:34px;color:white}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+
+    /* ── Sort icon ── */
+    .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
+
+    /* ── Column header (Google Sheets style) ── */
+    .col-header { position:relative; cursor:pointer; user-select:none; white-space:nowrap; }
+    .col-header:hover { background:var(--bg-tertiary); }
+    .col-header-inner { display:flex; align-items:center; gap:4px; }
+    .col-menu-btn { background:none; border:none; color:var(--text-muted); font-size:10px; padding:2px 3px; cursor:pointer; border-radius:2px; line-height:1; opacity:0; transition:opacity .15s; }
+    .col-header:hover .col-menu-btn { opacity:1; }
+    .col-menu-btn:hover { background:var(--border); color:var(--text); }
+
+    /* ── Column dropdown ── */
+    .col-dropdown { position:absolute; top:100%; left:0; z-index:100; background:white; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:200px; padding:6px 0; font-size:13px; font-weight:400; text-transform:none; letter-spacing:0; }
+    .col-dropdown-item { display:flex; align-items:center; gap:8px; padding:7px 14px; cursor:pointer; color:var(--text); transition:background .1s; white-space:nowrap; }
+    .col-dropdown-item:hover { background:var(--bg-secondary); }
+    .col-dropdown-item svg { width:14px; height:14px; color:var(--text-muted); flex-shrink:0; }
+    .col-dropdown-sep { height:1px; background:var(--border); margin:4px 0; }
+    .col-dropdown-search { padding:6px 10px; }
+    .col-dropdown-search input { width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; outline:none; }
+    .col-dropdown-search input:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(34,197,94,.12); }
+    .col-dropdown-values { max-height:180px; overflow-y:auto; }
+    .col-dropdown-values label { display:flex; align-items:center; gap:8px; padding:5px 14px; cursor:pointer; font-size:12.5px; color:var(--text); }
+    .col-dropdown-values label:hover { background:var(--bg-secondary); }
+    .col-dropdown-values input[type="checkbox"] { accent-color:var(--primary); }
+    .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
+    .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
+
+    /* ── Scrollbars inside table ── */
+    .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
+    .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
+    .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
+    .table-wrapper::-webkit-scrollbar-corner { background:var(--bg-secondary); }
+    thead th { position:sticky; top:0; z-index:10; background:var(--bg-secondary); }
   </style>
 </head>
 <body>
@@ -407,37 +441,23 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" class="search-input" id="search-input" placeholder="Search customer #, client name…" />
         </div>
-        <select class="filter-select" id="filter-renewal-status">
-          <option value="">All Renewal Status</option>
-          <option value="pending">Pending</option>
-          <option value="proposal-sent">Proposal Sent</option>
-          <option value="awaiting-response">Awaiting Response</option>
-          <option value="renewed">Renewed</option>
-          <option value="declined">Declined</option>
-        </select>
-        <select class="filter-select" id="filter-agent">
-          <option value="">All Agents</option>
-        </select>
-        <select class="filter-select" id="filter-contract-type">
-          <option value="">All Types</option>
-        </select>
         <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
 
       <!-- Table -->
-      <div class="table-card">
-        <div class="table-wrapper">
+      <div class="table-card" style="flex:1;min-height:0">
+        <div class="table-wrapper" style="flex:1;overflow:auto;min-height:0">
           <table>
             <thead>
               <tr>
-                <th>Customer No</th>
-                <th>Client Name</th>
-                <th>Contract Type</th>
-                <th>End Date</th>
-                <th>Days Left</th>
-                <th>Amount (₱)</th>
-                <th>Agent</th>
-                <th>Renewal Status</th>
+                <th class="col-header" data-sort="customerNo" data-col="customerNo"><div class="col-header-inner"><span>Customer No</span><span class="sort-icon" id="sort-customerNo"></span><button class="col-menu-btn" data-col="customerNo">▾</button></div></th>
+                <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
+                <th class="col-header" data-sort="contractType" data-col="contractType"><div class="col-header-inner"><span>Contract Type</span><span class="sort-icon" id="sort-contractType"></span><button class="col-menu-btn" data-col="contractType">▾</button></div></th>
+                <th class="col-header" data-sort="contractEndDate" data-col="contractEndDate"><div class="col-header-inner"><span>End Date</span><span class="sort-icon" id="sort-contractEndDate"></span><button class="col-menu-btn" data-col="contractEndDate">▾</button></div></th>
+                <th class="col-header" data-sort="daysLeft" data-col="daysLeft"><div class="col-header-inner"><span>Days Left</span><span class="sort-icon" id="sort-daysLeft">▲</span><button class="col-menu-btn" data-col="daysLeft">▾</button></div></th>
+                <th class="col-header" data-sort="totalAmount" data-col="totalAmount"><div class="col-header-inner"><span>Amount (₱)</span><span class="sort-icon" id="sort-totalAmount"></span><button class="col-menu-btn" data-col="totalAmount">▾</button></div></th>
+                <th class="col-header" data-sort="salesAgent" data-col="salesAgent"><div class="col-header-inner"><span>Agent</span><span class="sort-icon" id="sort-salesAgent"></span><button class="col-menu-btn" data-col="salesAgent">▾</button></div></th>
+                <th class="col-header" data-sort="renewalStatus" data-col="renewalStatus"><div class="col-header-inner"><span>Renewal Status</span><span class="sort-icon" id="sort-renewalStatus"></span><button class="col-menu-btn" data-col="renewalStatus">▾</button></div></th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -766,9 +786,6 @@ async function loadAll() {
     }
   } catch(e) { console.warn('Settings load failed:', e.message); }
 
-  /* Populate filter-contract-type */
-  $('filter-contract-type').innerHTML = '<option value="">All Types</option>' + contractTypesFromSettings.map(t => `<option>${t}</option>`).join('');
-
   /* Populate renew contract type select */
   const rctEl = $('renew-contract-type');
   if (rctEl) rctEl.innerHTML = (rctEl.querySelector('option[value=""]') ? '<option value="">— Select Type —</option>' : '') + contractTypesFromSettings.map(t => `<option>${t}</option>`).join('');
@@ -783,7 +800,6 @@ async function loadAll() {
   salesAgents=[...agentSet].filter(Boolean).sort();
   const agentOpts='<option value="">— Select Agent —</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
   $('renew-agent').innerHTML=agentOpts;
-  $('filter-agent').innerHTML='<option value="">All Agents</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
 
   // Renewals map: contractId → renewal doc
   const rSnap=await getDocs(collection(db,'renewals'));
@@ -835,50 +851,209 @@ document.querySelectorAll('.days-btn').forEach(btn=>{
   });
 });
 
+/* ══════════════════════════════════
+   COLUMN SORT + FILTER ENGINE
+   (mirrors treatments.html behaviour)
+══════════════════════════════════ */
+let sortField = 'daysLeft', sortDir = 'asc';
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values }
+
+const RENEWAL_STATUS_LABELS = {
+  'pending':'Pending','proposal-sent':'Proposal Sent',
+  'awaiting-response':'Awaiting Response','renewed':'Renewed','declined':'Declined'
+};
+
+function getColValue(c, col) {
+  const renewal = renewalMap[c.id];
+  const renewalStatus = renewal ? renewal.data().status : 'pending';
+  const clientData = clientMap[c.customerNo];
+  if (col === 'customerNo')     return c.customerNo || '';
+  if (col === 'clientName')     return cleanName(clientData?.clientName || '');
+  if (col === 'contractType')   return c.contractType || '';
+  if (col === 'contractEndDate')return fmtDate(c.contractEndDate);
+  if (col === 'daysLeft')       return daysLeft(c.contractEndDate) ?? 9999;
+  if (col === 'totalAmount')    return Number(c.totalAmount) || 0;
+  if (col === 'salesAgent')     return c.salesAgent || clientData?.salesAgent || '';
+  if (col === 'renewalStatus')  return RENEWAL_STATUS_LABELS[renewalStatus] || renewalStatus;
+  return '';
+}
+
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allContracts.forEach(c => {
+    const v = getColValue(c, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn'))
+    closeColDropdown();
+}
+
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
+
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>` : ''}
+    <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortField = th.dataset.sort;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
+      document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+      const icon = document.getElementById('sort-' + sortField);
+      if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+      doSort();
+      closeColDropdown();
+    });
+  });
+
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
+
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) delete columnFilters[col];
+    else columnFilters[col] = new Set(checked);
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// ▾ button opens dropdown
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openColDropdown(btn.dataset.col, btn.closest('th'));
+  });
+});
+
+// Click header text → sort toggle
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
+    const field = th.dataset.sort;
+    if (!field) return;
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+    doSort();
+  });
+});
+
+function doSort() {
+  filteredContracts.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'daysLeft') {
+      av = daysLeft(a.contractEndDate) ?? 9999;
+      bv = daysLeft(b.contractEndDate) ?? 9999;
+    } else if (sortField === 'contractEndDate') {
+      const da  = toLocalDate(a.contractEndDate);
+      const db2 = toLocalDate(b.contractEndDate);
+      av = da ? da.getTime() : 0; bv = db2 ? db2.getTime() : 0;
+    } else if (sortField === 'totalAmount') {
+      av = Number(a.totalAmount)||0; bv = Number(b.totalAmount)||0;
+    } else {
+      av = getColValue(a, sortField).toString().toLowerCase();
+      bv = getColValue(b, sortField).toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
 /* ── Filters ── */
 function applyFilters() {
   const today = todayLocal();
   const windowEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysWindow);
-  const q       = $('search-input').value.toLowerCase().trim();
-  const rs      = $('filter-renewal-status').value;
-  const agent   = $('filter-agent').value;
-  const ctype   = $('filter-contract-type').value;
+  const q = $('search-input').value.toLowerCase().trim();
 
   filteredContracts = allContracts.filter(c=>{
     const end = toLocalDate(c.contractEndDate);
     if (!end) return false;
-
-    // KEY FIX: Use local date comparison — include expired + within window
-    if (end > windowEnd) return false;
+    if (end > windowEnd) return false; // days-window filter (kept)
 
     const renewal = renewalMap[c.id];
     const renewalStatus = renewal ? renewal.data().status : 'pending';
     const clientData = clientMap[c.customerNo];
     const clientName = cleanName(clientData?.clientName||'');
 
-    const matchQ  = !q || [c.customerNo,clientName,c.contractType,c.contractNumber].some(f=>(f||'').toLowerCase().includes(q));
-    const matchRS = !rs || renewalStatus===rs;
-    const matchA  = !agent || (clientData?.salesAgent===agent||c.salesAgent===agent);
-    const matchT  = !ctype || c.contractType===ctype;
-    return matchQ&&matchRS&&matchA&&matchT;
+    const matchQ = !q || [c.customerNo,clientName,c.contractType,c.contractNumber,
+      renewalStatus,c.salesAgent||clientData?.salesAgent||'']
+      .some(f=>(f||'').toLowerCase().includes(q));
+
+    // Column header filters
+    let matchCol = true;
+    for (const [col, allowed] of Object.entries(columnFilters)) {
+      if (!allowed.has(getColValue(c, col).toString().trim())) { matchCol = false; break; }
+    }
+
+    return matchQ && matchCol;
   });
 
-  // Sort: overdue first, then by days left ascending
-  filteredContracts.sort((a,b)=>{
-    const da=daysLeft(a.contractEndDate)??9999;
-    const db2=daysLeft(b.contractEndDate)??9999;
-    return da-db2;
-  });
-
-  currentPage=1; renderTable();
+  currentPage=1; doSort();
 }
 
-['search-input','filter-renewal-status','filter-agent','filter-contract-type'].forEach(id=>{
-  $(id).addEventListener('input',applyFilters);
-  $(id).addEventListener('change',applyFilters);
-});
-$('btn-clear-filters').addEventListener('click',()=>{
-  $('search-input').value='';$('filter-renewal-status').value='';$('filter-agent').value='';$('filter-contract-type').value='';
+$('search-input').addEventListener('input', applyFilters);
+
+$('btn-clear-filters').addEventListener('click', () => {
+  $('search-input').value = '';
+  columnFilters = {};
+  document.querySelectorAll('thead th').forEach(th => th.style.background = '');
   applyFilters();
 });
 
