@@ -566,7 +566,7 @@ async function generateSOA() {
   // Compute running balance (debits increase balance, credits decrease)
   let runningBalance=0;
   const ledgerWithBalance=ledger.map(entry=>{
-    if(entry.type==='debit') runningBalance+=entry.amount;
+    if(entry.type==='debit'||entry.type==='debit-pending') runningBalance+=entry.amount;
     else if(entry.type==='credit') runningBalance-=entry.amount;
     return {...entry,balance:runningBalance};
   });
@@ -711,11 +711,14 @@ async function generateSOA() {
       </tr>`;
     });
 
+    const ledgerDebitTotal=ledgerWithBalance.filter(e=>e.type==='debit'||e.type==='debit-pending').reduce((s,e)=>s+e.amount,0);
+    const ledgerCreditTotal=ledgerWithBalance.filter(e=>e.type==='credit').reduce((s,e)=>s+e.amount,0);
+    const ledgerFinalBalance=ledgerWithBalance.length?ledgerWithBalance[ledgerWithBalance.length-1].balance:0;
     html+=`</tbody><tfoot><tr>
       <td colspan="5" style="font-weight:700;text-align:right">TOTALS</td>
-      <td class="right">${fmtCur(totalBilled)}</td>
-      <td class="right" style="color:#15803d">${fmtCur(totalPaid)}</td>
-      <td class="right ${outstanding>0?'balance-positive':''}">${fmtCur(outstanding)}</td>
+      <td class="right">${fmtCur(ledgerDebitTotal)}</td>
+      <td class="right" style="color:#15803d">${fmtCur(ledgerCreditTotal)}</td>
+      <td class="right ${ledgerFinalBalance>0?'balance-positive':''}">${fmtCur(ledgerFinalBalance)}</td>
     </tr></tfoot></table>`;
   } else {
     html+=`<p style="color:#9ca3af;font-size:13px;padding:12px 0">No transactions found for the selected period.</p>`;
