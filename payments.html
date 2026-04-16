@@ -81,7 +81,7 @@
     .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;position:relative}
     .topbar-btn svg{width:16px;height:16px}
     .topbar-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
-    .page-content{flex:1;overflow-y:auto;padding:24px}
+    .page-content{flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column}
     .page-content::-webkit-scrollbar{width:6px}
     .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
     .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -107,11 +107,11 @@
     .badge-red{background:var(--red-bg);color:var(--red-text)}
     .badge-purple{background:var(--purple-bg);color:var(--purple-text)}
     .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
-    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap;flex-shrink:0}
     .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
     .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
     .page-header-right{display:flex;gap:8px;flex-wrap:wrap}
-    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;flex-shrink:0}
     .sum-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow .15s,transform .15s}
     .sum-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
     .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
@@ -124,7 +124,7 @@
     .sum-card-sub{font-size:12px;margin-top:6px;color:var(--text-muted)}
     .sum-card-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);opacity:.07}
     .sum-card-icon svg{width:52px;height:52px}
-    .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;flex-shrink:0}
     .search-wrap{position:relative;flex:1;min-width:220px}
     .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none}
     .search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white;outline:none;transition:border-color .15s,box-shadow .15s}
@@ -134,8 +134,8 @@
     .date-range{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px}
     .date-range input[type="date"]{border:none;font-size:13px;color:var(--text);outline:none;background:transparent;cursor:pointer}
     .date-range span{font-size:12px;color:var(--text-muted)}
-    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-    .table-wrapper{overflow-x:auto}
+    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
+    .table-wrapper{overflow:auto;flex:1;min-height:0}
     table{width:100%;border-collapse:collapse}
     thead th{padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);white-space:nowrap;text-align:left;position:sticky;top:0;z-index:1}
     tbody tr{border-bottom:1px solid var(--bg-tertiary);transition:background .1s}
@@ -256,6 +256,40 @@
     .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
     .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
     .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+
+    /* ── Sort icon ── */
+    .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
+
+    /* ── Column header (Google Sheets style) ── */
+    .col-header { position:relative; cursor:pointer; user-select:none; white-space:nowrap; }
+    .col-header:hover { background:var(--bg-tertiary); }
+    .col-header-inner { display:flex; align-items:center; gap:4px; }
+    .col-menu-btn { background:none; border:none; color:var(--text-muted); font-size:10px; padding:2px 3px; cursor:pointer; border-radius:2px; line-height:1; opacity:0; transition:opacity .15s; }
+    .col-header:hover .col-menu-btn { opacity:1; }
+    .col-menu-btn:hover { background:var(--border); color:var(--text); }
+
+    /* ── Column dropdown ── */
+    .col-dropdown { position:absolute; top:100%; left:0; z-index:100; background:white; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:200px; padding:6px 0; font-size:13px; font-weight:400; text-transform:none; letter-spacing:0; }
+    .col-dropdown-item { display:flex; align-items:center; gap:8px; padding:7px 14px; cursor:pointer; color:var(--text); transition:background .1s; white-space:nowrap; }
+    .col-dropdown-item:hover { background:var(--bg-secondary); }
+    .col-dropdown-item svg { width:14px; height:14px; color:var(--text-muted); flex-shrink:0; }
+    .col-dropdown-sep { height:1px; background:var(--border); margin:4px 0; }
+    .col-dropdown-search { padding:6px 10px; }
+    .col-dropdown-search input { width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; outline:none; }
+    .col-dropdown-search input:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(34,197,94,.12); }
+    .col-dropdown-values { max-height:180px; overflow-y:auto; }
+    .col-dropdown-values label { display:flex; align-items:center; gap:8px; padding:5px 14px; cursor:pointer; font-size:12.5px; color:var(--text); }
+    .col-dropdown-values label:hover { background:var(--bg-secondary); }
+    .col-dropdown-values input[type="checkbox"] { accent-color:var(--primary); }
+    .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
+    .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
+
+    /* ── Scrollbars inside table ── */
+    .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
+    .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
+    .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
+    .table-wrapper::-webkit-scrollbar-corner { background:var(--bg-secondary); }
+    thead th { position:sticky; top:0; z-index:10; background:var(--bg-secondary); }
   </style>
 </head>
 <body>
@@ -360,19 +394,25 @@
       </div>
       <div class="filters-bar">
         <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="search-input" id="search-input" placeholder="Search client name, customer #, OR number…" /></div>
-        <select class="filter-select" id="filter-status"><option value="">All Status</option></select>
-        <select class="filter-select" id="filter-mode"><option value="">All Modes</option></select>
         <div class="date-range"><input type="date" id="filter-date-from" title="Due date from" /><span>to</span><input type="date" id="filter-date-to" title="Due date to" /></div>
         <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
-      <div class="table-card">
-        <div class="table-wrapper">
+      <div class="table-card" style="flex:1;min-height:0">
+        <div class="table-wrapper" style="flex:1;overflow:auto;min-height:0">
           <table id="payments-table">
             <thead>
               <tr>
-                <th>Customer No</th><th>Client Name</th><th>Due Date</th><th>Amount (₱)</th>
-                <th>OR No.</th><th>Payment Date</th><th>Mode</th><th>Status</th>
-                <th>Received By</th><th>Recent Note</th><th class="no-print">Actions</th>
+                <th class="col-header" data-sort="customerNo" data-col="customerNo"><div class="col-header-inner"><span>Customer No</span><span class="sort-icon" id="sort-customerNo"></span><button class="col-menu-btn" data-col="customerNo">▾</button></div></th>
+                <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
+                <th class="col-header" data-sort="dueDate" data-col="dueDate"><div class="col-header-inner"><span>Due Date</span><span class="sort-icon" id="sort-dueDate">▼</span><button class="col-menu-btn" data-col="dueDate">▾</button></div></th>
+                <th class="col-header" data-sort="amount" data-col="amount"><div class="col-header-inner"><span>Amount (₱)</span><span class="sort-icon" id="sort-amount"></span><button class="col-menu-btn" data-col="amount">▾</button></div></th>
+                <th class="col-header" data-sort="orNumber" data-col="orNumber"><div class="col-header-inner"><span>OR No.</span><span class="sort-icon" id="sort-orNumber"></span><button class="col-menu-btn" data-col="orNumber">▾</button></div></th>
+                <th class="col-header" data-sort="paymentDate" data-col="paymentDate"><div class="col-header-inner"><span>Payment Date</span><span class="sort-icon" id="sort-paymentDate"></span><button class="col-menu-btn" data-col="paymentDate">▾</button></div></th>
+                <th class="col-header" data-sort="paymentMode" data-col="paymentMode"><div class="col-header-inner"><span>Mode</span><span class="sort-icon" id="sort-paymentMode"></span><button class="col-menu-btn" data-col="paymentMode">▾</button></div></th>
+                <th class="col-header" data-sort="status" data-col="status"><div class="col-header-inner"><span>Status</span><span class="sort-icon" id="sort-status"></span><button class="col-menu-btn" data-col="status">▾</button></div></th>
+                <th class="col-header" data-sort="receivedBy" data-col="receivedBy"><div class="col-header-inner"><span>Received By</span><span class="sort-icon" id="sort-receivedBy"></span><button class="col-menu-btn" data-col="receivedBy">▾</button></div></th>
+                <th class="col-header" data-col="recentNote"><div class="col-header-inner"><span>Recent Note</span><span class="sort-icon" id="sort-recentNote"></span><button class="col-menu-btn" data-col="recentNote">▾</button></div></th>
+                <th class="no-print">Actions</th>
               </tr>
             </thead>
             <tbody id="payments-tbody">
@@ -574,10 +614,8 @@ async function loadAll(){
   salesAgents=[...agentSet].filter(Boolean).sort();
   $('form-received-by').innerHTML='<option value="">— Select Agent —</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
   const modeOpts=paymentModes.map(m=>`<option>${m}</option>`).join('');
-  $('filter-mode').innerHTML='<option value="">All Modes</option>'+modeOpts;
   $('form-mode').innerHTML='<option value="">— Select Mode —</option>'+modeOpts;
   const statusOpts=paymentStatuses.map(s=>`<option value="${s}">${s}</option>`).join('');
-  $('filter-status').innerHTML='<option value="">All Status</option>'+statusOpts+'<option value="overdue">Overdue (computed)</option>';
   $('form-status').innerHTML=statusOpts;
 
   const pSnap=await getDocs(query(collection(db,'payments'),orderBy('dueDate','desc')));
@@ -585,7 +623,7 @@ async function loadAll(){
   applyFilters();
 }
 
-function hasActiveFilters(){return!!($('search-input').value.trim()||$('filter-status').value||$('filter-mode').value||$('filter-date-from').value||$('filter-date-to').value);}
+function hasActiveFilters(){return!!($('search-input').value.trim()||Object.keys(columnFilters).length||$('filter-date-from').value||$('filter-date-to').value);}
 
 function computeSummary(payments){
   const set=payments||allPayments,filtered=hasActiveFilters();
@@ -602,27 +640,202 @@ function computeSummary(payments){
   const grid=document.querySelector('.summary-grid'),note=$('filter-active-note');
   if(filtered){
     grid?.classList.add('is-filtered');
-    if(note){const parts=[];const q=$('search-input').value.trim();const st=$('filter-status').value;const md=$('filter-mode').value;const df=$('filter-date-from').value;const dt=$('filter-date-to').value;if(q)parts.push(`search: "${q}"`);if(st)parts.push(`status: ${st}`);if(md)parts.push(`mode: ${md}`);if(df||dt)parts.push(`due date: ${df||'start'}${dt?' → '+dt:''}`);note.textContent=`Totals reflect ${set.length} filtered record${set.length===1?'':'s'} — ${parts.join(' · ')}`;note.classList.add('visible');}
+    if(note){const parts=[];const q=$('search-input').value.trim();const df=$('filter-date-from').value;const dt=$('filter-date-to').value;if(q)parts.push(`search: "${q}"`);Object.entries(columnFilters).forEach(([col,vals])=>{parts.push(`${col}: ${[...vals].slice(0,3).join(', ')}${[...vals].length>3?'…':''}`);});if(df||dt)parts.push(`due date: ${df||'start'}${dt?' → '+dt:''}`);note.textContent=`Totals reflect ${set.length} filtered record${set.length===1?'':'s'} — ${parts.join(' · ')}`;note.classList.add('visible');}
   }else{grid?.classList.remove('is-filtered');if(note){note.textContent='';note.classList.remove('visible');}}
 }
 
-function applyFilters(){
-  const q=$('search-input').value.toLowerCase().trim(),status=$('filter-status').value,mode=$('filter-mode').value,dateFrom=$('filter-date-from').value,dateTo=$('filter-date-to').value;
-  filteredPayments=allPayments.filter(p=>{
-    const clientName=(clientMap[p.customerNo]||'').toLowerCase();
-    const matchQ=!q||[p.customerNo,clientName,(p.orNumber||'')].some(f=>f.toLowerCase().includes(q));
-    const ov=isOverdue(p);
-    const matchStatus=!status||(status==='overdue'?ov:p.status===status);
-    const matchM=!mode||p.paymentMode===mode;
-    let matchD=true;
-    if(dateFrom||dateTo){const due=toDate(p.dueDate);if(due){if(dateFrom){const f=new Date(dateFrom);f.setHours(0,0,0,0);if(due<f)matchD=false;}if(dateTo){const t=new Date(dateTo);t.setHours(23,59,59,999);if(due>t)matchD=false;}}else matchD=false;}
-    return matchQ&&matchStatus&&matchM&&matchD;
-  });
-  currentPage=1;computeSummary(filteredPayments);renderTable();
+/* ══════════════════════════════════
+   COLUMN SORT + FILTER ENGINE
+   (mirrors treatments.html behaviour)
+══════════════════════════════════ */
+let sortField = 'dueDate', sortDir = 'desc';
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values }
+
+const MODE_LABELS = {
+  'cash':'Cash','check':'Check','bank-transfer':'Bank Transfer',
+  'credit-card':'Credit Card','gcash':'GCash','maya':'Maya'
+};
+
+function getColValue(p, col) {
+  if (col === 'customerNo')  return p.customerNo || '';
+  if (col === 'clientName')  return cleanName(clientMap[p.customerNo] || '');
+  if (col === 'dueDate')     return fmtDate(p.dueDate);
+  if (col === 'amount')      return Number(p.amount) || 0;
+  if (col === 'orNumber')    return p.orNumber || '';
+  if (col === 'paymentDate') return fmtDate(p.paymentDate);
+  if (col === 'paymentMode') return MODE_LABELS[p.paymentMode] || p.paymentMode || '';
+  if (col === 'status')      return isOverdue(p) ? 'Overdue' : (p.status || '');
+  if (col === 'receivedBy')  return p.receivedBy || '';
+  return '';
 }
 
-['search-input','filter-status','filter-mode','filter-date-from','filter-date-to'].forEach(id=>{$(id).addEventListener('input',applyFilters);$(id).addEventListener('change',applyFilters);});
-$('btn-clear-filters').addEventListener('click',()=>{$('search-input').value='';$('filter-status').value='';$('filter-mode').value='';$('filter-date-from').value='';$('filter-date-to').value='';applyFilters();});
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allPayments.forEach(p => {
+    const v = getColValue(p, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn'))
+    closeColDropdown();
+}
+
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
+
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>` : ''}
+    <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortField = th.dataset.sort;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
+      document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+      const icon = document.getElementById('sort-' + sortField);
+      if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+      doSort();
+      closeColDropdown();
+    });
+  });
+
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
+
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) delete columnFilters[col];
+    else columnFilters[col] = new Set(checked);
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// ▾ button opens dropdown
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openColDropdown(btn.dataset.col, btn.closest('th'));
+  });
+});
+
+// Click header text → sort toggle
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
+    const field = th.dataset.sort;
+    if (!field) return;
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+    doSort();
+  });
+});
+
+function doSort() {
+  filteredPayments.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'dueDate' || sortField === 'paymentDate') {
+      const da  = toDate(a[sortField]);
+      const db2 = toDate(b[sortField]);
+      av = da ? da.getTime() : 0; bv = db2 ? db2.getTime() : 0;
+    } else if (sortField === 'amount') {
+      av = Number(a.amount)||0; bv = Number(b.amount)||0;
+    } else {
+      av = getColValue(a, sortField).toString().toLowerCase();
+      bv = getColValue(b, sortField).toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function applyFilters(){
+  const q=$('search-input').value.toLowerCase().trim();
+  const dateFrom=$('filter-date-from').value, dateTo=$('filter-date-to').value;
+  filteredPayments=allPayments.filter(p=>{
+    const clientName=(clientMap[p.customerNo]||'').toLowerCase();
+    const matchQ=!q||[p.customerNo,clientName,(p.orNumber||''),(p.paymentMode||''),(p.status||''),(p.receivedBy||'')]
+      .some(f=>f.toLowerCase().includes(q));
+    // Date range filter (kept)
+    let matchD=true;
+    if(dateFrom||dateTo){const due=toDate(p.dueDate);if(due){if(dateFrom){const f=new Date(dateFrom);f.setHours(0,0,0,0);if(due<f)matchD=false;}if(dateTo){const t=new Date(dateTo);t.setHours(23,59,59,999);if(due>t)matchD=false;}}else matchD=false;}
+    // Column header filters
+    let matchCol=true;
+    for(const [col,allowed] of Object.entries(columnFilters)){
+      if(!allowed.has(getColValue(p,col).toString().trim())){matchCol=false;break;}
+    }
+    return matchQ&&matchD&&matchCol;
+  });
+  currentPage=1;computeSummary(filteredPayments);doSort();
+}
+
+['search-input','filter-date-from','filter-date-to'].forEach(id=>{
+  $(id).addEventListener('input',applyFilters);
+  $(id).addEventListener('change',applyFilters);
+});
+$('btn-clear-filters').addEventListener('click',()=>{
+  $('search-input').value='';
+  $('filter-date-from').value='';
+  $('filter-date-to').value='';
+  columnFilters={};
+  document.querySelectorAll('thead th').forEach(th=>th.style.background='');
+  applyFilters();
+});
 
 document.getElementById('payments-tbody').addEventListener('click',function(e){const btn=e.target.closest('.btn-edit');if(btn&&btn.dataset.id)openEditModal(btn.dataset.id);});
 
