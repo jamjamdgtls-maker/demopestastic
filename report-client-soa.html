@@ -502,14 +502,17 @@ async function generateSOA() {
   const pySnap=await getDocs(query(collection(db,'payments'),where('customerNo','==',selectedCustomerNo)));
   let payments=pySnap.docs.map(d=>({id:d.id,...d.data()}));
 
-  // Filter payments by date range on dueDate
+  // Filter payments by date range — include if EITHER dueDate OR paymentDate falls within range
+  // Also always include payments that are already collected (paid), regardless of dueDate
+  const allPaymentsUnfiltered=[...payments];
   if(fromDate||toDate) {
     payments=payments.filter(p=>{
-      const d=toLocalDate(p.dueDate);
-      if(!d) return false;
-      if(fromDate&&d<fromDate) return false;
-      if(toDate&&d>toDate) return false;
-      return true;
+      const dd=toLocalDate(p.dueDate);
+      const pd=toLocalDate(p.paymentDate);
+      // A payment is in-range if its dueDate OR paymentDate falls within the period
+      const dueDateInRange=dd&&(!fromDate||dd>=fromDate)&&(!toDate||dd<=toDate);
+      const payDateInRange=pd&&(!fromDate||pd>=fromDate)&&(!toDate||pd<=toDate);
+      return dueDateInRange||payDateInRange;
     });
   }
   payments.sort((a,b)=>{const da=toLocalDate(a.dueDate),db2=toLocalDate(b.dueDate);return da&&db2?da-db2:0;});
@@ -520,12 +523,13 @@ async function generateSOA() {
 
   // Add contract billings as debit entries
   contracts.forEach(c=>{
-    // Only include if start date within range
+    // Include if contract period OVERLAPS the report date range
     const startDate=toLocalDate(c.contractStartDate);
+    const endDate=toLocalDate(c.contractEndDate);
     const shouldInclude=!fromDate&&!toDate||
-      (fromDate&&toDate&&startDate>=fromDate&&startDate<=toDate)||
-      (!fromDate&&toDate&&startDate<=toDate)||
-      (fromDate&&!toDate&&startDate>=fromDate);
+      (startDate&&endDate&&(!toDate||startDate<=toDate)&&(!fromDate||endDate>=fromDate))||
+      (startDate&&!endDate&&(!toDate||startDate<=toDate))||
+      (!startDate);
 
     if(shouldInclude) {
       ledger.push({
@@ -567,15 +571,21 @@ async function generateSOA() {
     return {...entry,balance:runningBalance};
   });
 
-  // Summary totals — scoped to what's shown in the ledger
-  const includedContractIds=new Set(ledger.filter(e=>e.type==='debit'&&e.contractId).map(e=>e.contractId));
+  // Summary totals
+  // totalBilled: sum of contracts shown in the ledger
   const totalBilled=contracts
-    .filter(c=>{const sd=toLocalDate(c.contractStartDate);return!fromDate&&!toDate||(fromDate&&toDate&&sd>=fromDate&&sd<=toDate)||(!fromDate&&toDate&&sd<=toDate)||(fromDate&&!toDate&&sd>=fromDate);})
+    .filter(c=>{
+      const sd=toLocalDate(c.contractStartDate);const ed=toLocalDate(c.contractEndDate);
+      return!fromDate&&!toDate||(sd&&ed&&(!toDate||sd<=toDate)&&(!fromDate||ed>=fromDate))||(sd&&!ed&&(!toDate||sd<=toDate))||(!sd);
+    })
     .reduce((s,c)=>s+Number(c.totalAmount||0),0);
   const totalBilledAll=contracts.reduce((s,c)=>s+Number(c.totalAmount||0),0);
+  // totalPaid/totalPending: computed from ALL payments for this customer (not just date-filtered)
+  // so outstanding always reflects the true account balance
+  const totalPaidAll=allPaymentsUnfiltered.filter(p=>COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPaid=payments.filter(p=>COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
   const totalPending=payments.filter(p=>!COLLECTED.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
-  const outstanding=totalBilledAll-totalPaid;
+  const outstanding=totalBilledAll-totalPaidAll;
 
   /* ── Build HTML ── */
   let html=`
