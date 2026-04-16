@@ -404,6 +404,7 @@
               <tr>
                 <th class="col-header" data-sort="customerNo" data-col="customerNo"><div class="col-header-inner"><span>Customer No</span><span class="sort-icon" id="sort-customerNo"></span><button class="col-menu-btn" data-col="customerNo">▾</button></div></th>
                 <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
+                <th class="col-header" data-sort="contractNo" data-col="contractNo"><div class="col-header-inner"><span>Contract No</span><span class="sort-icon" id="sort-contractNo"></span><button class="col-menu-btn" data-col="contractNo">▾</button></div></th>
                 <th class="col-header" data-sort="dueDate" data-col="dueDate"><div class="col-header-inner"><span>Due Date</span><span class="sort-icon" id="sort-dueDate">▼</span><button class="col-menu-btn" data-col="dueDate">▾</button></div></th>
                 <th class="col-header" data-sort="amount" data-col="amount"><div class="col-header-inner"><span>Amount (₱)</span><span class="sort-icon" id="sort-amount"></span><button class="col-menu-btn" data-col="amount">▾</button></div></th>
                 <th class="col-header" data-sort="orNumber" data-col="orNumber"><div class="col-header-inner"><span>OR No.</span><span class="sort-icon" id="sort-orNumber"></span><button class="col-menu-btn" data-col="orNumber">▾</button></div></th>
@@ -552,7 +553,7 @@ const auth=getAuth(app);
 const db=getFirestore(app);
 
 let currentUser=null,currentRole=null;
-let allPayments=[],filteredPayments=[],clientMap={},contractsByCustomer={};
+let allPayments=[],filteredPayments=[],clientMap={},contractsByCustomer={},contractMap={};
 let salesAgents=[],currentPage=1;
 const PER_PAGE=20;
 const COLLECTED_STATUSES=['Received','Deposited','Remitted','Collected'];
@@ -604,7 +605,12 @@ async function loadAll(){
   $('customer-datalist').innerHTML=customerDL.join('');
 
   const coSnap=await getDocs(collection(db,'contracts'));
-  coSnap.forEach(d=>{const c=d.data();if(!contractsByCustomer[c.customerNo])contractsByCustomer[c.customerNo]=[];contractsByCustomer[c.customerNo].push({id:d.id,...c});});
+  coSnap.forEach(d=>{
+    const c=d.data();
+    contractMap[d.id]={id:d.id,...c};
+    if(!contractsByCustomer[c.customerNo])contractsByCustomer[c.customerNo]=[];
+    contractsByCustomer[c.customerNo].push({id:d.id,...c});
+  });
 
   let paymentModes=[],paymentStatuses=['Pending','Received','Deposited','Remitted','Collected'];
   try{const cfg=await getDoc(doc(db,'config','settings'));if(cfg.exists()){const s=cfg.data();salesAgents=s.salesAgents||[];if(s.paymentModes?.length)paymentModes=s.paymentModes;if(s.paymentStatuses?.length)paymentStatuses=s.paymentStatuses;}}catch{salesAgents=[];}
@@ -659,6 +665,7 @@ const MODE_LABELS = {
 
 function getColValue(p, col) {
   if (col === 'customerNo')  return p.customerNo || '';
+  if (col === 'contractNo')  return contractMap[p.contractId]?.contractNumber || '';
   if (col === 'clientName')  return cleanName(clientMap[p.customerNo] || '');
   if (col === 'dueDate')     return fmtDate(p.dueDate);
   if (col === 'amount')      return Number(p.amount) || 0;
@@ -792,6 +799,9 @@ function doSort() {
       av = da ? da.getTime() : 0; bv = db2 ? db2.getTime() : 0;
     } else if (sortField === 'amount') {
       av = Number(a.amount)||0; bv = Number(b.amount)||0;
+    } else if (sortField === 'contractNo') {
+      av = (contractMap[a.contractId]?.contractNumber||'').toLowerCase();
+      bv = (contractMap[b.contractId]?.contractNumber||'').toLowerCase();
     } else {
       av = getColValue(a, sortField).toString().toLowerCase();
       bv = getColValue(b, sortField).toString().toLowerCase();
@@ -809,7 +819,8 @@ function applyFilters(){
   const dateFrom=$('filter-date-from').value, dateTo=$('filter-date-to').value;
   filteredPayments=allPayments.filter(p=>{
     const clientName=(clientMap[p.customerNo]||'').toLowerCase();
-    const matchQ=!q||[p.customerNo,clientName,(p.orNumber||''),(p.paymentMode||''),(p.status||''),(p.receivedBy||'')]
+    const contractNo=(contractMap[p.contractId]?.contractNumber||'').toLowerCase();
+    const matchQ=!q||[p.customerNo,clientName,(p.orNumber||''),(p.paymentMode||''),(p.status||''),(p.receivedBy||''),contractNo]
       .some(f=>f.toLowerCase().includes(q));
     // Date range filter (kept)
     let matchD=true;
@@ -847,12 +858,14 @@ function renderTable(){
   if(!page.length){$('payments-tbody').innerHTML=`<tr><td colspan="11"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><h3>No payments found</h3><p>Try adjusting your search or filters.</p></div></td></tr>`;$('pagination-controls').innerHTML='';return;}
   $('payments-tbody').innerHTML=page.map(p=>{
     const ov=isOverdue(p),clientName=cleanName(clientMap[p.customerNo]||p.customerNo||'—');
+    const contractNo=contractMap[p.contractId]?.contractNumber||p.contractId?.slice(0,8)?.toUpperCase()||'—';
     const modeLabel={'cash':'Cash','check':'Check','bank-transfer':'Bank Transfer','credit-card':'Credit Card','gcash':'GCash','maya':'Maya'}[p.paymentMode]||p.paymentMode||'—';
     const recent=getRecentNote(p);
     const noteHtml=recent?`<div class="td-note"><span class="td-note-text" title="${esc(recent.text)}">${esc(recent.text)}</span><span class="td-note-meta">${recent.author?esc(recent.author):''}${recent.author&&recent.timestamp?' · ':''}${recent.timestamp?fmtNoteTime(recent.timestamp):''}</span></div>`:'<span style="color:var(--text-muted);font-size:12px">—</span>';
     return`<tr class="${ov?'overdue-row':''}">
       <td class="mono">${p.customerNo||'—'}</td>
-      <td style="font-weight:500;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}">${clientName}</td>
+      <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${clientName}"><a href="report-client-soa.html?customer=${p.customerNo}" target="_blank" style="font-weight:600;color:var(--primary);text-decoration:none;cursor:pointer" title="Open SOA for ${clientName}">${clientName}</a></td>
+      <td class="mono" style="font-size:12px">${contractNo}</td>
       <td style="white-space:nowrap${ov?';color:var(--red-text);font-weight:600':''}">${fmtDate(p.dueDate)}</td>
       <td class="currency">${fmtCur(p.amount)}</td>
       <td class="mono" style="font-size:12px">${p.orNumber||'—'}</td>
