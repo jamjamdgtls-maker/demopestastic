@@ -190,6 +190,31 @@
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .form-input[readonly]{background:var(--bg-secondary);color:var(--text-secondary)}
 
+    /* Treatment # clickable */
+    .treatment-no-btn{background:none;border:none;padding:0;font:inherit;color:var(--primary);font-weight:600;cursor:pointer;text-decoration:none;border-bottom:1px dashed transparent;transition:border-color .15s,color .15s}
+    .treatment-no-btn:hover{color:var(--primary-hover);border-bottom-color:var(--primary)}
+
+    /* Details modal */
+    .details-modal{max-width:720px}
+    .details-grid{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:13.5px;margin-bottom:16px}
+    .details-grid .dl{color:var(--text-muted);font-weight:500}
+    .details-grid .dv{color:var(--text);word-break:break-word}
+    .details-section{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+    .details-section h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px}
+    .details-section h4 svg{width:14px;height:14px}
+    .file-links-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .file-link-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px}
+    .file-link-item a{flex:1;color:var(--primary);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .file-link-item a:hover{text-decoration:underline}
+    .file-link-item .file-label{color:var(--text-secondary);font-size:12px;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .file-link-item .file-remove{background:none;border:none;color:var(--red);cursor:pointer;padding:2px 6px;border-radius:var(--radius-sm);font-size:16px;line-height:1}
+    .file-link-item .file-remove:hover{background:var(--red-bg)}
+    .file-add-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}
+    .file-add-row input{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px}
+    .file-empty{color:var(--text-muted);font-size:13px;font-style:italic;padding:8px 0}
+    .resched-history{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+    .resched-history-item{padding:8px 10px;background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:var(--radius-sm);color:var(--amber-text)}
+
     /* MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
     .modal-overlay.open{opacity:1;pointer-events:all}
@@ -483,6 +508,48 @@
   </div>
 </div>
 
+<!-- TREATMENT DETAILS MODAL -->
+<div class="modal-overlay" id="details-modal">
+  <div class="modal details-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="details-title">Treatment Details</div>
+        <div class="modal-subtitle" id="details-subtitle"></div>
+      </div>
+      <button class="modal-close" data-close="details-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="details-id" />
+      <div class="details-grid" id="details-grid"></div>
+
+      <div class="details-section">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Attached Files / Links
+        </h4>
+        <div class="file-links-list" id="file-links-list"></div>
+        <div class="file-add-row">
+          <input type="text" id="file-link-label" placeholder="Label (e.g. Service Report, Photo)" />
+          <input type="url"  id="file-link-url"   placeholder="https://drive.google.com/..." />
+          <button type="button" class="btn btn-sm btn-primary" id="btn-add-file-link">+ Add</button>
+        </div>
+        <div class="form-hint" style="margin-top:6px">Paste any URL — Google Drive, Dropbox, Imgur, etc. Files themselves are not uploaded; only the link is stored.</div>
+      </div>
+
+      <div class="details-section" id="details-resched-section" style="display:none">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Reschedule History
+        </h4>
+        <div class="resched-history" id="details-resched-list"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="details-modal">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT TREATMENT MODAL -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
@@ -726,7 +793,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc,
-  query, orderBy, serverTimestamp, runTransaction
+  query, orderBy, serverTimestamp, runTransaction, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 /* ── Firebase init ── */
@@ -1042,10 +1109,12 @@ $('btn-clear-filters').addEventListener('click', clearAllFilters);
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
+  const view       = e.target.closest('.btn-view-details');
   const edit       = e.target.closest('.btn-edit');
   const complete   = e.target.closest('.btn-complete');
   const cancel     = e.target.closest('.btn-cancel');
   const reschedule = e.target.closest('.btn-reschedule');
+  if (view       && view.dataset.id)       { openDetailsModal(view.dataset.id);          return; }
   if (edit       && edit.dataset.id)       { openEditModal(edit.dataset.id);             return; }
   if (complete   && complete.dataset.id)   { openCompleteModal(complete.dataset.id);     return; }
   if (cancel     && cancel.dataset.id)     { openCancelModal(cancel.dataset.id);         return; }
@@ -1095,7 +1164,7 @@ function renderTable() {
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
     const allStatuses   = [...new Set([...bookingStatuses.map(s => s.toLowerCase()), ...(ds && ds !== '—' ? [ds.toLowerCase()] : [])])].sort();
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
-      <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
+      <td class="mono"><button type="button" class="treatment-no-btn btn-view-details" data-id="${t.id}" title="View full details">${t.treatmentNo || '—'}</button>${reschedBadge}</td>
       <td>${(() => {
         const contract = contractMap[t.contractId];
         const contractNo = contract?.contractNumber || t.contractId?.slice(0,8)?.toUpperCase() || '—';
@@ -1239,6 +1308,154 @@ $('btn-confirm-complete').addEventListener('click', async () => {
   }
   btn.disabled = false;
   $('complete-btn-text').textContent = 'Mark Completed';
+});
+
+/* ══════════════════════════════════
+   DETAILS MODAL (view full info + file links)
+   ══════════════════════════════════ */
+function escHtml(str){return String(str==null?'':str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function openDetailsModal(id) {
+  const t = allTreatments.find(x => x.id === id);
+  if (!t) { showToast('Treatment not found', 'error'); return; }
+  $('details-id').value = id;
+
+  const client       = clientMap[t.customerNo] || {};
+  const clientName   = cleanName(client.name || t.customerNo || '—');
+  const contract     = contractMap[t.contractId] || {};
+  const contractNo   = contract.contractNumber || (t.contractId ? t.contractId.slice(0,8).toUpperCase() : '—');
+  const contractType = t.contractType || contract.contractType || '—';
+  const ds           = dispStatus(t);
+  const timeStr      = t.treatmentTime ? ' at ' + t.treatmentTime : '';
+
+  $('details-title').textContent = 'Treatment ' + (t.treatmentNo || id);
+  $('details-subtitle').textContent = clientName + ' • ' + contractType;
+
+  const rows = [
+    ['Treatment #',   t.treatmentNo || '—'],
+    ['Status',        ds.charAt(0).toUpperCase() + ds.slice(1)],
+    ['Client',        clientName],
+    ['Customer No.',  t.customerNo || '—'],
+    ['Contract',      contractNo],
+    ['Contract Type', contractType],
+    ['Treatment Type',t.treatmentType || '—'],
+    ['Scheduled',     fmtDate(t.treatmentDate) + timeStr],
+    ['Team',          t.assignedTeam || '—'],
+    ['Technician',    t.technician || '—'],
+    ['Chemicals',     t.chemicalsUsed || '—'],
+    ['Address',       client.address || '—'],
+    ['Notes',         t.notes || '—'],
+    ['Internal Remarks', t.remarks || '—']
+  ];
+  if (t.cancelReason) rows.push(['Cancel Reason', t.cancelReason]);
+  $('details-grid').innerHTML = rows.map(([l,v]) =>
+    '<div class="dl">' + escHtml(l) + '</div><div class="dv">' + escHtml(v) + '</div>'
+  ).join('');
+
+  // Reschedule history
+  const history = t.rescheduleHistory || [];
+  const histSec = $('details-resched-section');
+  if (history.length) {
+    histSec.style.display = '';
+    $('details-resched-list').innerHTML = history.map((h,i) => {
+      const when = h.rescheduledAt ? (h.rescheduledAt.toDate ? h.rescheduledAt.toDate().toLocaleString() : new Date(h.rescheduledAt).toLocaleString()) : '';
+      return '<div class="resched-history-item"><strong>#' + (i+1) + '</strong> — moved to ' +
+        escHtml(h.newDate || '—') + (h.newTeam ? ' (' + escHtml(h.newTeam) + ')' : '') +
+        ' • Reason: ' + escHtml(h.reason || '—') +
+        (when ? ' <span style="opacity:.7">— ' + escHtml(when) + '</span>' : '') + '</div>';
+    }).join('');
+  } else {
+    histSec.style.display = 'none';
+  }
+
+  renderFileLinks(t);
+  $('file-link-label').value = '';
+  $('file-link-url').value   = '';
+  openModal('details-modal');
+}
+
+function renderFileLinks(t) {
+  // Build a unified list of file links from legacy + new fields
+  const list = [];
+  if (Array.isArray(t.fileLinks)) {
+    t.fileLinks.forEach(f => list.push({ label: f.label || 'File', url: f.url, legacy: false }));
+  }
+  if (t.serviceReportUrl && !list.some(f => f.url === t.serviceReportUrl)) {
+    list.push({ label: 'Service Report', url: t.serviceReportUrl, legacy: true });
+  }
+  const wrap = $('file-links-list');
+  if (!list.length) {
+    wrap.innerHTML = '<div class="file-empty">No files attached yet.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map((f,i) =>
+    '<div class="file-link-item">' +
+      '<span class="file-label" title="' + escHtml(f.label) + '">' + escHtml(f.label) + '</span>' +
+      '<a href="' + escHtml(f.url) + '" target="_blank" rel="noopener">' + escHtml(f.url) + '</a>' +
+      (f.legacy
+        ? '<span style="font-size:10px;color:var(--text-muted);padding:2px 6px;background:var(--bg-tertiary);border-radius:8px">legacy</span>'
+        : '<button type="button" class="file-remove" data-idx="' + i + '" title="Remove">×</button>') +
+    '</div>'
+  ).join('');
+}
+
+$('btn-add-file-link').addEventListener('click', async () => {
+  const id    = $('details-id').value;
+  const label = $('file-link-label').value.trim();
+  const url   = $('file-link-url').value.trim();
+  if (!url) { showToast('Please enter a URL.', 'error'); return; }
+  try { new URL(url); } catch { showToast('Invalid URL.', 'error'); return; }
+  const entry = {
+    label:     label || 'File',
+    url,
+    addedAt:   new Date().toISOString(),
+    addedBy:   (auth.currentUser && auth.currentUser.email) || 'unknown'
+  };
+  const btn = $('btn-add-file-link');
+  btn.disabled = true;
+  try {
+    await updateDoc(doc(db, 'treatments', id), {
+      fileLinks: arrayUnion(entry),
+      updatedAt: serverTimestamp()
+    });
+    const t = allTreatments.find(x => x.id === id);
+    if (t) {
+      t.fileLinks = [...(t.fileLinks || []), entry];
+      renderFileLinks(t);
+    }
+    $('file-link-label').value = '';
+    $('file-link-url').value   = '';
+    showToast('File link added.');
+    await logAction('updated', 'treatment', id, 'Added file link "' + entry.label + '" to treatment ' + (t?.treatmentNo || id));
+    applyFilters();
+  } catch (err) {
+    showToast('Failed: ' + err.message, 'error');
+  }
+  btn.disabled = false;
+});
+
+$('file-links-list').addEventListener('click', async (e) => {
+  const rm = e.target.closest('.file-remove');
+  if (!rm) return;
+  const id  = $('details-id').value;
+  const idx = Number(rm.dataset.idx);
+  const t   = allTreatments.find(x => x.id === id);
+  if (!t || !Array.isArray(t.fileLinks) || !t.fileLinks[idx]) return;
+  if (!confirm('Remove this file link?')) return;
+  const entry = t.fileLinks[idx];
+  try {
+    await updateDoc(doc(db, 'treatments', id), {
+      fileLinks: arrayRemove(entry),
+      updatedAt: serverTimestamp()
+    });
+    t.fileLinks = t.fileLinks.filter((_,i) => i !== idx);
+    renderFileLinks(t);
+    showToast('File link removed.');
+    await logAction('updated', 'treatment', id, 'Removed file link "' + (entry.label || 'File') + '" from treatment ' + (t.treatmentNo || id));
+    applyFilters();
+  } catch (err) {
+    showToast('Failed: ' + err.message, 'error');
+  }
 });
 
 /* ══════════════════════════════════
