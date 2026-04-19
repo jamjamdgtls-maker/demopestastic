@@ -484,6 +484,34 @@ function fmtFullDate(isoStr) {
 
 function cleanName(n){return(n||'').replace(/\s*\(.*?\)\s*/g,'').trim()||'—';}
 
+/* Convert "HH:MM" (or "HH:MM:SS") to 12-hour format, e.g. "14:30" -> "2:30 PM" */
+function fmtTime12(t){
+  if(!t) return '—';
+  const m=String(t).match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return t;
+  let h=parseInt(m[1],10); const min=m[2];
+  if(isNaN(h)) return t;
+  const ampm = h>=12 ? 'PM' : 'AM';
+  h = h % 12; if(h===0) h=12;
+  return `${h}:${min} ${ampm}`;
+}
+
+/* Currency formatter (₱) — mirrors payments / SOA reports */
+function fmtCur(n){
+  const v=Number(n||0);
+  return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+/* Build a stable YYYY-M-D key from a Firestore timestamp / Date / string */
+function dateKey(v){
+  const d=toLocalDate(v); if(!d) return '';
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/* Payment status helpers — mirror payments.html */
+const COLLECTED_STATUSES=['Received','Deposited','Remitted','Collected'];
+function isPaid(p){ return COLLECTED_STATUSES.includes(p.status); }
+
 function statusDot(s) {
   const map={scheduled:'scheduled',completed:'completed',overdue:'overdue',rescheduled:'rescheduled',cancelled:'cancelled'};
   const label={scheduled:'Scheduled',completed:'Completed',overdue:'Overdue',rescheduled:'Rescheduled',cancelled:'Cancelled'};
@@ -533,6 +561,32 @@ async function generateReport() {
     if(!tDate) return;
     if(tDate>=selDate && tDate<nextDate) treatments.push({id:doc.id,...t});
   });
+
+  /* ── Fetch payments and build a lookup map by customerNo + contractId + dueDate ──
+     Used to surface the "receivable amount" of each treatment.            */
+  const paySnap=await getDocs(collection(db,'payments'));
+  const paymentsByKey={};       // primary lookup: customer + contract + date
+  const paymentsByCustDate={};  // fallback lookup: customer + date (no contract)
+  paySnap.forEach(d=>{
+    const p={id:d.id,...d.data()};
+    const dk=dateKey(p.dueDate);
+    if(!dk) return;
+    const k1=`${p.customerNo||''}|${p.contractId||''}|${dk}`;
+    (paymentsByKey[k1]=paymentsByKey[k1]||[]).push(p);
+    const k2=`${p.customerNo||''}|${dk}`;
+    (paymentsByCustDate[k2]=paymentsByCustDate[k2]||[]).push(p);
+  });
+
+  /* Resolve receivable(s) for a given treatment on the selected date.
+     Prefer exact match on (customerNo + contractId); fall back to
+     (customerNo + date) when the treatment has no contractId. */
+  const dkSel=`${selDate.getFullYear()}-${selDate.getMonth()}-${selDate.getDate()}`;
+  function getReceivablesFor(t){
+    const k1=`${t.customerNo||''}|${t.contractId||''}|${dkSel}`;
+    if(paymentsByKey[k1]&&paymentsByKey[k1].length) return paymentsByKey[k1];
+    const k2=`${t.customerNo||''}|${dkSel}`;
+    return paymentsByCustDate[k2]||[];
+  }
 
   // Separate cancelled before applying filters (cancelled excluded from schedule by default)
   const cancelledCount=treatments.filter(t=>t.status==='cancelled').length;
@@ -602,6 +656,17 @@ async function generateReport() {
     return;
   }
 
+  /* Compute total receivable across all displayed treatments (Pending only) */
+  let totalReceivableAll=0, totalUncollectedAll=0;
+  treatments.forEach(t=>{
+    const recs=getReceivablesFor(t);
+    recs.forEach(p=>{
+      const amt=Number(p.amount||0);
+      totalReceivableAll+=amt;
+      if(!isPaid(p)) totalUncollectedAll+=amt;
+    });
+  });
+
   let html=`
     <!-- LETTERHEAD -->
     <div class="letterhead">
@@ -628,11 +693,14 @@ async function generateReport() {
       <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t,dateStr)==='overdue').length}</div><div class="report-summary-lbl">Overdue</div></div>
       <div class="report-summary-item"><div class="report-summary-val">${cancelledCount}</div><div class="report-summary-lbl">Cancelled (excl.)</div></div>
       <div class="report-summary-item"><div class="report-summary-val" style="color:hsl(262,83%,38%)">${inspections.length}</div><div class="report-summary-lbl">Inspections</div></div>
+      <div class="report-summary-item"><div class="report-summary-val" style="color:var(--blue-text);font-size:16px">${fmtCur(totalReceivableAll)}</div><div class="report-summary-lbl">Total Receivable</div></div>
+      <div class="report-summary-item"><div class="report-summary-val" style="color:${totalUncollectedAll>0?'var(--amber-text)':'var(--green-text)'};font-size:16px">${fmtCur(totalUncollectedAll)}</div><div class="report-summary-lbl">To Collect</div></div>
     </div>`;
 
   /* ── Team sections ── */
   sortedTeams.forEach(team=>{
     const rows=grouped[team];
+    let teamReceivable=0, teamUncollected=0;
     html+=`
     <div class="team-section">
       <div class="team-section-header">
@@ -653,6 +721,7 @@ async function generateReport() {
             <th>Time</th>
             <th>Treatment #</th>
             <th>Technician</th>
+            <th style="text-align:right;white-space:nowrap">Receivable ₱</th>
             <th>Notes</th>
             <th>Status</th>
           </tr>
@@ -676,19 +745,52 @@ async function generateReport() {
       const notesFull=t.notes||'—';
       const notesPreview=t.notes?(t.notes.length>60?t.notes.slice(0,60)+'…':t.notes):'—';
       const ds=dispStatus(t,dateStr);
+
+      /* ── Receivable cell: matched payment(s) for this treatment ── */
+      const recs=getReceivablesFor(t);
+      let rowAmt=0, rowUncol=0;
+      recs.forEach(p=>{ const a=Number(p.amount||0); rowAmt+=a; if(!isPaid(p)) rowUncol+=a; });
+      teamReceivable+=rowAmt; teamUncollected+=rowUncol;
+
+      let receivableCell;
+      if(recs.length===0){
+        receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+      } else {
+        // Status indicator: all paid (green) / partially paid (amber) / unpaid (amber)
+        const allPaid = recs.every(isPaid);
+        const noneTouched = recs.every(p=>!isPaid(p));
+        const stateLabel = allPaid ? 'Paid' : (noneTouched ? 'Pending' : 'Partial');
+        const stateClass = allPaid ? 'completed' : (noneTouched ? 'rescheduled' : 'rescheduled');
+        receivableCell = `<td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+          <div style="font-weight:700;font-size:12.5px;color:#111">${fmtCur(rowAmt)}</div>
+          <div style="margin-top:2px"><span class="status-dot ${stateClass}" style="font-size:10px;padding:1px 6px">${stateLabel}</span></div>
+        </td>`;
+      }
+
       html+=`<tr>
         <td class="num">${i+1}</td>
         <td style="font-weight:600;max-width:140px">${clientName}</td>
         <td class="treat-no">${t.customerNo||'—'}</td>
         <td style="font-size:11.5px;max-width:160px">${address}</td>
         <td style="font-size:11.5px">${treatmentType}</td>
-        <td style="font-size:12px;white-space:nowrap">${t.treatmentTime||'—'}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtTime12(t.treatmentTime)}</td>
         <td class="treat-no">${t.treatmentNo||'—'}</td>
         <td style="font-size:12px">${t.technician||'—'}</td>
+        ${receivableCell}
         <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
         <td>${statusDot(ds)}</td>
       </tr>`;
     });
+
+    /* Team subtotal row */
+    html+=`<tr style="background:#f1f3f5!important;font-weight:700">
+      <td colspan="8" style="text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#374151">Team Subtotal</td>
+      <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+        <div style="color:#111;font-size:12.5px">${fmtCur(teamReceivable)}</div>
+        ${teamUncollected>0?`<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px">${fmtCur(teamUncollected)} to collect</div>`:`<div style="font-size:10.5px;color:#15803d;font-weight:600;margin-top:2px">All settled</div>`}
+      </td>
+      <td colspan="2"></td>
+    </tr>`;
 
     html+=`</tbody></table></div>`;
   });
