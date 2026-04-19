@@ -1064,10 +1064,12 @@ $('btn-clear-filters').addEventListener('click', clearAllFilters);
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
+  const view       = e.target.closest('.btn-view-details');
   const edit       = e.target.closest('.btn-edit');
   const complete   = e.target.closest('.btn-complete');
   const cancel     = e.target.closest('.btn-cancel');
   const reschedule = e.target.closest('.btn-reschedule');
+  if (view       && view.dataset.id)       { e.preventDefault(); openDetailsModal(view.dataset.id); return; }
   if (edit       && edit.dataset.id)       { openEditModal(edit.dataset.id);             return; }
   if (complete   && complete.dataset.id)   { openCompleteModal(complete.dataset.id);     return; }
   if (cancel     && cancel.dataset.id)     { openCancelModal(cancel.dataset.id);         return; }
@@ -1117,7 +1119,7 @@ function renderTable() {
     const notePreview   = t.notes ? (t.notes.length > 40 ? t.notes.slice(0,40) + '…' : t.notes) : '—';
     const allStatuses   = [...new Set([...bookingStatuses.map(s => s.toLowerCase()), ...(ds && ds !== '—' ? [ds.toLowerCase()] : [])])].sort();
     return `<tr class="${isOverdue ? 'overdue-row' : ''}">
-      <td class="mono">${t.treatmentNo || '—'}${reschedBadge}</td>
+      <td class="mono">${t.treatmentNo ? `<a href="#" class="btn-view-details" data-id="${t.id}" style="color:var(--primary);font-weight:600;font-family:monospace;font-size:12.5px;text-decoration:none" title="View treatment details">${t.treatmentNo}</a>` : '—'}${reschedBadge}</td>
       <td>${(() => {
         const contract = contractMap[t.contractId];
         const contractNo = contract?.contractNumber || t.contractId?.slice(0,8)?.toUpperCase() || '—';
