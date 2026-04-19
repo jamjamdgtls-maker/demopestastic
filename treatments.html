@@ -147,6 +147,18 @@
     .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none}
     .search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white;outline:none;transition:border-color .15s,box-shadow .15s}
     .search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .date-filter-group{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:3px 6px 3px 10px;height:36px;transition:border-color .15s,box-shadow .15s}
+    .date-filter-group:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .date-filter-field{display:flex;align-items:center;gap:6px}
+    .date-filter-field + .date-filter-field{padding-left:8px;border-left:1px solid var(--border)}
+    .date-filter-field label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+    .date-filter-input{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);padding:4px 2px;font-family:var(--font);min-width:120px;cursor:pointer}
+    .date-filter-input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5;transition:opacity .15s}
+    .date-filter-input::-webkit-calendar-picker-indicator:hover{opacity:1}
+    .date-filter-clear{background:none;border:none;padding:5px;color:var(--text-muted);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+    .date-filter-clear svg{width:13px;height:13px}
+    .date-filter-clear:hover{background:var(--bg-secondary);color:var(--red)}
+    .date-filter-clear.hidden{display:none}
     .filter-select{padding:8px 32px 8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;outline:none;cursor:pointer;color:var(--text)}
     .filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
     .date-range{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px}
@@ -262,7 +274,7 @@
       .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
       .form-row{grid-template-columns:1fr}
     }
-    @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}}
+    @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}.date-filter-group{flex-wrap:wrap;height:auto;width:100%}.date-filter-input{min-width:0;flex:1}.date-filter-field{flex:1}}
     @media(max-width:480px){.summary-grid{grid-template-columns:1fr}}
   
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
@@ -428,6 +440,19 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="search-input" id="search-input" placeholder="Search treatment, client, team…" />
           </div>
+          <div class="date-filter-group">
+            <div class="date-filter-field">
+              <label for="filter-date-from">From</label>
+              <input type="date" id="filter-date-from" class="date-filter-input" />
+            </div>
+            <div class="date-filter-field">
+              <label for="filter-date-to">To</label>
+              <input type="date" id="filter-date-to" class="date-filter-input" />
+            </div>
+            <button type="button" class="date-filter-clear" id="btn-clear-date-filter" title="Clear dates" aria-label="Clear date filter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
           <button class="btn btn-secondary" id="btn-export-csv">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
@@ -446,8 +471,6 @@
       <select style="display:none" id="filter-type"><option value="">All Types</option></select>
       <select style="display:none" id="filter-status"><option value="">All Status</option></select>
       <select style="display:none" id="filter-team"><option value="">All Teams</option></select>
-      <input type="hidden" id="filter-date-from" />
-      <input type="hidden" id="filter-date-to" />
       <button style="display:none" id="btn-clear-filters">Clear</button>
 
       <!-- Table -->
@@ -1058,9 +1081,26 @@ window.filterByStatus = s => { $('filter-status').value = s; applyFilters(); };
 window.clearAllFilters = () => {
   ['search-input','filter-status','filter-team','filter-type','filter-date-from','filter-date-to']
     .forEach(id => { $(id).value = ''; });
+  $('btn-clear-date-filter')?.classList.add('hidden');
   applyFilters();
 };
 $('btn-clear-filters').addEventListener('click', clearAllFilters);
+
+/* ── Date filter clear button (show/hide based on whether dates are set) ── */
+const updateDateClearVisibility = () => {
+  const hasDates = $('filter-date-from').value || $('filter-date-to').value;
+  $('btn-clear-date-filter').classList.toggle('hidden', !hasDates);
+};
+['filter-date-from','filter-date-to'].forEach(id => {
+  $(id).addEventListener('change', updateDateClearVisibility);
+});
+$('btn-clear-date-filter').addEventListener('click', () => {
+  $('filter-date-from').value = '';
+  $('filter-date-to').value   = '';
+  updateDateClearVisibility();
+  applyFilters();
+});
+updateDateClearVisibility();
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
