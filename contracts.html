@@ -1737,7 +1737,7 @@ async function loadDetailTreatments(c) {
           const dispS=isOverdue?'overdue':t.status;
           const sMap={scheduled:'blue',completed:'green',cancelled:'gray',rescheduled:'amber',overdue:'red'};
           const sBadge=`<span class="badge badge-${sMap[dispS]||'gray'}">${dispS}</span>`;
-          return `<tr><td class="muted" style="font-family:monospace;font-size:11.5px">${t.treatmentNo||'—'}</td><td>${fmtDate(t.treatmentDate)}</td><td>${sBadge}</td><td>${t.assignedTeam||'—'}</td><td>${t.technician||'—'}</td><td style="font-size:12px;max-width:140px">${t.chemicalsUsed||'—'}</td></tr>`;
+          return `<tr><td class="muted" style="font-family:monospace;font-size:11.5px"><a href="treatments.html?id=${t.id}" target="_blank" rel="noopener" title="Open treatment details in new tab" style="color:var(--primary);text-decoration:none;font-weight:600" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.treatmentNo||'—'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;display:inline-block;vertical-align:baseline;margin-left:2px;opacity:.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></td><td>${fmtDate(t.treatmentDate)}</td><td>${sBadge}</td><td>${t.assignedTeam||'—'}</td><td>${t.technician||'—'}</td><td style="font-size:12px;max-width:140px">${t.chemicalsUsed||'—'}</td></tr>`;
         }).join('')
       }</tbody></table></div>`;
     }
