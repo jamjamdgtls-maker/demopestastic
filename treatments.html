@@ -216,6 +216,14 @@
     .modal-body{padding:22px;overflow-y:auto;flex:1}
     .modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border);flex-shrink:0}
 
+    /* CSV UPLOAD */
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg-secondary)}
+    .upload-zone:hover,.upload-zone.drag{border-color:var(--primary);background:var(--primary-light)}
+    .upload-zone svg{width:32px;height:32px;color:var(--text-muted);margin-bottom:10px}
+    .upload-zone p{font-size:13.5px;color:var(--text-secondary);margin-bottom:4px}
+    .upload-zone small{font-size:12px;color:var(--text-muted)}
+    .upload-preview{margin-top:14px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12.5px}
+
     /* CONTEXT BANNER */
     .context-banner{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
     .context-banner .cb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)}
@@ -453,6 +461,14 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
+          <button class="btn btn-secondary" id="btn-download-template">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV Template
+          </button>
+          <button class="btn btn-secondary" id="btn-import-csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import CSV
+          </button>
           <button class="btn btn-secondary" id="btn-export-csv">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
@@ -750,6 +766,41 @@
   </div>
 </div>
 
+<!-- CSV IMPORT MODAL -->
+<div class="modal-overlay" id="csv-import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Import Treatments from CSV</span>
+      <button class="modal-close" data-close="csv-import-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--blue-text)">
+        <strong>Required columns:</strong> customerNo, contractNumber, treatmentType, treatmentDate (YYYY-MM-DD)<br>
+        <strong>Optional:</strong> treatmentTime (HH:MM), contractType, assignedTeam, technician, status (default: scheduled), notes
+      </div>
+      <div class="upload-zone" id="tr-upload-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Drop CSV file here or click to browse</p>
+        <small>Only .csv files accepted</small>
+        <input type="file" accept=".csv" id="tr-csv-file-input" style="display:none" />
+      </div>
+      <div class="upload-preview" id="tr-upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong id="tr-preview-filename" style="font-size:13px"></strong>
+          <span id="tr-preview-count" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;font-size:12px;color:var(--text-secondary)" id="tr-preview-table-wrap"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="csv-import-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-confirm-tr-import" disabled>
+        <span id="tr-import-btn-text">Import Records</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -771,7 +822,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc,
-  query, orderBy, serverTimestamp, runTransaction
+  query, orderBy, serverTimestamp, runTransaction, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 /* ── Firebase init ── */
@@ -796,6 +847,7 @@ const PER_PAGE = 20;
 let treatmentTypesList  = [];
 let contractTypesFromSettings = [];
 let bookingStatuses = [];
+let csvTreatmentRows = [];
 
 const DEFAULT_CONTRACT_TYPES = [];
 const DEFAULT_BOOKING_STATUSES = [];
@@ -2114,6 +2166,157 @@ $('btn-export-csv').addEventListener('click', () => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   showToast(`Exported ${filteredTreatments.length} treatments.`);
+});
+
+/* ══════════════════════════════════
+   CSV TEMPLATE DOWNLOAD
+══════════════════════════════════ */
+$('btn-download-template').addEventListener('click', () => {
+  const headers = 'customerNo,contractNumber,treatmentType,treatmentDate,treatmentTime,contractType,assignedTeam,technician,status,notes';
+  const example = 'PC-00001,CT-00001,General Pest Control,2025-05-15,09:00,Annual GPC,Team Alpha,Juan Cruz,scheduled,Check kitchen area';
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([headers + '\n' + example], { type: 'text/csv' })),
+    download: 'pestastic_treatments_template.csv'
+  });
+  a.click();
+});
+
+/* ══════════════════════════════════
+   CSV IMPORT
+══════════════════════════════════ */
+$('btn-import-csv').addEventListener('click', () => {
+  csvTreatmentRows = [];
+  $('tr-upload-preview').style.display  = 'none';
+  $('btn-confirm-tr-import').disabled   = true;
+  $('tr-csv-file-input').value          = '';
+  openModal('csv-import-modal');
+});
+
+const trUploadZone = $('tr-upload-zone');
+trUploadZone.addEventListener('click', () => $('tr-csv-file-input').click());
+trUploadZone.addEventListener('dragover',  e => { e.preventDefault(); trUploadZone.classList.add('drag'); });
+trUploadZone.addEventListener('dragleave', ()  => trUploadZone.classList.remove('drag'));
+trUploadZone.addEventListener('drop', e => { e.preventDefault(); trUploadZone.classList.remove('drag'); handleTreatmentCSV(e.dataTransfer.files[0]); });
+$('tr-csv-file-input').addEventListener('change', e => handleTreatmentCSV(e.target.files[0]));
+
+function handleTreatmentCSV(file) {
+  if (!file || !file.name.endsWith('.csv')) { showToast('Please upload a .csv file.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines   = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase().replace(/\s+/g,''));
+    csvTreatmentRows = lines.slice(1).map(line => {
+      const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
+      const row  = {};
+      headers.forEach((h, i) => { row[h] = (vals[i] || '').replace(/^"|"$/g, '').trim(); });
+      return row;
+    }).filter(r => (r.customerno || r.customerNo) && (r.treatmenttype || r.treatmentType) && (r.treatmentdate || r.treatmentDate));
+
+    $('tr-preview-filename').textContent = file.name;
+    $('tr-preview-count').textContent    = `${csvTreatmentRows.length} records`;
+    const previewHeaders = ['customerNo','contractNumber','treatmentType','treatmentDate','treatmentTime','status'].filter(h =>
+      headers.includes(h.toLowerCase())
+    );
+    $('tr-preview-table-wrap').innerHTML = `<table style="width:100%;border-collapse:collapse">${
+      [previewHeaders, ...csvTreatmentRows.slice(0,5).map(r => previewHeaders.map(h => r[h.toLowerCase()] || r[h] || ''))].map((row, i) =>
+        `<tr style="${i===0?'background:var(--bg-secondary);font-weight:700':''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${
+          row.join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)">')
+        }</td></tr>`
+      ).join('')
+    }</table>`;
+    $('tr-upload-preview').style.display = '';
+    $('btn-confirm-tr-import').disabled  = csvTreatmentRows.length === 0;
+    $('tr-import-btn-text').textContent  = `Import ${csvTreatmentRows.length} Records`;
+  };
+  reader.readAsText(file);
+}
+
+$('btn-confirm-tr-import').addEventListener('click', async () => {
+  if (!csvTreatmentRows.length) return;
+  $('btn-confirm-tr-import').disabled = true;
+  $('tr-import-btn-text').textContent = 'Importing…';
+
+  // Resolve contractIds: build a lookup from contractNumber → contractId
+  const contractNumberMap = {};
+  Object.entries(contractMap).forEach(([id, c]) => {
+    if (c.contractNumber) contractNumberMap[c.contractNumber.trim()] = id;
+  });
+
+  let nextNum = 1;
+  try {
+    const cfg = await getDoc(doc(db, 'config', 'counters'));
+    if (cfg.exists()) nextNum = (cfg.data().treatmentCounter || 0) + 1;
+  } catch {}
+
+  const batch = writeBatch(db);
+  let count = 0, skipped = 0;
+
+  for (const row of csvTreatmentRows) {
+    const customerNo    = row.customerno    || row.customerNo    || '';
+    const contractNum   = row.contractnumber || row.contractNumber || '';
+    const treatmentType = row.treatmenttype  || row.treatmentType  || '';
+    const dateStr       = row.treatmentdate  || row.treatmentDate  || '';
+
+    if (!customerNo || !treatmentType || !dateStr) { skipped++; continue; }
+
+    // Resolve contractId from contractNumber
+    const contractId = contractNum ? (contractNumberMap[contractNum] || '') : '';
+    const contract   = contractId ? contractMap[contractId] : null;
+
+    // Parse date
+    let treatmentDate;
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      treatmentDate = new Date(y, m - 1, d);
+      if (isNaN(treatmentDate.getTime())) { skipped++; continue; }
+    } catch { skipped++; continue; }
+
+    const treatmentNo = `TR-${String(nextNum).padStart(5, '0')}`;
+    nextNum++;
+
+    const ref = doc(collection(db, 'treatments'));
+    batch.set(ref, {
+      treatmentNo,
+      customerNo,
+      contractId:    contractId,
+      contractNumber: contractNum,
+      contractType:  row.contracttype || row.contractType || contract?.contractType || '',
+      treatmentType,
+      treatmentDate,
+      treatmentTime: row.treatmenttime || row.treatmentTime || '',
+      assignedTeam:  row.assignedteam  || row.assignedTeam  || '',
+      technician:    row.technician    || '',
+      status:        row.status        || 'scheduled',
+      notes:         row.notes         || '',
+      createdAt:     serverTimestamp(),
+      updatedAt:     serverTimestamp()
+    });
+    count++;
+  }
+
+  if (count === 0) {
+    showToast('No valid records to import. Check that customerNo, treatmentType, and treatmentDate (YYYY-MM-DD) are present.', 'error');
+    $('btn-confirm-tr-import').disabled = false;
+    $('tr-import-btn-text').textContent = 'Import Records';
+    return;
+  }
+
+  // Update treatment counter
+  batch.set(doc(db, 'config', 'counters'), { treatmentCounter: nextNum - 1 }, { merge: true });
+
+  try {
+    await batch.commit();
+    await logAction('bulk_import', 'treatment', 'batch', `Imported ${count} treatments via CSV`);
+    closeModal('csv-import-modal');
+    const msg = skipped > 0 ? `Imported ${count} treatments (${skipped} skipped — missing required fields).` : `Successfully imported ${count} treatment records.`;
+    showToast(msg, skipped > 0 ? 'warning' : 'success', 'Import Complete');
+    await loadAll();
+  } catch (err) {
+    console.error('Treatment import error:', err);
+    showToast('Import failed: ' + err.message, 'error');
+  }
+  $('tr-import-btn-text').textContent = 'Import Records';
+  $('btn-confirm-tr-import').disabled = false;
 });
 
 /* ══════════════════════════════════
