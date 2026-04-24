@@ -775,8 +775,9 @@
     </div>
     <div class="modal-body">
       <div style="background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--blue-text)">
-        <strong>Required columns:</strong> customerNo, contractNumber, treatmentType, treatmentDate (YYYY-MM-DD)<br>
-        <strong>Optional:</strong> treatmentTime (HH:MM), contractType, assignedTeam, technician, status (default: scheduled), notes
+        <strong>Required columns:</strong> customerNo, treatmentType<br>
+        <strong>Date column:</strong> treatmentDate — accepts any common format (2025-05-15, 05/15/2025, May 15 2025, etc.). Defaults to today if blank.<br>
+        <strong>Optional:</strong> contractNumber, treatmentTime, contractType, assignedTeam, technician, status (default: scheduled), notes
       </div>
       <div class="upload-zone" id="tr-upload-zone">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2199,34 +2200,80 @@ trUploadZone.addEventListener('dragleave', ()  => trUploadZone.classList.remove(
 trUploadZone.addEventListener('drop', e => { e.preventDefault(); trUploadZone.classList.remove('drag'); handleTreatmentCSV(e.dataTransfer.files[0]); });
 $('tr-csv-file-input').addEventListener('change', e => handleTreatmentCSV(e.target.files[0]));
 
+/* ── Robust CSV line parser (handles quoted fields with commas inside) ── */
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; } // escaped quote
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      result.push(cur.trim()); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+/* ── Flexible date parser — accepts YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, etc. ── */
+function parseFlexDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  // YYYY-MM-DD  or  YYYY/MM/DD
+  let m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  // MM/DD/YYYY  or  MM-DD-YYYY
+  m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (m) return new Date(+m[3], +m[1] - 1, +m[2]);
+  // Fallback to JS Date (handles "May 15, 2025", "15 May 2025", ISO strings, etc.)
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function handleTreatmentCSV(file) {
   if (!file || !file.name.endsWith('.csv')) { showToast('Please upload a .csv file.', 'error'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    const lines   = e.target.result.split(/\r?\n/).filter(l => l.trim());
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase().replace(/\s+/g,''));
-    csvTreatmentRows = lines.slice(1).map(line => {
-      const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
-      const row  = {};
-      headers.forEach((h, i) => { row[h] = (vals[i] || '').replace(/^"|"$/g, '').trim(); });
-      return row;
-    }).filter(r => (r.customerno || r.customerNo) && (r.treatmenttype || r.treatmentType) && (r.treatmentdate || r.treatmentDate));
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showToast('CSV file is empty or has no data rows.', 'error'); return; }
 
+    // Normalise headers: lowercase, strip spaces/quotes
+    const rawHeaders = parseCSVLine(lines[0]);
+    const headers    = rawHeaders.map(h => h.replace(/"/g,'').trim().toLowerCase().replace(/\s+/g,''));
+
+    // Parse every data row into a key→value object (keys are lowercase header names)
+    csvTreatmentRows = lines.slice(1)
+      .map(line => {
+        const vals = parseCSVLine(line);
+        const row  = {};
+        headers.forEach((h, i) => { row[h] = (vals[i] || '').trim(); });
+        return row;
+      })
+      .filter(r => r.customerno || r.treatmenttype); // keep rows with at least one key field
+
+    const total = csvTreatmentRows.length;
     $('tr-preview-filename').textContent = file.name;
-    $('tr-preview-count').textContent    = `${csvTreatmentRows.length} records`;
-    const previewHeaders = ['customerNo','contractNumber','treatmentType','treatmentDate','treatmentTime','status'].filter(h =>
-      headers.includes(h.toLowerCase())
-    );
-    $('tr-preview-table-wrap').innerHTML = `<table style="width:100%;border-collapse:collapse">${
-      [previewHeaders, ...csvTreatmentRows.slice(0,5).map(r => previewHeaders.map(h => r[h.toLowerCase()] || r[h] || ''))].map((row, i) =>
-        `<tr style="${i===0?'background:var(--bg-secondary);font-weight:700':''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${
-          row.join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)">')
-        }</td></tr>`
-      ).join('')
-    }</table>`;
+    $('tr-preview-count').textContent    = `${total} record${total !== 1 ? 's' : ''} detected`;
+
+    // Show first 5 rows (first 5 original header names as columns)
+    const previewCols = headers.slice(0, 6);
+    $('tr-preview-table-wrap').innerHTML = `<table style="width:100%;border-collapse:collapse">
+      <tr style="background:var(--bg-secondary);font-weight:700">${rawHeaders.slice(0,6).map(h =>
+        `<td style="padding:4px 6px;border-bottom:1px solid var(--border)">${h}</td>`).join('')}</tr>
+      ${csvTreatmentRows.slice(0,5).map(r =>
+        `<tr>${previewCols.map(h =>
+          `<td style="padding:4px 6px;border-bottom:1px solid var(--border)">${r[h] || ''}</td>`
+        ).join('')}</tr>`
+      ).join('')}
+    </table>`;
+
     $('tr-upload-preview').style.display = '';
-    $('btn-confirm-tr-import').disabled  = csvTreatmentRows.length === 0;
-    $('tr-import-btn-text').textContent  = `Import ${csvTreatmentRows.length} Records`;
+    $('btn-confirm-tr-import').disabled  = total === 0;
+    $('tr-import-btn-text').textContent  = `Import ${total} Record${total !== 1 ? 's' : ''}`;
   };
   reader.readAsText(file);
 }
@@ -2236,7 +2283,7 @@ $('btn-confirm-tr-import').addEventListener('click', async () => {
   $('btn-confirm-tr-import').disabled = true;
   $('tr-import-btn-text').textContent = 'Importing…';
 
-  // Resolve contractIds: build a lookup from contractNumber → contractId
+  // Build contractNumber → contractId lookup
   const contractNumberMap = {};
   Object.entries(contractMap).forEach(([id, c]) => {
     if (c.contractNumber) contractNumberMap[c.contractNumber.trim()] = id;
@@ -2250,26 +2297,37 @@ $('btn-confirm-tr-import').addEventListener('click', async () => {
 
   const batch = writeBatch(db);
   let count = 0, skipped = 0;
+  const skipReasons = [];
 
   for (const row of csvTreatmentRows) {
-    const customerNo    = row.customerno    || row.customerNo    || '';
-    const contractNum   = row.contractnumber || row.contractNumber || '';
-    const treatmentType = row.treatmenttype  || row.treatmentType  || '';
-    const dateStr       = row.treatmentdate  || row.treatmentDate  || '';
+    const customerNo    = row.customerno     || '';
+    const contractNum   = row.contractnumber || '';
+    const treatmentType = row.treatmenttype  || '';
+    const dateStr       = row.treatmentdate  || '';
 
-    if (!customerNo || !treatmentType || !dateStr) { skipped++; continue; }
+    // Skip rows missing all three key fields — but be lenient, skip only if ALL are blank
+    if (!customerNo && !treatmentType && !dateStr) { skipped++; continue; }
 
-    // Resolve contractId from contractNumber
+    // Individual field fallbacks
+    const effectiveCustomerNo = customerNo || '(unknown)';
+    const effectiveType       = treatmentType || 'General Pest Control';
+
+    // Date: try to parse, skip row only if completely unparseable
+    let treatmentDate = null;
+    if (dateStr) {
+      treatmentDate = parseFlexDate(dateStr);
+      if (!treatmentDate) {
+        skipReasons.push(`Row skipped — unreadable date: "${dateStr}"`);
+        skipped++;
+        continue;
+      }
+    } else {
+      // No date provided — default to today
+      treatmentDate = new Date();
+    }
+
     const contractId = contractNum ? (contractNumberMap[contractNum] || '') : '';
-    const contract   = contractId ? contractMap[contractId] : null;
-
-    // Parse date
-    let treatmentDate;
-    try {
-      const [y, m, d] = dateStr.split('-').map(Number);
-      treatmentDate = new Date(y, m - 1, d);
-      if (isNaN(treatmentDate.getTime())) { skipped++; continue; }
-    } catch { skipped++; continue; }
+    const contract   = contractId  ? contractMap[contractId]           : null;
 
     const treatmentNo = `TR-${String(nextNum).padStart(5, '0')}`;
     nextNum++;
@@ -2277,17 +2335,17 @@ $('btn-confirm-tr-import').addEventListener('click', async () => {
     const ref = doc(collection(db, 'treatments'));
     batch.set(ref, {
       treatmentNo,
-      customerNo,
+      customerNo:    effectiveCustomerNo,
       contractId:    contractId,
       contractNumber: contractNum,
-      contractType:  row.contracttype || row.contractType || contract?.contractType || '',
-      treatmentType,
+      contractType:  row.contracttype || contract?.contractType || '',
+      treatmentType: effectiveType,
       treatmentDate,
-      treatmentTime: row.treatmenttime || row.treatmentTime || '',
-      assignedTeam:  row.assignedteam  || row.assignedTeam  || '',
-      technician:    row.technician    || '',
-      status:        row.status        || 'scheduled',
-      notes:         row.notes         || '',
+      treatmentTime: row.treatmenttime  || '',
+      assignedTeam:  row.assignedteam   || '',
+      technician:    row.technician     || '',
+      status:        row.status         || 'scheduled',
+      notes:         row.notes          || '',
       createdAt:     serverTimestamp(),
       updatedAt:     serverTimestamp()
     });
@@ -2295,20 +2353,21 @@ $('btn-confirm-tr-import').addEventListener('click', async () => {
   }
 
   if (count === 0) {
-    showToast('No valid records to import. Check that customerNo, treatmentType, and treatmentDate (YYYY-MM-DD) are present.', 'error');
+    showToast('No records could be imported — all rows were skipped. Please check your CSV data.', 'error');
     $('btn-confirm-tr-import').disabled = false;
     $('tr-import-btn-text').textContent = 'Import Records';
     return;
   }
 
-  // Update treatment counter
   batch.set(doc(db, 'config', 'counters'), { treatmentCounter: nextNum - 1 }, { merge: true });
 
   try {
     await batch.commit();
     await logAction('bulk_import', 'treatment', 'batch', `Imported ${count} treatments via CSV`);
     closeModal('csv-import-modal');
-    const msg = skipped > 0 ? `Imported ${count} treatments (${skipped} skipped — missing required fields).` : `Successfully imported ${count} treatment records.`;
+    const msg = skipped > 0
+      ? `Imported ${count} treatments. ${skipped} row${skipped > 1 ? 's' : ''} skipped (blank or bad date).`
+      : `Successfully imported ${count} treatment record${count !== 1 ? 's' : ''}.`;
     showToast(msg, skipped > 0 ? 'warning' : 'success', 'Import Complete');
     await loadAll();
   } catch (err) {
