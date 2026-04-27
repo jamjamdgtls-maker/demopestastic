@@ -417,6 +417,7 @@ function dismissLoadingScreen(){
 setTimeout(()=>dismissLoadingScreen(), 6000);
 
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { firebaseConfig } from './firebase-config.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -424,19 +425,9 @@ import {
   query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-    /* ── Firebase init ── */
-    const app = initializeApp({
-      apiKey:            "AIzaSyASkfFtXzfkRx8S4lo3FmSH-x_YxGsbXwM",
-      authDomain:        "pestasticsys.firebaseapp.com",
-      databaseURL:       "https://pestasticsys-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId:         "pestasticsys",
-      storageBucket:     "pestasticsys.firebasestorage.app",
-      messagingSenderId: "388702066218",
-      appId:             "1:388702066218:web:752c9dfc5b8503bd8d5553"
-    });
-
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
 /* ── State ── */
 let currentUser = null, currentRole = null;
