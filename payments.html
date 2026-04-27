@@ -548,9 +548,19 @@ import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,collection,doc,getDoc,getDocs,addDoc,setDoc,updateDoc,query,orderBy,serverTimestamp,writeBatch}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const app=initializeApp({apiKey:"AIzaSyAijywj5gsxQRDSIPkE_Q9EAMdACHng3_Y",authDomain:"pestaticdatabase.firebaseapp.com",databaseURL:"https://pestaticdatabase-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"pestaticdatabase",storageBucket:"pestaticdatabase.firebasestorage.app",messagingSenderId:"930313053124",appId:"1:930313053124:web:66e6ce6c889dc747d77a91"});
-const auth=getAuth(app);
-const db=getFirestore(app);
+    /* ── Firebase init ── */
+    const app = initializeApp({
+      apiKey:            "AIzaSyASkfFtXzfkRx8S4lo3FmSH-x_YxGsbXwM",
+      authDomain:        "pestasticsys.firebaseapp.com",
+      databaseURL:       "https://pestasticsys-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:         "pestasticsys",
+      storageBucket:     "pestasticsys.firebasestorage.app",
+      messagingSenderId: "388702066218",
+      appId:             "1:388702066218:web:752c9dfc5b8503bd8d5553"
+    });
+
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
 
 let currentUser=null,currentRole=null;
 let allPayments=[],filteredPayments=[],clientMap={},contractsByCustomer={},contractMap={};
