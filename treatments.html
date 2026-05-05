@@ -159,6 +159,10 @@
     .date-filter-clear svg{width:13px;height:13px}
     .date-filter-clear:hover{background:var(--bg-secondary);color:var(--red)}
     .date-filter-clear.hidden{display:none}
+    .date-quick-filters{display:flex;align-items:center;gap:4px;height:36px}
+    .date-quick-btn{height:36px;padding:0 12px;border:1px solid var(--border);background:white;border-radius:var(--radius);font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap}
+    .date-quick-btn:hover{background:var(--bg-secondary);border-color:var(--border-hover);color:var(--text)}
+    .date-quick-btn.active{background:var(--primary-light);border-color:var(--primary-border);color:var(--primary);font-weight:600}
     .filter-select{padding:8px 32px 8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;outline:none;cursor:pointer;color:var(--text)}
     .filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
     .date-range{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px}
@@ -282,7 +286,7 @@
       .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
       .form-row{grid-template-columns:1fr}
     }
-    @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}.date-filter-group{flex-wrap:wrap;height:auto;width:100%}.date-filter-input{min-width:0;flex:1}.date-filter-field{flex:1}}
+    @media(max-width:768px){.page-content{padding:16px}.summary-grid{grid-template-columns:1fr 1fr}.filters-bar{flex-direction:column;align-items:stretch}.date-filter-group{flex-wrap:wrap;height:auto;width:100%}.date-filter-input{min-width:0;flex:1}.date-filter-field{flex:1}.date-quick-filters{flex-wrap:wrap;width:100%;height:auto}.date-quick-btn{flex:1;min-width:0}}
     @media(max-width:480px){.summary-grid{grid-template-columns:1fr}}
   
     .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
@@ -447,6 +451,11 @@
           <div class="search-wrap" style="min-width:260px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="search-input" id="search-input" placeholder="Search treatment, client, team…" />
+          </div>
+          <div class="date-quick-filters" id="date-quick-filters">
+            <button type="button" class="date-quick-btn" data-range="today">Today</button>
+            <button type="button" class="date-quick-btn" data-range="week">This Week</button>
+            <button type="button" class="date-quick-btn" data-range="month">This Month</button>
           </div>
           <div class="date-filter-group">
             <div class="date-filter-field">
@@ -1128,6 +1137,7 @@ window.clearAllFilters = () => {
   ['search-input','filter-status','filter-team','filter-type','filter-date-from','filter-date-to']
     .forEach(id => { $(id).value = ''; });
   $('btn-clear-date-filter')?.classList.add('hidden');
+  document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b => b.classList.remove('active'));
   applyFilters();
 };
 $('btn-clear-filters').addEventListener('click', clearAllFilters);
@@ -1143,10 +1153,57 @@ const updateDateClearVisibility = () => {
 $('btn-clear-date-filter').addEventListener('click', () => {
   $('filter-date-from').value = '';
   $('filter-date-to').value   = '';
+  document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b => b.classList.remove('active'));
   updateDateClearVisibility();
   applyFilters();
 });
 updateDateClearVisibility();
+
+/* ── Quick date filters: Today / This Week / This Month ── */
+const fmtDate = d => {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
+const clearQuickActive = () => {
+  document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b => b.classList.remove('active'));
+};
+const applyQuickRange = (range, btn) => {
+  if (btn.classList.contains('active')) {
+    // toggle off
+    btn.classList.remove('active');
+    $('filter-date-from').value = '';
+    $('filter-date-to').value   = '';
+    updateDateClearVisibility();
+    applyFilters();
+    return;
+  }
+  const now = new Date();
+  let from, to;
+  if (range === 'today') {
+    from = to = now;
+  } else if (range === 'week') {
+    const day = now.getDay(); // 0=Sun..6=Sat
+    const diffToMon = (day === 0 ? -6 : 1 - day);
+    from = new Date(now); from.setDate(now.getDate() + diffToMon);
+    to   = new Date(from); to.setDate(from.getDate() + 6);
+  } else if (range === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+  $('filter-date-from').value = fmtDate(from);
+  $('filter-date-to').value   = fmtDate(to);
+  clearQuickActive();
+  btn.classList.add('active');
+  updateDateClearVisibility();
+  applyFilters();
+};
+document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyQuickRange(btn.dataset.range, btn));
+});
+// Manual date edits clear quick-filter active state
+['filter-date-from','filter-date-to'].forEach(id => {
+  $(id).addEventListener('input', clearQuickActive);
+});
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
