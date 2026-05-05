@@ -1160,7 +1160,7 @@ $('btn-clear-date-filter').addEventListener('click', () => {
 updateDateClearVisibility();
 
 /* ── Quick date filters: Today / This Week / This Month ── */
-const fmtDate = d => {
+const fmtDateInput = d => {
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 };
@@ -1190,8 +1190,8 @@ const applyQuickRange = (range, btn) => {
     from = new Date(now.getFullYear(), now.getMonth(), 1);
     to   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   }
-  $('filter-date-from').value = fmtDate(from);
-  $('filter-date-to').value   = fmtDate(to);
+  $('filter-date-from').value = fmtDateInput(from);
+  $('filter-date-to').value   = fmtDateInput(to);
   clearQuickActive();
   btn.classList.add('active');
   updateDateClearVisibility();
