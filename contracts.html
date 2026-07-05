@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pestastic — Contracts</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --primary:hsl(142,76%,36%);--primary-hover:hsl(142,76%,30%);--primary-light:hsl(142,76%,95%);
+      --bg:#fff;--bg-secondary:#f8f9fa;--bg-tertiary:#f1f3f5;
+      --sidebar-bg:#0f1b12;--sidebar-text:#c8d6ca;--sidebar-muted:#6b7f6e;
+      --text:#111827;--text-secondary:#4b5563;--text-muted:#9ca3af;
+      --border:#e5e7eb;--border-hover:#d1d5db;
+      --radius:8px;--radius-sm:4px;--radius-lg:12px;
+      --shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow:0 2px 8px rgba(0,0,0,.10);--shadow-lg:0 8px 24px rgba(0,0,0,.12);
+      --green:hsl(142,76%,36%);--green-bg:hsl(142,76%,95%);--green-text:hsl(142,76%,28%);
+      --blue:hsl(213,94%,47%);--blue-bg:hsl(213,94%,95%);--blue-text:hsl(213,94%,35%);
+      --amber:hsl(38,92%,50%);--amber-bg:hsl(38,92%,95%);--amber-text:hsl(38,92%,32%);
+      --red:hsl(0,84%,50%);--red-bg:hsl(0,84%,96%);--red-text:hsl(0,84%,38%);
+      --purple:hsl(262,83%,58%);--purple-bg:hsl(262,83%,96%);--purple-text:hsl(262,83%,42%);
+      --gray:hsl(220,9%,46%);--gray-bg:hsl(220,9%,95%);--gray-text:hsl(220,9%,35%);
+      --sidebar-width:260px;--topbar-height:60px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif
+    }
+    html,body{height:100%;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg-secondary);line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    button{font-family:var(--font);cursor:pointer}
+    input,select,textarea{font-family:var(--font);font-size:14px}
+
+    /* ── AUTH ── */
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
+    .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
+    .auth-logo{width:64px;height:64px;background:var(--primary-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .auth-logo svg{width:36px;height:36px}
+    .auth-card h1{font-size:24px;font-weight:700;margin-bottom:4px}
+    .auth-card>p{color:var(--text-muted);font-size:14px;margin-bottom:32px}
+    .btn-google{width:100%;padding:12px 20px;border:1.5px solid var(--border);background:white;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;gap:12px;font-size:15px;font-weight:500;color:var(--text);transition:all .15s;cursor:pointer}
+    .btn-google:hover{background:var(--bg-secondary)}
+    .btn-google svg{width:20px;height:20px}
+    .auth-error{margin-top:16px;padding:10px 14px;background:var(--red-bg);color:var(--red-text);border-radius:var(--radius-sm);font-size:13px;border:1px solid #fca5a5;display:none}
+    .pending-icon{width:72px;height:72px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .pending-icon svg{width:36px;height:36px;color:var(--amber)}
+    .btn-pending-check{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;margin-bottom:12px;cursor:pointer}
+    .btn-signout-pending{width:100%;padding:12px;background:transparent;color:var(--text-secondary);border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;cursor:pointer}
+
+    /* ── APP SHELL ── */
+    #app-shell{display:none;height:100vh;overflow:hidden}
+
+    /* ── SIDEBAR ── */
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;z-index:200;transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .sidebar-logo-icon{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sidebar-logo-icon svg{width:20px;height:20px;color:white}
+    .sidebar-logo-text span{display:block;font-size:15px;font-weight:700;color:white;line-height:1.2}
+    .sidebar-logo-text small{font-size:10px;color:var(--sidebar-muted);text-transform:uppercase;letter-spacing:.08em}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px}
+    .sidebar-nav::-webkit-scrollbar{width:4px}
+    .sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+    .nav-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--sidebar-muted);padding:12px 10px 6px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--sidebar-text);font-size:13.5px;font-weight:450;cursor:pointer;transition:all .15s;position:relative;user-select:none}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:white}
+    .nav-item.active{background:rgba(34,197,94,.15);color:hsl(142,76%,65%)}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--primary);border-radius:0 2px 2px 0}
+    .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85}
+    .nav-item.active svg{opacity:1}
+    .nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+    .nav-badge.amber{background:var(--amber)}
+    .sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
+    .sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s}
+    .sidebar-user:hover{background:rgba(255,255,255,.07)}
+    .user-avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;flex-shrink:0;overflow:hidden}
+    .user-avatar img{width:100%;height:100%;object-fit:cover}
+    .user-info{flex:1;min-width:0}
+    .user-name{font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:11px;color:var(--sidebar-muted);text-transform:capitalize}
+    .btn-signout{background:none;border:none;padding:6px;color:var(--sidebar-muted);border-radius:var(--radius-sm);transition:all .15s;display:flex;align-items:center;cursor:pointer}
+    .btn-signout:hover{color:var(--red);background:rgba(239,68,68,.1)}
+    .btn-signout svg{width:16px;height:16px}
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+
+    /* ── MAIN ── */
+    .main-wrapper{margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+    .hamburger{display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}
+    .hamburger svg{width:20px;height:20px}
+    .topbar-title{font-size:16px;font-weight:700;color:var(--text)}
+    .topbar-spacer{flex:1}
+    .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;position:relative}
+    .topbar-btn svg{width:16px;height:16px}
+    .page-content{flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column}
+    .page-content::-webkit-scrollbar{width:6px}
+    .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+    /* ── BUTTONS ── */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .btn svg{width:15px;height:15px}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:hover{background:var(--primary-hover)}
+    .btn-primary:active{transform:scale(.98)}
+    .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+    .btn-secondary{background:white;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg-secondary)}
+    .btn-danger{background:var(--red-bg);color:var(--red-text);border:1px solid #fca5a5}
+    .btn-danger:hover{background:#fee2e2}
+    .btn-ghost{background:none;color:var(--text-secondary);border:none;padding:6px 10px}
+    .btn-ghost:hover{background:var(--bg-secondary);color:var(--text)}
+    .btn-sm{padding:5px 10px;font-size:12px}
+    .btn-sm svg{width:13px;height:13px}
+    .btn-icon{padding:6px;border-radius:var(--radius);background:none;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center}
+    .btn-icon:hover{background:var(--bg-secondary);color:var(--text)}
+    .btn-icon svg{width:14px;height:14px}
+
+    /* ── BADGES ── */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+    .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .badge-green{background:var(--green-bg);color:var(--green-text)}
+    .badge-blue{background:var(--blue-bg);color:var(--blue-text)}
+    .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
+    .badge-red{background:var(--red-bg);color:var(--red-text)}
+    .badge-purple{background:var(--purple-bg);color:var(--purple-text)}
+    .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
+
+    /* ── PAGE ── */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap;flex-shrink:0}
+    .page-header-left h2{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+    .page-header-left p{font-size:13px;color:var(--text-muted);margin-top:3px}
+    .page-header-right{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* ── STATS ── */
+    .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;flex-shrink:0}
+    .stat-pill{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:10px;flex:1;min-width:130px}
+    .stat-pill-icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .stat-pill-icon svg{width:16px;height:16px}
+    .stat-pill-val{font-size:20px;font-weight:800;color:var(--text);line-height:1}
+    .stat-pill-lbl{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+
+    /* ── FILTERS ── */
+    .filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;flex-shrink:0}
+    .search-wrap{position:relative;flex:1;min-width:220px}
+    .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none}
+    .search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white;outline:none;transition:border-color .15s,box-shadow .15s}
+    .search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .filter-select{padding:8px 32px 8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;outline:none;cursor:pointer;color:var(--text);transition:border-color .15s}
+    .filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+
+    /* ── TABLE ── */
+    .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
+    .table-wrapper{overflow:auto;flex:1;min-height:0}
+    table{width:100%;border-collapse:collapse}
+    thead th{padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);white-space:nowrap;text-align:left;position:sticky;top:0;z-index:1}
+    tbody tr{border-bottom:1px solid var(--bg-tertiary);transition:background .1s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:var(--bg-secondary)}
+    tbody td{padding:10px 14px;font-size:13.5px;color:var(--text);vertical-align:middle}
+    td.muted{color:var(--text-muted);font-size:12.5px}
+    td.mono{font-family:monospace;font-size:12.5px;color:var(--text-secondary)}
+    .actions-cell{display:flex;align-items:center;gap:5px}
+
+    /* ── PAGINATION ── */
+    .pagination{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-top:1px solid var(--border);background:white;flex-wrap:wrap;gap:10px}
+    .pagination-info{font-size:13px;color:var(--text-muted)}
+    .pagination-controls{display:flex;align-items:center;gap:4px}
+    .page-btn{min-width:32px;height:32px;padding:0 10px;background:white;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--font)}
+    .page-btn:hover:not(:disabled){background:var(--bg-secondary);color:var(--text)}
+    .page-btn.active{background:var(--primary);color:white;border-color:var(--primary);font-weight:600}
+    .page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+    /* ── FORMS ── */
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+    .form-label .req{color:var(--red);margin-left:2px}
+    .form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;color:var(--text);background:white;transition:border-color .15s,box-shadow .15s;outline:none}
+    .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:32px;cursor:pointer}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+    .form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
+    .form-textarea{resize:vertical;min-height:72px}
+    .form-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-row.three{grid-template-columns:1fr 1fr 1fr}
+    .form-input[readonly]{background:var(--bg-secondary);color:var(--text-secondary)}
+    .form-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+    .form-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+    .form-section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:14px}
+
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:white;border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);transform:translateY(10px) scale(.98);transition:transform .2s}
+    .modal-overlay.open .modal{transform:translateY(0) scale(1)}
+    .modal-xl{max-width:900px}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .modal-title{font-size:16px;font-weight:700;color:var(--text)}
+    .modal-close{width:30px;height:30px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer;transition:all .15s}
+    .modal-close:hover{background:var(--bg-secondary);color:var(--text)}
+    .modal-close svg{width:15px;height:15px}
+    .modal-body{padding:22px;overflow-y:auto;flex:1}
+    .modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border);flex-shrink:0}
+
+    /* ── TABS ── */
+    .tabs{display:flex;border-bottom:2px solid var(--border);gap:4px;margin-bottom:18px}
+    .tab{padding:9px 16px;font-size:13.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+    /* ── DETAIL ── */
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
+    .detail-field label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-bottom:4px}
+    .detail-field span{font-size:13.5px;color:var(--text);word-break:break-word}
+    .detail-field.full{grid-column:1/-1}
+
+    /* ── SUMMARY CARDS ── */
+    .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+    .sum-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+    .sum-card-val{font-size:20px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+    .sum-card-lbl{font-size:11.5px;color:var(--text-muted)}
+
+    /* ── MINI TABLE ── */
+    .mini-table{width:100%;border-collapse:collapse}
+    .mini-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);padding:8px 10px;background:var(--bg-secondary);border-bottom:1px solid var(--border);text-align:left}
+    .mini-table td{font-size:12.5px;padding:9px 10px;border-bottom:1px solid var(--bg-tertiary);color:var(--text);vertical-align:middle}
+    .mini-table tr:last-child td{border-bottom:none}
+    .mini-table tr:hover td{background:var(--bg-secondary)}
+    .mini-table .muted{color:var(--text-muted)}
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap{margin-bottom:16px}
+    .progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+    .progress-bar{height:8px;background:var(--bg-tertiary);border-radius:4px;overflow:hidden}
+    .progress-fill{height:100%;background:var(--primary);border-radius:4px;transition:width .4s ease}
+
+    /* ── NEXT TREATMENT BANNER ── */
+    .next-treatment-banner{background:var(--green-bg);border:1px solid var(--primary-border);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--green-text)}
+    .next-treatment-banner svg{width:16px;height:16px;flex-shrink:0}
+
+    /* ── CSV UPLOAD ── */
+    .upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg-secondary)}
+    .upload-zone:hover,.upload-zone.drag{border-color:var(--primary);background:var(--primary-light)}
+    .upload-zone svg{width:32px;height:32px;color:var(--text-muted);margin-bottom:10px}
+    .upload-zone p{font-size:13.5px;color:var(--text-secondary);margin-bottom:4px}
+    .upload-zone small{font-size:12px;color:var(--text-muted)}
+    .upload-preview{margin-top:14px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12.5px}
+
+    /* ── EMPTY ── */
+    .empty-state{text-align:center;padding:48px 20px}
+    .empty-state svg{width:40px;height:40px;color:var(--text-muted);margin-bottom:14px;opacity:.5}
+    .empty-state h3{font-size:15px;font-weight:600;margin-bottom:6px}
+    .empty-state p{font-size:13px;color:var(--text-muted);max-width:340px;margin:0 auto}
+
+    /* ── SPINNER / TOAST ── */
+    .spinner{width:18px;height:18px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+    .toast{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:280px;max-width:380px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-start;gap:10px;pointer-events:all;animation:toastIn .2s ease;border-left:4px solid var(--primary)}
+    .toast.error{border-left-color:var(--red)}.toast.warning{border-left-color:var(--amber)}
+    .toast-icon svg{width:16px;height:16px}
+    .toast-body{flex:1}
+    .toast-title{font-size:13.5px;font-weight:600}
+    .toast-msg{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+    .toast-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0}
+    .toast-close svg{width:14px;height:14px}
+    @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:1024px){
+      .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+      .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
+      .form-row,.form-row.three{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}
+      .summary-cards{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:768px){.page-content{padding:16px}.stats-row{gap:8px}.filters-bar{flex-direction:column;align-items:stretch}.summary-cards{grid-template-columns:1fr}}
+  
+    /* ── PAGE LOAD SCREEN ── */
+    #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
+    #loading-screen.fade-out{opacity:0;pointer-events:none}
+    .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
+    .ls-logo svg{width:34px;height:34px;color:white}
+    .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
+    .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+
+    /* ── Sort icon ── */
+    .sort-icon { font-size:10px; margin-left:3px; color:var(--primary); }
+
+    /* ── Column header (Google Sheets style) ── */
+    .col-header { position:relative; cursor:pointer; user-select:none; white-space:nowrap; }
+    .col-header:hover { background:var(--bg-tertiary); }
+    .col-header-inner { display:flex; align-items:center; gap:4px; }
+    .col-menu-btn { background:none; border:none; color:var(--text-muted); font-size:10px; padding:2px 3px; cursor:pointer; border-radius:2px; line-height:1; opacity:0; transition:opacity .15s; }
+    .col-header:hover .col-menu-btn { opacity:1; }
+    .col-menu-btn:hover { background:var(--border); color:var(--text); }
+
+    /* ── Column dropdown ── */
+    .col-dropdown { position:absolute; top:100%; left:0; z-index:100; background:white; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:200px; padding:6px 0; font-size:13px; font-weight:400; text-transform:none; letter-spacing:0; }
+    .col-dropdown-item { display:flex; align-items:center; gap:8px; padding:7px 14px; cursor:pointer; color:var(--text); transition:background .1s; white-space:nowrap; }
+    .col-dropdown-item:hover { background:var(--bg-secondary); }
+    .col-dropdown-item svg { width:14px; height:14px; color:var(--text-muted); flex-shrink:0; }
+    .col-dropdown-sep { height:1px; background:var(--border); margin:4px 0; }
+    .col-dropdown-search { padding:6px 10px; }
+    .col-dropdown-search input { width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; outline:none; }
+    .col-dropdown-search input:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(34,197,94,.12); }
+    .col-dropdown-values { max-height:180px; overflow-y:auto; }
+    .col-dropdown-values label { display:flex; align-items:center; gap:8px; padding:5px 14px; cursor:pointer; font-size:12.5px; color:var(--text); }
+    .col-dropdown-values label:hover { background:var(--bg-secondary); }
+    .col-dropdown-values input[type="checkbox"] { accent-color:var(--primary); }
+    .col-dropdown-actions { display:flex; gap:6px; padding:6px 10px; border-top:1px solid var(--border); margin-top:4px; }
+    .col-dropdown-actions button { flex:1; padding:5px 8px; font-size:12px; border-radius:var(--radius-sm); cursor:pointer; }
+
+    /* ── Scrollbars inside table ── */
+    .table-wrapper::-webkit-scrollbar { width:8px; height:8px; }
+    .table-wrapper::-webkit-scrollbar-thumb { background:var(--border-hover); border-radius:4px; }
+    .table-wrapper::-webkit-scrollbar-track { background:var(--bg-secondary); }
+    .table-wrapper::-webkit-scrollbar-corner { background:var(--bg-secondary); }
+    thead th { position:sticky; top:0; z-index:10; background:var(--bg-secondary); }
+  </style>
+</head>
+<body>
+
+<!-- PAGE LOAD SCREEN -->
+<div id="loading-screen">
+    <div class="ls-logo">
+    <img src="logo.jpg" alt="Pestastic" style="width:34px;height:34px;object-fit:contain" />
+  </div>
+  <div class="ls-spinner"></div>
+  <div class="ls-text">Pestastic</div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none">
+  <div id="login-card" class="auth-card">
+    <div class="auth-logo"><img src="logo.jpg" alt="Pestastic" style="width:36px;height:36px;object-fit:contain" /></div>
+    <h1>Pestastic</h1><p>Sign in to continue</p>
+    <button class="btn-google" id="btn-google-signin"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
+    <div class="auth-error" id="login-error"></div>
+  </div>
+  <div id="pending-card" class="auth-card" style="display:none">
+    <div class="pending-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <h1 style="font-size:20px">Pending Approval</h1><p style="margin-bottom:24px">Your account awaits admin approval.</p>
+    <button class="btn-pending-check" id="btn-check-status">Check Status</button>
+    <button class="btn-signout-pending" id="btn-signout-pending">Sign Out</button>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo" style="justify-content:center;padding:14px 16px">
+      <div style="background:white;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:center;width:100%">
+        <img src="logo.jpg" alt="Pestastic" style="width:100%;max-width:188px;height:40px;object-fit:contain" />
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a class="nav-item" href="clients.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clients</a>
+      <a class="nav-item active" href="contracts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Contracts</a>
+      <a class="nav-item" href="treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Treatments</a>
+      <div class="nav-section-label">Financial</div>
+      <a class="nav-item" href="payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</a>
+      <a class="nav-item" href="renewals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Renewals</a>
+      <div class="nav-section-label">Service</div>
+      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="nav-badge" id="badge-complaints" style="display:none"></span></a>
+      <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections<span class="nav-badge amber" id="badge-inspections" style="display:none"></span></a>
+      <div class="nav-section-label">Monitoring</div>
+      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
+      <div class="nav-section-label">Reports</div>
+      <a class="nav-item" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
+      <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
+      <a class="nav-item" href="report-client-soa.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>Client SOA</a>
+      <a class="nav-item" href="report-monthly-collection.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Monthly Collection</a>
+      <a class="nav-item" href="report-overdue-treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue Report</a>
+      <div class="nav-section-label">Operations</div>
+      <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Teams</a>
+      <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
+      <div class="nav-section-label" id="admin-nav-label" style="display:none">Admin</div>
+      <a class="nav-item" href="user-management.html" id="nav-users" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>User Management<span class="nav-badge amber" id="badge-pending-users" style="display:none"></span></a>
+      <a class="nav-item" href="settings.html" id="nav-settings" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar"><span id="user-initials">?</span></div>
+        <div class="user-info"><div class="user-name" id="user-display-name">Loading…</div><div class="user-role" id="user-role-label">—</div></div>
+        <button class="btn-signout" id="btn-signout" title="Sign Out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <span class="topbar-title">Contracts</span>
+      <div class="topbar-spacer"></div>
+      <span id="last-updated" class="last-updated-badge" data-pc-topbar="1" style="font-size:12px;color:#9ca3af;margin-right:8px;white-space:nowrap"></span><button id="btn-refresh" class="topbar-btn" title="Refresh data" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="topbar-notif-dot" id="notif-dot" style="display:none"></span></button>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Contracts</h2>
+          <p>Manage all pest control service contracts</p>
+        </div>
+        <div class="page-header-right">
+          <button class="btn btn-secondary" id="btn-dl-template">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV Template
+          </button>
+          <button class="btn btn-secondary" id="btn-import-csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import CSV
+          </button>
+          <button class="btn btn-secondary" id="btn-export-csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-primary" id="btn-new-contract">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Contract
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-pill"><div class="stat-pill-icon" style="background:var(--blue-bg);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div><div class="stat-pill-val" id="stat-total">—</div><div class="stat-pill-lbl">Total</div></div></div>
+        <div class="stat-pill"><div class="stat-pill-icon" style="background:var(--green-bg);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-pill-val" id="stat-active">—</div><div class="stat-pill-lbl">Active</div></div></div>
+        <div class="stat-pill"><div class="stat-pill-icon" style="background:var(--red-bg);color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-pill-val" id="stat-expired">—</div><div class="stat-pill-lbl">Expired</div></div></div>
+        <div class="stat-pill"><div class="stat-pill-icon" style="background:var(--purple-bg);color:var(--purple)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div><div><div class="stat-pill-val" id="stat-renewed">—</div><div class="stat-pill-lbl">Renewed</div></div></div>
+        <div class="stat-pill"><div class="stat-pill-icon" style="background:var(--green-bg);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-pill-val" id="stat-value">—</div><div class="stat-pill-lbl">Total Value</div></div></div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="search-input" placeholder="Search by customer no, client name…" />
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card" style="flex:1;min-height:0">
+        <div class="table-wrapper" style="flex:1;overflow:auto;min-height:0">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-header" data-sort="contractNumber" data-col="contractNumber"><div class="col-header-inner"><span>Contract No.</span><span class="sort-icon" id="sort-contractNumber">▲</span><button class="col-menu-btn" data-col="contractNumber">▾</button></div></th>
+                <th class="col-header" data-sort="customerNo" data-col="customerNo"><div class="col-header-inner"><span>Customer No</span><span class="sort-icon" id="sort-customerNo"></span><button class="col-menu-btn" data-col="customerNo">▾</button></div></th>
+                <th class="col-header" data-sort="clientName" data-col="clientName"><div class="col-header-inner"><span>Client Name</span><span class="sort-icon" id="sort-clientName"></span><button class="col-menu-btn" data-col="clientName">▾</button></div></th>
+                <th class="col-header" data-sort="contractType" data-col="contractType"><div class="col-header-inner"><span>Contract Type</span><span class="sort-icon" id="sort-contractType"></span><button class="col-menu-btn" data-col="contractType">▾</button></div></th>
+                <th class="col-header" data-sort="contractStartDate" data-col="contractStartDate"><div class="col-header-inner"><span>Start Date</span><span class="sort-icon" id="sort-contractStartDate"></span><button class="col-menu-btn" data-col="contractStartDate">▾</button></div></th>
+                <th class="col-header" data-sort="contractEndDate" data-col="contractEndDate"><div class="col-header-inner"><span>End Date</span><span class="sort-icon" id="sort-contractEndDate"></span><button class="col-menu-btn" data-col="contractEndDate">▾</button></div></th>
+                <th class="col-header" data-sort="totalAmount" data-col="totalAmount"><div class="col-header-inner"><span>Amount (₱)</span><span class="sort-icon" id="sort-totalAmount"></span><button class="col-menu-btn" data-col="totalAmount">▾</button></div></th>
+                <th class="col-header" data-col="balance"><div class="col-header-inner"><span>Balance (₱)</span><span class="sort-icon" id="sort-balance"></span><button class="col-menu-btn" data-col="balance">▾</button></div></th>
+                <th class="col-header" data-sort="status" data-col="status"><div class="col-header-inner"><span>Status</span><span class="sort-icon" id="sort-status"></span><button class="col-menu-btn" data-col="status">▾</button></div></th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contracts-tbody">
+              <tr><td colspan="10" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span class="pagination-info" id="pagination-info">Loading…</span>
+          <div class="pagination-controls" id="pagination-controls"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CONTRACT FORM MODAL (New / Edit)
+══════════════════════════════════ -->
+<div class="modal-overlay" id="contract-form-modal">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <span class="modal-title" id="form-modal-title">New Contract</span>
+      <button class="modal-close" data-close="contract-form-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="form-contract-id" />
+      <input type="hidden" id="form-old-contract-id" />
+
+      <div class="form-section">
+        <div class="form-section-title">Client Information</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Customer No <span class="req">*</span></label>
+            <input type="text" class="form-input" id="form-customer-no" placeholder="Type to search (e.g. PC-00001)" list="customer-datalist" autocomplete="off" />
+            <datalist id="customer-datalist"></datalist>
+            <div class="form-hint" id="client-name-hint" style="color:var(--green-text);font-weight:500"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contract Number</label>
+            <input type="text" class="form-input" id="form-contract-no" placeholder="Auto-generated" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Contract Details</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Contract Type <span class="req">*</span></label>
+            <select class="form-select" id="form-contract-type">
+              <option value="">— Select Contract Type —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Treatment Method</label>
+            <select class="form-select" id="form-treatment-method">
+              <option value="">— Select or type —</option>
+            </select>
+            <div class="form-hint">Choose from common methods or type a custom one.</div>
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="form-group">
+            <label class="form-label">Frequency <span class="req">*</span></label>
+            <select class="form-select" id="form-frequency">
+              <option value="">— Select —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">No. of Sessions <span class="req">*</span></label>
+            <input type="number" class="form-input" id="form-sessions" min="1" placeholder="e.g. 12" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Warranty Period (months)</label>
+            <input type="number" class="form-input" id="form-warranty" min="0" placeholder="e.g. 6" />
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="form-group">
+            <label class="form-label">Start Date <span class="req">*</span></label>
+            <input type="date" class="form-input" id="form-start-date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">End / Expiry Date</label>
+            <input type="date" class="form-input" id="form-end-date" readonly />
+            <div class="form-hint">Calculated from warranty period (or last session if no warranty)</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Amount (₱) <span class="req">*</span></label>
+            <input type="number" class="form-input" id="form-amount" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Downpayment %</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" class="form-input" id="form-downpayment-pct" min="0" max="100" step="1" placeholder="e.g. 60" style="max-width:120px" />
+              <span style="font-size:13px;color:var(--text-secondary)">% (leave blank to use system default)</span>
+            </div>
+            <div class="form-hint" id="downpayment-hint">System default: loading…</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Plan Type</label>
+            <select class="form-select" id="form-payment-plan-type">
+              <option value="">Use system default</option>
+              <option value="downpayment-then-equal">Downpayment + Equal Installments</option>
+              <option value="equal">Equal Installments (no downpayment)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Assignment</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Assigned Team</label>
+            <select class="form-select" id="form-team">
+              <option value="">— Select Team —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sales Agent</label>
+            <select class="form-select" id="form-sales-agent">
+              <option value="">— Select Agent —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Communication Source</label>
+            <select class="form-select" id="form-comm-source">
+              <option value="">— Select Source —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="form-status">
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="form-notes" placeholder="Any additional notes…"></textarea>
+      </div>
+
+      <!-- Renewal banner -->
+      <div id="renewal-banner" style="display:none;background:var(--blue-bg);border:1px solid var(--blue);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--blue-text)">🔄 Renewal Contract</div>
+            <div style="font-size:12px;color:var(--blue-text);margin-top:2px" id="renewal-ref-text">Renewing from a previous contract</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Preview -->
+      <div id="schedule-preview" style="display:none;border:1px solid var(--primary-border);border-radius:var(--radius);overflow:hidden;margin-top:4px">
+        <div style="background:var(--primary);color:white;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Treatment Schedule Preview
+          <span id="schedule-preview-count" style="margin-left:auto;font-size:12px;opacity:.85"></span>
+        </div>
+        <div style="max-height:220px;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="background:var(--bg-secondary);position:sticky;top:0">
+              <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">#</th>
+              <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Treatment Date</th>
+              <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Day</th>
+              <th style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Amount Due (₱)</th>
+            </tr></thead>
+            <tbody id="schedule-preview-text"></tbody>
+          </table>
+        </div>
+        <div style="padding:8px 12px;background:var(--green-bg);border-top:1px solid var(--primary-border);font-size:12px;color:var(--green-text);font-weight:600" id="schedule-preview-total"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="contract-form-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-contract">
+        <span id="save-btn-text">Save Contract</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CONTRACT DETAIL MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="contract-detail-modal">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detail-title">Contract Details</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="detail-subtitle"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-secondary btn-sm" id="btn-edit-from-detail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="btn btn-danger btn-sm" id="btn-delete-from-detail" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Delete
+        </button>
+        <button class="modal-close" data-close="contract-detail-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" data-tab="info">Info</button>
+        <button class="tab" data-tab="treatments">Treatments</button>
+        <button class="tab" data-tab="payments">Payments</button>
+        <button class="tab" data-tab="notes">Notes</button>
+      </div>
+      <div id="tab-info" class="tab-panel"></div>
+      <div id="tab-treatments" class="tab-panel" style="display:none"></div>
+      <div id="tab-payments" class="tab-panel" style="display:none"></div>
+      <div id="tab-notes" class="tab-panel" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CSV IMPORT MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="csv-import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Import Contracts from CSV</span>
+      <button class="modal-close" data-close="csv-import-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--blue-text)">
+        <strong>Date columns</strong> support: YYYY-MM-DD, MM/DD/YYYY, DD-Mon-YYYY, and Excel serial numbers.<br>
+        <strong>Required:</strong> customerNo, contractType, contractStartDate, totalAmount
+      </div>
+      <div class="upload-zone" id="csv-upload-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p>Drop CSV file here or click to browse</p>
+        <small>Only .csv files</small>
+        <input type="file" accept=".csv" id="csv-file-input" style="display:none" />
+      </div>
+      <div class="upload-preview" id="upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong id="preview-filename" style="font-size:13px"></strong>
+          <span id="preview-count" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+        <div style="max-height:180px;overflow-y:auto;font-size:12px" id="preview-table-wrap"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="csv-import-modal">Cancel</button>
+      <button class="btn btn-primary" id="btn-confirm-import" disabled>
+        <span id="import-btn-text">Import</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════════
+     FIREBASE + APP LOGIC
+══════════════════════════════════════════════════ -->
+<script>
+function dismissLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('fade-out');
+  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
+}
+setTimeout(function(){ dismissLoadingScreen(); }, 6000);
+</script>
+<script type="module">
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { firebaseConfig } from './firebase-config.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc,
+  query, where, orderBy, serverTimestamp, writeBatch, runTransaction
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { app as _pcApp, auth as _pcAuth, db as _pcDb } from './js/firebase-init.js';
+import {
+  cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
+  smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
+} from './js/firestoreShim.js';
+import { mountSidebarBadges } from './js/sidebarBadges.js';
+import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
+
+
+/* Firebase init now centralized in js/firebase-init.js */
+const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
+
+/* ── State ── */
+let currentUser = null, currentRole = null;
+let allContracts = [], clientMap = {}, paymentMap = {}, filteredContracts = [];
+let currentPage = 1; const PER_PAGE = 20;
+let teamsData = [], salesAgents = [];
+let activeDetailId = null, csvRows = [];
+let systemSettings = { defaultDownpaymentPct: 60, defaultPaymentPlanType: 'downpayment-then-equal' };
+let treatmentTypesList = [];
+let treatmentMethods = [];
+let contractTypesFromSettings = [];
+let bookingStatuses = [];
+
+/* ── Helpers ── */
+const $ = id => document.getElementById(id);
+
+function showToast(msg, type='success', title='') {
+  const c=$('toast-container'), el=document.createElement('div');
+  el.className=`toast ${type==='success'?'':type}`;
+  const icons={success:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(142,76%,36%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,error:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(0,84%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,warning:`<svg viewBox="0 0 24 24" fill="none" stroke="hsl(38,92%,50%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>`};
+  el.innerHTML=`<div class="toast-icon">${icons[type]||icons.success}</div><div class="toast-body"><div class="toast-title">${title||(type==='error'?'Error':type==='warning'?'Warning':'Saved')}</div><div class="toast-msg">${msg}</div></div><button class="toast-close" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+  c.appendChild(el); setTimeout(()=>el.remove(),5000);
+}
+
+function openModal(id)  { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)closeModal(ov.id);}));
+
+function fmtDate(v) {
+  if(!v) return '—';
+  const d = v.toDate?v.toDate():new Date(v);
+  if(isNaN(d)) return '—';
+  return d.toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});
+}
+
+function fmtCurrency(n) {
+  return '₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function toLocalDate(v) {
+  if(!v) return null;
+  if(v.toDate) return v.toDate();
+  const d = new Date(v); return isNaN(d)?null:d;
+}
+
+function computeStatus(ct) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(ct.status==='active') {
+    const end = toLocalDate(ct.contractEndDate);
+    if(end && end < today) return 'expired';
+  }
+  return ct.status||'active';
+}
+
+function statusBadge(s) {
+  const m={active:'green',expired:'red',renewed:'purple',cancelled:'gray'};
+  return `<span class="badge badge-${m[s]||'gray'}">${s}</span>`;
+}
+
+async function logAction(action,entityType,entityId,description){
+  const entry={action,entityType,entityId,description,
+    performedBy:currentUser?.email||'unknown',
+    performedByUid:currentUser?.uid||'',
+    page:'contracts',createdAt:serverTimestamp()};
+  try{
+    await smartAddDoc(collection(db,'audit_log'),entry);
+  }catch(err){
+    console.error('[audit_log] Write failed (',err.code,'):',err.message);
+  }
+}
+
+function addMonths(date, n) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth()+n);
+  return d;
+}
+
+function getIntervalMonths(freq) {
+  return {monthly:1,'bi-monthly':2,quarterly:3,'semi-annual':6,annual:12,'one-time':null}[freq]||1;
+}
+
+function computeEndDate(startDate, freq, sessions, warrantyMonths) {
+  if(warrantyMonths && warrantyMonths > 0) return addMonths(startDate, warrantyMonths);
+  if(freq==='one-time') return new Date(startDate);
+  const interval = getIntervalMonths(freq);
+  return addMonths(startDate, interval*(sessions-1));
+}
+
+async function getNextContractNo() {
+  let nextNum=1;
+  await runTransaction(db, async tx => {
+    const ref=doc(db,'config','counters');
+    const snap=await tx.get(ref);
+    if(!snap.exists()) { tx.set(ref,{contractCounter:1}); nextNum=1; }
+    else { nextNum=(snap.data().contractCounter||0)+1; tx.update(ref,{contractCounter:nextNum}); }
+  });
+      await invalidateAfterWrite('clients', 'contracts', 'treatments', 'payments', 'complaints', 'inspections', 'renewals', 'teams', 'users', 'config');
+  return `CTR-${String(nextNum).padStart(5,'0')}`;
+}
+
+function generateTreatmentDates(startDate, freq, sessions, contractId, customerNo, contractType, team) {
+  const entries = [];
+  const interval = getIntervalMonths(freq);
+  for(let i=0;i<sessions;i++) {
+    const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
+    entries.push({
+      contractId, customerNo, contractType,
+      contractTypes: contractType ? [contractType] : [],
+      treatmentType: contractType || '',
+      treatmentNo: `TRT-${String(i+1).padStart(3,'0')}`,
+      treatmentDate: d,
+      status: i === 0 ? 'Scheduled' : 'Need Schedule',
+      assignedTeam: team||'',
+      chemicalsUsed: '',
+      technician: '',
+      notes: '',
+      createdAt: serverTimestamp()
+    });
+  }
+  return entries;
+}
+
+function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contractId, customerNo, downpaymentPct, planType) {
+  const entries = [];
+  const interval = getIntervalMonths(freq);
+  const usePlanType = planType || systemSettings.defaultPaymentPlanType;
+  const dpPct = (downpaymentPct !== undefined && downpaymentPct !== null)
+    ? downpaymentPct
+    : systemSettings.defaultDownpaymentPct;
+
+  let amounts = [];
+  if(usePlanType === 'equal' || sessions <= 1) {
+    const perPayment = totalAmount / sessions;
+    amounts = Array(sessions).fill(parseFloat(perPayment.toFixed(2)));
+    const sumSoFar = amounts.slice(0,-1).reduce((a,b)=>a+b,0);
+    amounts[amounts.length-1] = parseFloat((totalAmount - sumSoFar).toFixed(2));
+  } else {
+    const dpAmt = parseFloat((totalAmount * dpPct / 100).toFixed(2));
+    const remaining = parseFloat((totalAmount - dpAmt).toFixed(2));
+    const perInstallment = sessions > 1 ? parseFloat((remaining / (sessions - 1)).toFixed(2)) : 0;
+    amounts = [dpAmt];
+    for(let i=1;i<sessions-1;i++) amounts.push(perInstallment);
+    if(sessions > 1) {
+      const sumSoFar = amounts.reduce((a,b)=>a+b,0);
+      amounts.push(parseFloat((totalAmount - sumSoFar).toFixed(2)));
+    }
+  }
+
+  for(let i=0;i<sessions;i++) {
+    const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
+    entries.push({
+      contractId, customerNo,
+      amount: amounts[i] || 0,
+      dueDate: d,
+      paymentDate: null,
+      status: 'Pending',
+      paymentMode: '',
+      orNumber: '',
+      receivedBy: '',
+      remarks: '',
+      sessionNo: i + 1,
+      isDownpayment: i === 0 && usePlanType !== 'equal',
+      createdAt: serverTimestamp()
+    });
+  }
+  return entries;
+}
+
+async function loadAll() {
+  const cSnap = await cachedGetDocs(collection(db,'clients'));
+  clientMap = {};
+  cSnap.forEach(d=>{ const c=d.data(); clientMap[c.customerNo]={ name:c.clientName, id:d.id }; });
+
+  $('customer-datalist').innerHTML = cSnap.docs.map(d=>{
+    const c=d.data();
+    return `<option value="${c.customerNo}">${c.customerNo} — ${c.clientName}</option>`;
+  }).join('');
+
+  const tSnap = await cachedGetDocs(collection(db,'teams'));
+  teamsData = tSnap.docs.map(d=>({id:d.id,...d.data()}));
+  $('form-team').innerHTML = '<option value="">— Select Team —</option>'+teamsData.map(t=>`<option value="${t.teamName}">${t.teamName}</option>`).join('');
+
+  let commSources = [];
+  let contractFrequencies = [];
+
+  try {
+    const cfg = await cachedGetDoc(doc(db,'config','settings'));
+    if(cfg.exists()) {
+      const s = cfg.data();
+      salesAgents = s.salesAgents || [];
+      treatmentTypesList = s.treatmentTypes || ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+      treatmentMethods = s.treatmentMethods || ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
+      contractTypesFromSettings = s.contractTypesList || [];
+      bookingStatuses = s.bookingStatuses || ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
+      systemSettings.defaultDownpaymentPct    = s.defaultDownpaymentPct    ?? 60;
+      systemSettings.defaultPaymentPlanType   = s.defaultPaymentPlanType   || 'downpayment-then-equal';
+      if (s.commSources && s.commSources.length) commSources = s.commSources;
+      if (s.contractFrequencies && s.contractFrequencies.length) contractFrequencies = s.contractFrequencies;
+    }
+  } catch { 
+    salesAgents=[]; 
+    treatmentTypesList = ['Termite Control','General Pest Control','Rodents Control','Crawling Insects Control','Pre-Construction Termite Control','Reticulation System','Flying Insects Control'];
+    treatmentMethods = ['Chemical spraying','Heat treatment','Baiting system','Fogging','Biological control','Physical removal','Monitoring'];
+    contractTypesFromSettings = [];
+    bookingStatuses = ['Confirmed','For Confirmation','Awaiting Customer Confirmation','Pencil Booking','Need Schedule'];
+  }
+
+  /* Populate Contract Type dropdown (single select) */
+  $('form-contract-type').innerHTML = '<option value="">— Select Contract Type —</option>' + contractTypesFromSettings.map(t => `<option value="${t}">${t}</option>`).join('');
+
+
+  /* Populate contract statuses from settings */
+  let contractStatuses = [];
+  try { const ss = await cachedGetDoc(doc(db,'config','settings')); if(ss.exists() && ss.data().contractStatuses) contractStatuses = ss.data().contractStatuses; } catch(e){}
+  if (!contractStatuses.length) contractStatuses = ['Active','Expired','Renewed','Cancelled'];
+  $('form-status').innerHTML = contractStatuses.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
+
+  $('form-treatment-method').innerHTML = '<option value="">— Select or type —</option>' + treatmentTypesList.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  /* Populate Communication Source and Frequency dropdowns */
+  $('form-comm-source').innerHTML = '<option value="">— Select Source —</option>' + commSources.map(s => `<option>${s}</option>`).join('');
+  $('form-frequency').innerHTML   = '<option value="">— Select —</option>'         + contractFrequencies.map(f => `<option value="${f.toLowerCase().replace(/\s+/g,'-')}">${f}</option>`).join('');
+
+  const agentSet=new Set(salesAgents);
+  cSnap.forEach(d=>{if(d.data().salesAgent)agentSet.add(d.data().salesAgent);});
+  salesAgents=[...agentSet].filter(Boolean).sort();
+  $('form-sales-agent').innerHTML='<option value="">— Select Agent —</option>'+salesAgents.map(a=>`<option>${a}</option>`).join('');
+
+  const pSnap = await cachedGetDocs(collection(db,'payments'));
+  paymentMap = {};
+  pSnap.forEach(d=>{
+    const p=d.data();
+    if(!paymentMap[p.contractId]) paymentMap[p.contractId]={collected:0,total:0};
+    paymentMap[p.contractId].total += Number(p.amount)||0;
+    if(['Received','Deposited','Remitted','Collected'].includes(p.status))
+      paymentMap[p.contractId].collected += Number(p.amount)||0;
+  });
+
+  const coSnap = await cachedGetDocs(query(collection(db,'contracts'), orderBy('contractStartDate','desc')));
+  allContracts = coSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  computeStats();
+  applyFilters();
+}
+
+function computeStats() {
+  const today=new Date();today.setHours(0,0,0,0);
+  let active=0,expired=0,renewed=0,totalVal=0;
+  allContracts.forEach(c=>{
+    const s=computeStatus(c);
+    if(s==='active')active++;
+    else if(s==='expired')expired++;
+    else if(s==='renewed')renewed++;
+    totalVal+=Number(c.totalAmount||0);
+  });
+  $('stat-total').textContent   = allContracts.length;
+  $('stat-active').textContent  = active;
+  $('stat-expired').textContent = expired;
+  $('stat-renewed').textContent = renewed;
+  $('stat-value').textContent   = '₱'+totalVal.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+
+/* ══════════════════════════════════
+   COLUMN SORT + FILTER ENGINE
+   (mirrors treatments.html behaviour)
+══════════════════════════════════ */
+let sortField = 'contractNumber', sortDir = 'asc';
+let activeColDropdown = null;
+let columnFilters = {}; // { colName: Set of allowed values }
+
+function getColValue(c, col) {
+  if (col === 'contractNumber')    return c.contractNumber || '';
+  if (col === 'customerNo')        return c.customerNo || '';
+  if (col === 'clientName')        return (clientMap[c.customerNo]?.name || '').replace(/\s*\(.*?\)\s*/g,'').trim();
+  if (col === 'contractType')      return c.contractType || '';
+  if (col === 'contractStartDate') {
+    const d = c.contractStartDate?.toDate ? c.contractStartDate.toDate() : new Date(c.contractStartDate||0);
+    return isNaN(d) ? '' : d.toISOString();
+  }
+  if (col === 'contractEndDate') {
+    const d = c.contractEndDate?.toDate ? c.contractEndDate.toDate() : new Date(c.contractEndDate||0);
+    return isNaN(d) ? '' : d.toISOString();
+  }
+  if (col === 'totalAmount') return Number(c.totalAmount) || 0;
+  if (col === 'status')      return computeStatus(c);
+  return '';
+}
+
+function getUniqueColValues(col) {
+  const vals = new Set();
+  allContracts.forEach(c => {
+    const v = getColValue(c, col).toString().trim();
+    if (v && v !== '—') vals.add(v);
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+function closeColDropdown() {
+  if (activeColDropdown) { activeColDropdown.remove(); activeColDropdown = null; }
+  document.removeEventListener('click', onDocClickCloseDropdown, true);
+}
+function onDocClickCloseDropdown(e) {
+  if (activeColDropdown && !activeColDropdown.contains(e.target) && !e.target.closest('.col-menu-btn'))
+    closeColDropdown();
+}
+
+function openColDropdown(col, th) {
+  closeColDropdown();
+  const values = getUniqueColValues(col);
+  const currentFilter = columnFilters[col];
+  const hasSortField = th.dataset.sort;
+
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    ${hasSortField ? `
+      <div class="col-dropdown-item" data-action="sort-asc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Sort A → Z
+      </div>
+      <div class="col-dropdown-item" data-action="sort-desc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Sort Z → A
+      </div>
+      <div class="col-dropdown-sep"></div>` : ''}
+    <div class="col-dropdown-search"><input type="text" placeholder="Search…" id="col-search-input" /></div>
+    <div class="col-dropdown-values" id="col-values-list">
+      ${values.map(v => `<label><input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${!currentFilter || currentFilter.has(v) ? 'checked' : ''} />${v}</label>`).join('')}
+    </div>
+    <div class="col-dropdown-actions">
+      <button class="btn btn-ghost btn-sm" data-action="select-all" style="border:1px solid var(--border)">All</button>
+      <button class="btn btn-ghost btn-sm" data-action="select-none" style="border:1px solid var(--border)">None</button>
+      <button class="btn btn-primary btn-sm" data-action="apply">Apply</button>
+    </div>
+  `;
+
+  th.style.position = 'relative';
+  th.appendChild(dd);
+  activeColDropdown = dd;
+
+  dd.querySelector('#col-search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    dd.querySelectorAll('#col-values-list label').forEach(lbl => {
+      lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  dd.querySelectorAll('[data-action="sort-asc"],[data-action="sort-desc"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortField = th.dataset.sort;
+      sortDir = btn.dataset.action === 'sort-asc' ? 'asc' : 'desc';
+      document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+      const icon = document.getElementById('sort-' + sortField);
+      if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+      doSort();
+      closeColDropdown();
+    });
+  });
+
+  dd.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+  });
+  dd.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+    dd.querySelectorAll('#col-values-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  });
+
+  dd.querySelector('[data-action="apply"]')?.addEventListener('click', () => {
+    const checked = [...dd.querySelectorAll('#col-values-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const allChecked = checked.length === values.length;
+    if (allChecked) delete columnFilters[col];
+    else columnFilters[col] = new Set(checked);
+    th.style.background = columnFilters[col] ? 'var(--primary-light)' : '';
+    closeColDropdown();
+    applyFilters();
+  });
+
+  setTimeout(() => document.addEventListener('click', onDocClickCloseDropdown, true), 10);
+  dd.querySelector('#col-search-input').focus();
+}
+
+// ▾ button opens dropdown
+document.querySelectorAll('.col-menu-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    openColDropdown(btn.dataset.col, btn.closest('th'));
+  });
+});
+
+// Click header text → sort toggle
+document.querySelectorAll('th.col-header').forEach(th => {
+  th.addEventListener('click', e => {
+    if (e.target.closest('.col-menu-btn') || e.target.closest('.col-dropdown')) return;
+    const field = th.dataset.sort;
+    if (!field) return;
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.textContent = sortDir === 'asc' ? '▲' : '▼';
+    doSort();
+  });
+});
+
+function doSort() {
+  filteredContracts.sort((a, b) => {
+    let av, bv;
+    if (sortField === 'contractStartDate' || sortField === 'contractEndDate') {
+      const da  = a[sortField]?.toDate ? a[sortField].toDate() : new Date(a[sortField]||0);
+      const db2 = b[sortField]?.toDate ? b[sortField].toDate() : new Date(b[sortField]||0);
+      av = da.getTime(); bv = db2.getTime();
+    } else if (sortField === 'totalAmount') {
+      av = Number(a.totalAmount)||0; bv = Number(b.totalAmount)||0;
+    } else {
+      av = getColValue(a, sortField).toString().toLowerCase();
+      bv = getColValue(b, sortField).toString().toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function applyFilters() {
+  const q = $('search-input').value.toLowerCase().trim();
+
+  filteredContracts = allContracts.filter(c=>{
+    const dispStatus = computeStatus(c);
+    const clientName = (clientMap[c.customerNo]?.name||'').toLowerCase();
+    const matchQ = !q||[c.customerNo,clientName,c.contractNumber,c.contractType,dispStatus]
+      .some(f=>(f||'').toLowerCase().includes(q));
+    let matchCol = true;
+    for (const [col, allowed] of Object.entries(columnFilters)) {
+      if (!allowed.has(getColValue(c, col).toString().trim())) { matchCol = false; break; }
+    }
+    return matchQ && matchCol;
+  });
+  currentPage=1;
+  doSort();
+}
+
+$('search-input').addEventListener('input', applyFilters);
+$('btn-clear-filters').addEventListener('click', () => {
+  $('search-input').value = '';
+  columnFilters = {};
+  document.querySelectorAll('thead th').forEach(th => th.style.background = '');
+  applyFilters();
+});
+
+document.getElementById('contracts-tbody').addEventListener('click', function(e) {
+  const viewBtn   = e.target.closest('.btn-view, .contract-no-link');
+  const editBtn   = e.target.closest('.btn-edit');
+  const deleteBtn = e.target.closest('.btn-delete');
+  if (viewBtn && viewBtn.dataset.id) { openDetailModal(viewBtn.dataset.id); return; }
+  if (editBtn && editBtn.dataset.id) { openEditModal(editBtn.dataset.id); return; }
+  if (deleteBtn && deleteBtn.dataset.id) { deleteContract(deleteBtn.dataset.id); return; }
+});
+
+/* ── Delete contract (super_admin only) ──
+   Removes the contract record itself. Does not cascade-delete linked
+   treatments/payments — those remain (orphaned by contract id) so
+   historical records are preserved; the user is warned about this. */
+async function deleteContract(id) {
+  if (currentRole !== 'super_admin') {
+    showToast('Only super admins can delete contracts.', 'error');
+    return;
+  }
+  const c = allContracts.find(x => x.id === id);
+  if (!c) return;
+  const contractNo  = c.contractNumber || c.id.slice(0,8).toUpperCase();
+  const clientName  = (clientMap[c.customerNo]?.name || '—').replace(/\s*\(.*?\)\s*/g,'').trim();
+
+  const confirmed = confirm(
+    `Delete contract "${contractNo}" for ${clientName} (${c.customerNo || 'no customer #'})?\n\n` +
+    `This permanently removes the contract record. Linked treatments, payments, and renewals will NOT be deleted, but will no longer be associated with a contract in this list.\n\n` +
+    `This action cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  try {
+    await smartDeleteDoc(doc(db, 'contracts', id));
+    await invalidateAfterWrite('clients', 'contracts', 'treatments', 'payments', 'complaints', 'inspections', 'renewals');
+    await logAction('deleted', 'contract', id, `Deleted contract ${contractNo} for ${c.customerNo || ''}`);
+    showToast(`Contract "${contractNo}" deleted.`);
+    if (activeDetailId === id) closeModal('contract-detail-modal');
+    await loadAll();
+  } catch (err) {
+    console.error('Delete contract error:', err);
+    showToast('Failed to delete contract: ' + err.message, 'error');
+  }
+}
+
+function renderTable() {
+  const total=filteredContracts.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
+  currentPage=Math.min(currentPage,totalPages);
+  const start=(currentPage-1)*PER_PAGE, end=Math.min(start+PER_PAGE,total);
+  const page=filteredContracts.slice(start,end);
+
+  $('pagination-info').textContent = total===0?'No records found':`Showing ${start+1}–${end} of ${total} contracts`;
+
+  if(!page.length){
+    $('contracts-tbody').innerHTML=`<tr><td colspan="10"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg><h3>No contracts found</h3><p>Try adjusting your search or filters.</p></div></td></tr>`;
+    $('pagination-controls').innerHTML=''; return;
+  }
+
+  $('contracts-tbody').innerHTML = page.map(c=>{
+    const dispStatus = computeStatus(c);
+    const clientName = clientMap[c.customerNo]?.name||'—';
+    const pm = paymentMap[c.id]||{collected:0,total:0};
+    const balance = Math.max(0,(Number(c.totalAmount)||0)-pm.collected);
+    const contractNo = c.contractNumber||c.id.slice(0,8).toUpperCase();
+    const displayType = c.contractType || '—';
+    const isSuperAdmin = currentRole === 'super_admin';
+    return `<tr>
+      <td><span class="contract-no-link" style="color:var(--primary);cursor:pointer;font-weight:600;font-family:monospace;font-size:12.5px" data-id="${c.id}">${contractNo}</span></td>
+      <td class="mono">${c.customerNo||'—'}</td>
+      <td style="font-weight:500">${clientName.replace(/\s*\(.*?\)\s*/g,'').trim()}</td>
+      <td style="font-size:12.5px"><span style="display:inline-block;background:var(--green-bg);color:var(--green-text);border:1px solid hsl(142,76%,80%);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${displayType}</span></td>
+      <td class="muted">${fmtDate(c.contractStartDate)}</td>
+      <td class="muted">${fmtDate(c.contractEndDate)}</td>
+      <td style="font-variant-numeric:tabular-nums">${fmtCurrency(c.totalAmount)}</td>
+      <td style="font-variant-numeric:tabular-nums;color:${balance>0?'var(--amber-text)':'var(--green-text)'}">${fmtCurrency(balance)}</td>
+      <td>${statusBadge(dispStatus)}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-sm btn-secondary btn-view" data-id="${c.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View
+          </button>
+          <button class="btn-icon btn-edit" data-id="${c.id}" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          ${isSuperAdmin ? `
+          <button class="btn-icon btn-delete" data-id="${c.id}" title="Delete" style="color:var(--red-text);border-color:#fca5a5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const ctrl=$('pagination-controls');
+  if(totalPages<=1){ctrl.innerHTML='';return;}
+  const pages=[];
+  for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=currentPage-1&&i<=currentPage+1))pages.push(i);else if(pages[pages.length-1]!=='…')pages.push('…');}
+  ctrl.innerHTML=`<button class="page-btn" ${currentPage<=1?'disabled':''} data-p="${currentPage-1}">‹</button>${pages.map(p=>p==='…'?`<button class="page-btn" disabled>…</button>`:`<button class="page-btn${p===currentPage?' active':''}" data-p="${p}">${p}</button>`).join('')}<button class="page-btn" ${currentPage>=totalPages?'disabled':''} data-p="${currentPage+1}">›</button>`;
+  ctrl.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{currentPage=Number(b.dataset.p);renderTable();}));
+}
+
+function updateEndDateAndPreview() {
+  const startStr   = $('form-start-date').value;
+  const freq       = $('form-frequency').value;
+  const sessions   = parseInt($('form-sessions').value)||0;
+  const amount     = parseFloat($('form-amount').value)||0;
+  const warranty   = parseInt($('form-warranty').value)||0;
+  if(!startStr||!freq||!sessions) { $('form-end-date').value=''; $('schedule-preview').style.display='none'; return; }
+
+  const [y,m,d] = startStr.split('-').map(Number);
+  const startDate = new Date(y,m-1,d);
+
+  const endDate   = computeEndDate(startDate, freq, sessions, warranty);
+  const interval  = getIntervalMonths(freq);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const ed = endDate;
+  $('form-end-date').value = `${ed.getFullYear()}-${String(ed.getMonth()+1).padStart(2,'0')}-${String(ed.getDate()).padStart(2,'0')}`;
+
+  const dpPctInput = parseFloat($('form-downpayment-pct').value);
+  const dpPct = !isNaN(dpPctInput) ? dpPctInput : systemSettings.defaultDownpaymentPct;
+  const planType = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
+
+  $('downpayment-hint').textContent = !isNaN(dpPctInput)
+    ? `Using ${dpPct}% downpayment on 1st session`
+    : `Using system default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
+
+  let sessionAmounts = [];
+  if(amount && sessions) {
+    if(planType === 'equal' || sessions <= 1) {
+      const per = parseFloat((amount / sessions).toFixed(2));
+      sessionAmounts = Array(sessions).fill(per);
+      sessionAmounts[sessions-1] = parseFloat((amount - per*(sessions-1)).toFixed(2));
+    } else {
+      const dpAmt = parseFloat((amount * dpPct / 100).toFixed(2));
+      const remaining = parseFloat((amount - dpAmt).toFixed(2));
+      const perInstall = sessions > 1 ? parseFloat((remaining / (sessions-1)).toFixed(2)) : 0;
+      sessionAmounts = [dpAmt];
+      for(let i=1;i<sessions-1;i++) sessionAmounts.push(perInstall);
+      if(sessions > 1) {
+        const sumSoFar = sessionAmounts.reduce((a,b)=>a+b,0);
+        sessionAmounts.push(parseFloat((amount - sumSoFar).toFixed(2)));
+      }
+    }
+  }
+
+  let rows = '';
+  for(let i=0;i<sessions;i++){
+    const td = freq==='one-time'?startDate:addMonths(startDate,interval*i);
+    const dateStr = td.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+    const dayStr  = days[td.getDay()];
+    const rowBg   = i%2===0?'#fff':'var(--bg-secondary)';
+    const sessionAmt = sessionAmounts[i];
+    const isDP   = planType !== 'equal' && i === 0 && sessions > 1;
+    const amtLabel = sessionAmt
+      ? `₱${sessionAmt.toLocaleString('en-PH',{minimumFractionDigits:2})}`
+      : '—';
+    const sessionLabel = i === 0 ? (isDP ? '1st (Downpayment)' : '1') : String(i+1);
+    rows += `<tr style="background:${rowBg}${isDP?';border-left:3px solid var(--primary)':''}">
+      <td style="padding:6px 12px;color:${isDP?'var(--primary)':'var(--text-muted)'};font-size:11.5px;font-weight:${isDP?'700':'400'};border-bottom:1px solid var(--border)">${sessionLabel}</td>
+      <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid var(--border)">${dateStr}</td>
+      <td style="padding:6px 12px;color:var(--text-muted);border-bottom:1px solid var(--border)">${dayStr}</td>
+      <td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:${isDP?'700':'400'};color:${isDP?'var(--primary)':'inherit'};border-bottom:1px solid var(--border)">${amtLabel}</td>
+    </tr>`;
+  }
+  $('schedule-preview-text').innerHTML = rows;
+  $('schedule-preview-count').textContent = `${sessions} session${sessions===1?'':'s'}`;
+
+  if(amount) {
+    const dpAmt = sessionAmounts[0] || 0;
+    const remaining = parseFloat((amount - dpAmt).toFixed(2));
+    const remainSessions = sessions - 1;
+    const perRemain = remainSessions > 0 ? parseFloat((remaining/remainSessions).toFixed(2)) : 0;
+    const warrantyLine = warranty > 0 ? ` · Warranty: <strong>${warranty} months</strong> (expires ${ed.toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})})` : '';
+    if(planType !== 'equal' && sessions > 1) {
+      $('schedule-preview-total').innerHTML =
+        `Total: <strong>₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        ` · Downpayment: <strong>₱${dpAmt.toLocaleString('en-PH',{minimumFractionDigits:2})} (${dpPct}%)</strong>` +
+        (remainSessions > 0 ? ` · Remaining ${remainSessions} sessions: <strong>₱${perRemain.toLocaleString('en-PH',{minimumFractionDigits:2})} each</strong>` : '') +
+        warrantyLine;
+    } else {
+      const per = sessionAmounts[0] || 0;
+      $('schedule-preview-total').innerHTML =
+        `Total: <strong>₱${amount.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        ` · Per session: <strong>₱${per.toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>` +
+        warrantyLine;
+    }
+  } else {
+    $('schedule-preview-total').innerHTML = 'Enter Total Amount to see payment breakdown';
+  }
+  $('schedule-preview').style.display='';
+}
+
+['form-start-date','form-frequency','form-sessions','form-amount','form-warranty','form-downpayment-pct','form-payment-plan-type'].forEach(id=>{$(id).addEventListener('change',updateEndDateAndPreview);$(id).addEventListener('input',updateEndDateAndPreview);});
+
+$('form-customer-no').addEventListener('input',()=>{
+  const no=$('form-customer-no').value.trim();
+  const client=clientMap[no];
+  $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : (no?'Client not found in system':'');
+});
+
+$('btn-new-contract').addEventListener('click', async ()=>{
+  clearForm();
+  $('renewal-banner').style.display='none';
+  $('form-modal-title').textContent='New Contract';
+  $('save-btn-text').textContent='Save & Generate Schedule';
+  $('form-contract-id').value='';
+  $('form-old-contract-id').value='';
+  $('form-contract-no').value = 'Auto-generated';
+  if($('downpayment-hint')) $('downpayment-hint').textContent = `System default: ${systemSettings.defaultDownpaymentPct}% downpayment (${systemSettings.defaultPaymentPlanType === 'equal' ? 'Equal split' : 'Downpayment + equal installments'})`;
+  openModal('contract-form-modal');
+});
+
+async function openRenewalMode(params) {
+  clearForm();
+  $('form-contract-no').value = 'Auto-generated';
+  $('form-contract-id').value = '';
+
+  const oldId  = params.get('oldId')  || '';
+  const oldNo  = params.get('oldNo')  || '';
+  const oldEnd = params.get('oldEnd') || '';
+  $('form-old-contract-id').value = oldId;
+
+  const banner = $('renewal-banner');
+  banner.style.display = 'flex';
+  $('renewal-ref-text').textContent = oldNo
+    ? `Renewing Contract ${oldNo}${oldEnd?' (ended '+oldEnd+')':''} · All details pre-filled from previous contract`
+    : 'Pre-filled from previous contract — review & adjust before saving';
+
+  if(params.get('customerNo')) {
+    $('form-customer-no').value = params.get('customerNo');
+    const client = clientMap[params.get('customerNo')];
+    $('client-name-hint').textContent = client ? `✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}` : '';
+  }
+  if(params.get('contractType')) {
+    $('form-contract-type').value = params.get('contractType');
+  }
+  if(params.get('method'))         $('form-treatment-method').value = params.get('method');
+  if(params.get('frequency'))      $('form-frequency').value        = params.get('frequency');
+  if(params.get('sessions'))       $('form-sessions').value         = params.get('sessions');
+  if(params.get('warranty'))       $('form-warranty').value         = params.get('warranty');
+  if(params.get('amount'))         $('form-amount').value           = params.get('amount');
+  if(params.get('team'))           $('form-team').value             = params.get('team');
+  if(params.get('agent'))          $('form-sales-agent').value      = params.get('agent');
+
+  if(params.get('oldEnd')) {
+    const [ey,em,ed] = params.get('oldEnd').split('-').map(Number);
+    const nextDay = new Date(ey,em-1,ed+1);
+    $('form-start-date').value = `${nextDay.getFullYear()}-${String(nextDay.getMonth()+1).padStart(2,'0')}-${String(nextDay.getDate()).padStart(2,'0')}`;
+  }
+
+  $('form-modal-title').textContent = '🔄 New Renewal Contract';
+  $('save-btn-text').textContent = 'Save Renewal & Generate Schedule';
+  $('form-status').value = 'active';
+
+  updateEndDateAndPreview();
+  openModal('contract-form-modal');
+
+  if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
+}
+
+async function openInspectionMode(params) {
+  clearForm();
+  $('form-contract-no').value = 'Auto-generated';
+  $('form-contract-id').value = '';
+  $('form-old-contract-id').value = '';
+
+  const inspId = params.get('fromInspectionId') || '';
+  if(inspId) $('form-old-contract-id').value = 'INSP:' + inspId;
+
+  const banner = $('renewal-banner');
+  banner.style.display = 'flex';
+  banner.style.background = 'var(--purple-bg)';
+  banner.style.borderColor = 'hsl(262,83%,70%)';
+  banner.querySelector('svg').style.stroke = 'var(--purple)';
+  banner.querySelector('div').querySelector('div:first-child').style.color = 'var(--purple-text)';
+  banner.querySelector('div').querySelector('div:first-child').textContent = '🔍 Converting Inspection to Contract';
+  banner.querySelector('div').querySelector('div:last-child').style.color = 'var(--purple-text)';
+
+  const clientName   = params.get('clientName')    || '';
+  const contactNo    = params.get('contactNumber') || '';
+  const address      = params.get('address')       || '';
+  const inspectedBy  = params.get('inspectedBy')   || '';
+  const pestProblems = params.get('pestProblems')  || '';
+  const inspDate     = params.get('inspectionDate')|| '';
+
+  $('renewal-ref-text').textContent = clientName
+    ? `Inspection for "${clientName}"${inspDate?' on '+inspDate:''}${pestProblems?' · Pests: '+pestProblems:''}`
+    : 'Pre-filled from inspection record — complete contract details to proceed';
+
+  let foundCustomerNo = '';
+  for(const [cno, cdata] of Object.entries(clientMap)) {
+    const name = (cdata.name || '').replace(/\s*\(.*?\)\s*/g,'').trim().toLowerCase();
+    if(clientName && name.includes(clientName.toLowerCase().split('(')[0].trim())) {
+      foundCustomerNo = cno;
+      break;
+    }
+  }
+  if(foundCustomerNo) {
+    $('form-customer-no').value = foundCustomerNo;
+    const client = clientMap[foundCustomerNo];
+    $('client-name-hint').textContent = client ? '✓ ' + (client.name||'').replace(/\s*\(.*?\)\s*/g,'').trim() : '';
+  } else if(clientName) {
+    $('client-name-hint').textContent = '⚠ Client "'+clientName+'" not in system — please select or add first';
+    $('client-name-hint').style.color = 'var(--amber-text)';
+  }
+
+  if(params.get('contractType')) {
+    $('form-contract-type').value = params.get('contractType');
+  }
+  if(params.get('assignedTeam')) $('form-team').value          = params.get('assignedTeam');
+  if(params.get('salesAgent'))   $('form-sales-agent').value   = params.get('salesAgent');
+
+  const notesParts = [];
+  if(pestProblems) notesParts.push('Pest problems observed: ' + pestProblems);
+  if(address)      notesParts.push('Inspection address: ' + address);
+  if(contactNo)    notesParts.push('Contact: ' + contactNo);
+  if(inspectedBy)  notesParts.push('Inspected by: ' + inspectedBy);
+  if(params.get('notes')) notesParts.push('Inspection notes: ' + params.get('notes'));
+  if(inspId)       notesParts.push('Source inspection ID: ' + inspId);
+  $('form-notes').value = notesParts.join(' | ');
+
+  $('form-modal-title').textContent = '🔍 Convert Inspection to Contract';
+  $('save-btn-text').textContent = 'Save Contract & Generate Schedule';
+  $('form-status').value = 'active';
+
+  updateEndDateAndPreview();
+  openModal('contract-form-modal');
+
+  if(window.history.replaceState) window.history.replaceState({},'','contracts.html');
+}
+
+function openEditModal(id) {
+  const c=allContracts.find(x=>x.id===id);
+  if(!c) return;
+  clearForm();
+  $('form-modal-title').textContent='Edit Contract';
+  $('save-btn-text').textContent='Update Contract';
+  $('form-contract-id').value=id;
+  $('form-customer-no').value=c.customerNo||'';
+  const client=clientMap[c.customerNo];
+  $('client-name-hint').textContent=client?`✓ ${client.name.replace(/\s*\(.*?\)\s*/g,'').trim()}`:'';
+  $('form-contract-no').value=c.contractNumber||'';
+  // For edit: use contractType (single value). If old record had contractTypes array, use first item.
+  const savedType = c.contractType || (Array.isArray(c.contractTypes) && c.contractTypes.length ? c.contractTypes[0] : '');
+  $('form-contract-type').value = savedType;
+  $('form-treatment-method').value=c.treatmentMethod||'';
+  $('form-frequency').value=c.frequency||'';
+  $('form-sessions').value=c.noOfSessions||'';
+  $('form-warranty').value=c.warrantyPeriod||'';
+  const toDateStr=v=>{if(!v)return '';const d=toLocalDate(v);return d?d.toISOString().slice(0,10):'';};
+  $('form-start-date').value=toDateStr(c.contractStartDate);
+  $('form-end-date').value=toDateStr(c.contractEndDate);
+  $('form-amount').value=c.totalAmount||'';
+  $('form-team').value=c.assignedTeam||'';
+  $('form-sales-agent').value=c.salesAgent||'';
+  $('form-comm-source').value=c.communicationSource||'';
+  $('form-status').value=c.status||'active';
+  $('form-notes').value=c.notes||'';
+  if(c.downpaymentPct !== undefined) $('form-downpayment-pct').value = c.downpaymentPct;
+  if(c.paymentPlanType) $('form-payment-plan-type').value = c.paymentPlanType;
+  $('schedule-preview').style.display='none';
+  openModal('contract-form-modal');
+}
+
+function clearForm() {
+  ['form-contract-id','form-old-contract-id','form-customer-no','form-contract-no','form-treatment-method',
+   'form-sessions','form-warranty','form-start-date','form-end-date','form-amount','form-notes',
+   'form-downpayment-pct']
+    .forEach(id=>{$(id).value='';});
+  ['form-contract-type','form-frequency','form-team','form-sales-agent','form-comm-source','form-payment-plan-type'].forEach(id=>{$(id).value='';});
+  $('form-status').value='active';
+  $('client-name-hint').textContent='';
+  $('schedule-preview').style.display='none';
+  $('renewal-banner').style.display='none';
+  if($('downpayment-hint')) $('downpayment-hint').textContent=`System default: ${systemSettings.defaultDownpaymentPct}% downpayment`;
+}
+
+$('btn-save-contract').addEventListener('click', async ()=>{
+  const customerNo   = $('form-customer-no').value.trim();
+  const contractType = $('form-contract-type').value.trim();
+  const freq         = $('form-frequency').value;
+  const sessions     = parseInt($('form-sessions').value)||0;
+  const startStr     = $('form-start-date').value;
+  const amount       = parseFloat($('form-amount').value)||0;
+
+  if(!customerNo)   { showToast('Customer No is required.','error'); return; }
+  if(!contractType) { showToast('Contract Type is required.','error'); return; }
+  if(!freq)         { showToast('Frequency is required.','error'); return; }
+  if(!sessions)     { showToast('No. of Sessions is required.','error'); return; }
+  if(!startStr)     { showToast('Start Date is required.','error'); return; }
+  if(!amount)       { showToast('Total Amount is required.','error'); return; }
+
+  const btn=$('btn-save-contract'); btn.disabled=true; $('save-btn-text').textContent='Saving…';
+
+  const [y,m,d]=startStr.split('-').map(Number);
+  const startDate = new Date(y,m-1,d);
+  const endDate   = computeEndDate(startDate,freq,sessions,parseInt($('form-warranty').value)||0);
+
+  const warrantyPeriod = parseInt($('form-warranty').value)||0;
+  const dpPctInput     = parseFloat($('form-downpayment-pct').value);
+  const dpPct          = !isNaN(dpPctInput) ? dpPctInput : systemSettings.defaultDownpaymentPct;
+  const planType       = $('form-payment-plan-type').value || systemSettings.defaultPaymentPlanType;
+
+  const data = {
+    customerNo,
+    contractType,
+    contractTypes: [contractType],   // keep array for backward compat, single item
+    contractNumber: '',
+    treatmentMethod: $('form-treatment-method').value.trim(),
+    frequency: freq,
+    noOfSessions: sessions,
+    warrantyPeriod,
+    contractStartDate: startDate,
+    contractEndDate: endDate,
+    totalAmount: amount,
+    assignedTeam: $('form-team').value,
+    salesAgent: $('form-sales-agent').value,
+    communicationSource: $('form-comm-source').value,
+    status: $('form-status').value,
+    notes: $('form-notes').value.trim(),
+    downpaymentPct: dpPct,
+    paymentPlanType: planType,
+    updatedAt: serverTimestamp(),
+  };
+
+  const editId=$('form-contract-id').value;
+  try {
+    if(editId) {
+      await smartUpdateDoc(doc(db,'contracts',editId),data);
+      await logAction('updated','contract',editId,`Updated contract ${data.contractNumber} for ${customerNo}`);
+      showToast('Contract updated successfully.');
+    } else {
+      const _oldVal = $('form-old-contract-id').value.trim();
+      const isInspectionConvert = _oldVal.startsWith('INSP:');
+      const oldContractId = isInspectionConvert ? '' : _oldVal;
+      const inspectionSourceId = isInspectionConvert ? _oldVal.replace('INSP:','') : '';
+      const isRenewal = !!oldContractId;
+
+      if(isRenewal) {
+        data.renewedFromContractId = oldContractId;
+        data.notes = (data.notes?data.notes+' | ':'') + 'Renewal of contract ' + oldContractId;
+      }
+      if(inspectionSourceId) {
+        data.fromInspectionId = inspectionSourceId;
+      }
+      data.createdAt=serverTimestamp();
+      data.contractNumber = await getNextContractNo();
+      const ref=await smartAddDoc(collection(db,'contracts'),data);
+
+      const treatments=generateTreatmentDates(startDate,freq,sessions,ref.id,customerNo,contractType,$('form-team').value);
+      const payments=generatePaymentSchedule(startDate,amount,freq,sessions,ref.id,customerNo,dpPct,planType);
+
+      const batch=writeBatch(db);
+      treatments.forEach(t=>batch.set(doc(collection(db,'treatments')),t));
+      payments.forEach(p=>batch.set(doc(collection(db,'payments')),p));
+
+      if(isRenewal) {
+        batch.update(doc(db,'contracts',oldContractId),{
+          status:'renewed', renewedToContractId:ref.id, updatedAt:serverTimestamp()
+        });
+        batch.set(doc(collection(db,'renewals')),{
+          contractId:    oldContractId,
+          newContractId: ref.id,
+          customerNo,
+          status:        'renewed',
+          notes:         `Renewed to ${data.contractNumber}`,
+          createdAt:     serverTimestamp(),
+          updatedAt:     serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+      await invalidateAfterWrite('clients', 'contracts', 'treatments', 'payments', 'complaints', 'inspections', 'renewals', 'teams', 'users', 'config');
+
+      await logAction('created','contract',ref.id,
+        isRenewal
+          ? `Renewed contract ${oldContractId} → ${data.contractNumber} for ${customerNo}. ${treatments.length} treatments + ${payments.length} payments generated.`
+          : `Created contract ${data.contractNumber} for ${customerNo} — ${treatments.length} treatments + ${payments.length} payments generated`
+      );
+      showToast(
+        isRenewal
+          ? `✓ Renewal complete! Contract ${data.contractNumber} created with ${treatments.length} treatments & ${payments.length} payments.`
+          : `Contract created. ${treatments.length} treatments & ${payments.length} payments scheduled.`,
+        'success',
+        isRenewal ? 'Contract Renewed' : 'Saved'
+      );
+    }
+    closeModal('contract-form-modal');
+    await loadAll();
+  } catch(err) {
+    dismissLoadingScreen();console.error(err); showToast('Failed to save: '+err.message,'error');
+  }
+  btn.disabled=false; $('save-btn-text').textContent=editId?'Update Contract':'Save & Generate Schedule';
+});
+
+async function openDetailModal(id) {
+  const c=allContracts.find(x=>x.id===id);
+  if(!c) return;
+  activeDetailId=id;
+
+  const dispStatus=computeStatus(c);
+  const contractNo=c.contractNumber||c.id.slice(0,8).toUpperCase();
+  const clientName=(clientMap[c.customerNo]?.name||'—').replace(/\s*\(.*?\)\s*/g,'').trim();
+
+  $('detail-title').textContent=contractNo;
+  $('detail-subtitle').textContent=`${clientName} · ${c.customerNo||''}`;
+  $('btn-edit-from-detail').onclick=()=>{ closeModal('contract-detail-modal'); openEditModal(id); };
+  const delBtn = $('btn-delete-from-detail');
+  if (currentRole === 'super_admin') {
+    delBtn.style.display = '';
+    delBtn.onclick = () => deleteContract(id);
+  } else {
+    delBtn.style.display = 'none';
+    delBtn.onclick = null;
+  }
+
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="info"]').classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
+  $('tab-info').style.display='';
+
+  $('tab-info').innerHTML=`
+    <div class="detail-grid">
+      ${[
+        ['Contract No.',contractNo],['Client Name',clientName],
+        ['Customer No.',c.customerNo],['Contract Type', c.contractType || '—'],
+        ['Treatment Method',c.treatmentMethod],['Frequency',c.frequency],
+        ['Sessions',c.noOfSessions],['Warranty Period',c.warrantyPeriod?c.warrantyPeriod+' months':'—'],
+        ['Start Date',fmtDate(c.contractStartDate)],['End Date',fmtDate(c.contractEndDate)],
+        ['Total Amount',fmtCurrency(c.totalAmount)],['Assigned Team',c.assignedTeam],
+        ['Sales Agent',c.salesAgent],['Comm. Source',c.communicationSource],
+        ['Status',statusBadge(dispStatus),'raw'],
+      ].map(([label,val,type])=>`
+        <div class="detail-field">
+          <label>${label}</label>
+          <span>${type==='raw'?val:(val||'—')}</span>
+        </div>`).join('')}
+      <div class="detail-field full"><label>Notes</label><span>${c.notes||'—'}</span></div>
+    </div>`;
+
+  openModal('contract-detail-modal');
+
+  $('tab-notes').innerHTML=`
+    <div class="form-group">
+      <label class="form-label" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Contract Notes</label>
+      <textarea class="form-textarea" id="notes-editor" style="min-height:180px">${c.notes||''}</textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-primary btn-sm" id="btn-save-notes">Save Notes</button>
+    </div>`;
+  $('btn-save-notes').addEventListener('click',async()=>{
+    await smartUpdateDoc(doc(db,'contracts',id),{notes:$('notes-editor').value,updatedAt:serverTimestamp()});
+    const idx=allContracts.findIndex(x=>x.id===id);
+    if(idx>=0) allContracts[idx].notes=$('notes-editor').value;
+    showToast('Notes saved.');
+  });
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', async ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
+    $(`tab-${tab.dataset.tab}`).style.display='';
+    const c=allContracts.find(x=>x.id===activeDetailId);
+    if(!c) return;
+    if(tab.dataset.tab==='treatments') await loadDetailTreatments(c);
+    if(tab.dataset.tab==='payments')   await loadDetailPayments(c);
+  });
+});
+
+async function loadDetailTreatments(c) {
+  const panel=$('tab-treatments');
+  panel.innerHTML=`<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const snap=await cachedGetDocs(query(collection(db,'treatments'),where('contractId','==',c.id)));
+    const treatments=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>{const da=a.treatmentDate?.toDate?a.treatmentDate.toDate():new Date(a.treatmentDate||0);const db2=b.treatmentDate?.toDate?b.treatmentDate.toDate():new Date(b.treatmentDate||0);return da-db2;});
+    const total=treatments.length, completed=treatments.filter(t=>t.status==='completed').length;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const next=treatments.find(t=>t.status==='scheduled'&&toLocalDate(t.treatmentDate)>=today);
+
+    const pct=total>0?Math.round(completed/total*100):0;
+    let html=`
+      <div class="progress-wrap">
+        <div class="progress-label"><span>${completed} of ${total} sessions completed</span><span>${pct}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    if(next) {
+      html+=`<div class="next-treatment-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Next treatment: <strong>${fmtDate(next.treatmentDate)}</strong> — ${next.assignedTeam||'No team assigned'}</div>`;
+    }
+
+    if(!treatments.length){ html+=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/></svg><h3>No treatments</h3><p>No treatments scheduled yet.</p></div>`; }
+    else {
+      html+=`<div style="overflow-x:auto"><table class="mini-table"><thead><tr><th>#</th><th>Date</th><th>Status</th><th>Team</th><th>Technician</th><th>Chemicals</th></tr></thead><tbody>${
+        treatments.map(t=>{
+          const tDate=toLocalDate(t.treatmentDate);
+          const isOverdue=t.status==='scheduled'&&tDate&&tDate<today;
+          const dispS=isOverdue?'overdue':t.status;
+          const sMap={scheduled:'blue',completed:'green',cancelled:'gray',rescheduled:'amber',overdue:'red'};
+          const sBadge=`<span class="badge badge-${sMap[dispS]||'gray'}">${dispS}</span>`;
+          return `<tr><td class="muted" style="font-family:monospace;font-size:11.5px"><a href="treatments.html?id=${t.id}" target="_blank" rel="noopener" title="Open treatment details in new tab" style="color:var(--primary);text-decoration:none;font-weight:600" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.treatmentNo||'—'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;display:inline-block;vertical-align:baseline;margin-left:2px;opacity:.7"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></td><td>${fmtDate(t.treatmentDate)}</td><td>${sBadge}</td><td>${t.assignedTeam||'—'}</td><td>${t.technician||'—'}</td><td style="font-size:12px;max-width:140px">${t.chemicalsUsed||'—'}</td></tr>`;
+        }).join('')
+      }</tbody></table></div>`;
+    }
+    panel.innerHTML=html;
+  } catch(e) { panel.innerHTML=`<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load treatments.</p>`; }
+}
+
+async function loadDetailPayments(c) {
+  const panel=$('tab-payments');
+  panel.innerHTML=`<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const snap=await cachedGetDocs(query(collection(db,'payments'),where('contractId','==',c.id)));
+    const payments=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>{const da=a.dueDate?.toDate?a.dueDate.toDate():new Date(a.dueDate||0);const db2=b.dueDate?.toDate?b.dueDate.toDate():new Date(b.dueDate||0);return da-db2;});
+
+    const totalAmt  = Number(c.totalAmount || 0);
+    const collected = payments.filter(p=>['Received','Deposited','Remitted','Collected'].includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
+    const balance   = Math.max(0, totalAmt - collected);
+    const today     = new Date(); today.setHours(0,0,0,0);
+
+    const paidPayments     = payments.filter(p => ['Received','Deposited','Remitted','Collected'].includes(p.status));
+    const pendingPayments  = payments.filter(p => !['Received','Deposited','Remitted','Collected'].includes(p.status));
+    const overduePayments  = pendingPayments.filter(p => { const d=toLocalDate(p.dueDate); return d && d < today; });
+    const upcomingPayments = pendingPayments.filter(p => { const d=toLocalDate(p.dueDate); return !d || d >= today; });
+
+    // ── Synthesize virtual rows for sessions that exist on the contract but have no payment record yet ──
+    const totalSessions = Number(c.noOfSessions || 0);
+    const existingCount = payments.length;
+    if (totalSessions > existingCount && balance > 0) {
+      const startD = toLocalDate(c.contractStartDate) || new Date();
+      const interval = (typeof getIntervalMonths === 'function') ? getIntervalMonths(c.frequency) : 1;
+      for (let i = existingCount; i < totalSessions; i++) {
+        const d = (c.frequency === 'one-time') ? new Date(startD) : addMonths(startD, interval * i);
+        const virtual = {
+          id: `__virtual_${i}`,
+          __virtual: true,
+          sessionNo: i + 1,
+          amount: 0,
+          dueDate: d,
+          status: 'Pending',
+          isDownpayment: false,
+          orNumber: '', receivedBy: '', paymentDate: null
+        };
+        if (d < today) overduePayments.push(virtual); else upcomingPayments.push(virtual);
+        pendingPayments.push(virtual);
+      }
+    }
+
+    // ── Redistribute remaining balance equally across ALL unpaid sessions ──
+    // Overdue is NOT pushed onto upcoming — it keeps its share of the split.
+    const unpaidPayments = [...overduePayments, ...upcomingPayments];
+    const unpaidCount = unpaidPayments.length;
+    const upcomingCount = upcomingPayments.length;
+    const redistributed = {}; // payment.id → revised amount
+    if (unpaidCount > 0 && balance > 0) {
+      const perSession = parseFloat((balance / unpaidCount).toFixed(2));
+      let runningSum = 0;
+      unpaidPayments.forEach((p, i) => {
+        if (i < unpaidCount - 1) {
+          redistributed[p.id] = perSession;
+          runningSum += perSession;
+        } else {
+          redistributed[p.id] = parseFloat((balance - runningSum).toFixed(2));
+        }
+      });
+    } else if (unpaidCount > 0 && balance === 0) {
+      unpaidPayments.forEach(p => { redistributed[p.id] = 0; });
+    }
+
+    const overdueTotal   = overduePayments.reduce((s,p)=>s+Number((redistributed[p.id]??p.amount)||0),0);
+    const upcomingTotal  = upcomingPayments.reduce((s,p)=>s+Number((redistributed[p.id]??p.amount)||0),0);
+
+    // ── Summary Cards ──
+    let html = `
+      <div class="summary-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div class="sum-card"><div class="sum-card-val">${fmtCurrency(totalAmt)}</div><div class="sum-card-lbl">Total Contract Value</div></div>
+        <div class="sum-card" style="border-color:var(--green);background:var(--green-bg)">
+          <div class="sum-card-val" style="color:var(--green-text)">${fmtCurrency(collected)}</div>
+          <div class="sum-card-lbl" style="color:var(--green-text)">Total Collected</div>
+        </div>
+        <div class="sum-card" style="border-color:${balance>0?'var(--amber)':'var(--green)'};background:${balance>0?'var(--amber-bg)':'var(--green-bg)'}">
+          <div class="sum-card-val" style="color:${balance>0?'var(--amber-text)':'var(--green-text)'}">${fmtCurrency(balance)}</div>
+          <div class="sum-card-lbl" style="color:${balance>0?'var(--amber-text)':'var(--green-text)'}">Remaining Balance</div>
+        </div>
+      </div>`;
+
+    // ── Redistribution notice ──
+    if (unpaidCount > 0 && balance > 0) {
+      const perSession = redistributed[unpaidPayments[0]?.id] ?? 0;
+      html += `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--blue-bg);border:1px solid #93c5fd;border-radius:var(--radius);margin-bottom:12px;font-size:12.5px;color:var(--blue-text)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Remaining <strong>&nbsp;${fmtCurrency(balance)}&nbsp;</strong>redistributed equally across <strong>&nbsp;${unpaidCount} unpaid session${unpaidCount===1?'':'s'}&nbsp;</strong> — <strong>&nbsp;${fmtCurrency(perSession)} each</strong>
+        </div>`;
+    }
+
+    if (!payments.length) {
+      html += `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/></svg><h3>No payments</h3><p>No payment schedule found for this contract.</p></div>`;
+      panel.innerHTML = html; return;
+    }
+
+    const tableHeader = `
+      <thead><tr style="background:var(--bg-secondary);position:sticky;top:0;z-index:1">
+        <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">#</th>
+        <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Due Date</th>
+        <th style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Amount (₱)</th>
+        <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Payment Date</th>
+        <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">OR No.</th>
+        <th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border)">Received By</th>
+      </tr></thead>`;
+
+    // ── Row renderer ──
+    const sessionRow = (p, i) => {
+      const isPaid   = ['Received','Deposited','Remitted','Collected'].includes(p.status);
+      const isOv     = !isPaid && toLocalDate(p.dueDate) && toLocalDate(p.dueDate) < today;
+      const isDP     = p.isDownpayment;
+      const globalIdx = p.sessionNo || (payments.indexOf(p) + 1);
+      const origAmt  = Number(p.amount || 0);
+      const revAmt   = redistributed[p.id];
+      const hasChange = revAmt !== undefined && Math.abs(revAmt - origAmt) >= 0.01;
+
+      let rowBg = i % 2 === 0 ? '#fff' : 'var(--bg-secondary)';
+      if (isPaid) rowBg = 'hsl(142,76%,98%)';
+      if (isOv)   rowBg = 'hsl(0,84%,99%)';
+
+      const statusIcon = isPaid
+        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+        : isOv
+          ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+          : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+      const sessionLabel = isDP ? `1st (DP)` : `${globalIdx}`;
+
+      // Single Amount cell — shows revised amount inline; original struck through underneath if changed
+      const schedCell = isPaid
+        ? `<td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--green-text);border-bottom:1px solid var(--border)">${fmtCurrency(origAmt)}</td>`
+        : hasChange
+          ? `<td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--border)">
+               <div style="font-weight:700;color:${isOv?'var(--red-text)':'var(--blue-text)'}">${fmtCurrency(revAmt)}</div>
+               <div style="font-size:10.5px;color:var(--text-muted);text-decoration:line-through;margin-top:1px">${fmtCurrency(origAmt)}</div>
+             </td>`
+          : `<td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:${isDP?'700':'500'};color:${isOv?'var(--red-text)':isDP?'var(--primary)':'inherit'};border-bottom:1px solid var(--border)">${fmtCurrency(origAmt)}</td>`;
+
+      const orCell = isPaid && p.orNumber
+        ? `<span style="font-family:monospace;font-size:11px;background:var(--green-bg);color:var(--green-text);padding:2px 6px;border-radius:4px">OR# ${p.orNumber}</span>`
+        : `<span style="color:var(--text-muted);font-size:12px">—</span>`;
+
+      const payDateCell = isPaid
+        ? `<span style="font-size:12px;color:var(--green-text);font-weight:500">${fmtDate(p.paymentDate)}</span>`
+        : isOv
+          ? `<span style="font-size:12px;color:var(--red-text);font-weight:600">OVERDUE</span>`
+          : `<span style="font-size:12px;color:var(--text-muted)">—</span>`;
+
+      return `<tr style="background:${rowBg};${isDP?'border-left:3px solid var(--primary)':''}">
+        <td style="padding:8px 12px;font-size:12px;color:${isDP?'var(--primary)':'var(--text-muted)'};font-weight:${isDP?'700':'400'};border-bottom:1px solid var(--border);white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:5px">${statusIcon}<span>${sessionLabel}</span></div>
+        </td>
+        <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;color:${isOv?'var(--red-text)':'var(--text)'}">${fmtDate(p.dueDate)}</td>
+        ${schedCell}
+        <td style="padding:8px 12px;border-bottom:1px solid var(--border)">${payDateCell}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid var(--border)">${orCell}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted)">${p.receivedBy||'—'}</td>
+      </tr>`;
+    };
+
+    // ── PAID SECTION ──
+    if (paidPayments.length) {
+      html += `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--green-bg);border:1px solid hsl(142,76%,80%);border-radius:var(--radius) var(--radius) 0 0">
+            <div style="display:flex;align-items:center;gap:7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span style="font-size:12.5px;font-weight:700;color:var(--green-text)">Paid Sessions</span>
+              <span style="font-size:11px;background:var(--green);color:white;padding:1px 7px;border-radius:10px;font-weight:700">${paidPayments.length}</span>
+            </div>
+            <span style="font-size:13px;font-weight:700;color:var(--green-text)">${fmtCurrency(collected)}</span>
+          </div>
+          <div style="border:1px solid hsl(142,76%,80%);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px">${tableHeader}<tbody>${paidPayments.map((p,i)=>sessionRow(p,i)).join('')}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    // ── OVERDUE SECTION ──
+    if (overduePayments.length) {
+      html += `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--red-bg);border:1px solid #fca5a5;border-radius:var(--radius) var(--radius) 0 0">
+            <div style="display:flex;align-items:center;gap:7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span style="font-size:12.5px;font-weight:700;color:var(--red-text)">Overdue</span>
+              <span style="font-size:11px;background:var(--red);color:white;padding:1px 7px;border-radius:10px;font-weight:700">${overduePayments.length}</span>
+            </div>
+            <span style="font-size:13px;font-weight:700;color:var(--red-text)">${fmtCurrency(overdueTotal)}</span>
+          </div>
+          <div style="border:1px solid #fca5a5;border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px">${tableHeader}<tbody>${overduePayments.map((p,i)=>sessionRow(p,i)).join('')}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    // ── UPCOMING SECTION ──
+    if (upcomingPayments.length) {
+      const nextDue = upcomingPayments[0];
+      html += `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--amber-bg);border:1px solid hsl(38,92%,75%);border-radius:var(--radius) var(--radius) 0 0">
+            <div style="display:flex;align-items:center;gap:7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style="font-size:12.5px;font-weight:700;color:var(--amber-text)">Upcoming Schedule</span>
+              <span style="font-size:11px;background:var(--amber);color:white;padding:1px 7px;border-radius:10px;font-weight:700">${upcomingPayments.length}</span>
+            </div>
+            <div style="text-align:right">
+              <span style="font-size:13px;font-weight:700;color:var(--amber-text)">${fmtCurrency(upcomingTotal)}</span>
+              ${nextDue?`<div style="font-size:10.5px;color:var(--amber-text);margin-top:1px">Next due: ${fmtDate(nextDue.dueDate)}</div>`:''}
+            </div>
+          </div>
+          <div style="border:1px solid hsl(38,92%,75%);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px">${tableHeader}<tbody>${upcomingPayments.map((p,i)=>sessionRow(p,i)).join('')}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    // ── Fully paid banner ──
+    if (balance === 0 && paidPayments.length) {
+      html += `<div style="padding:10px 14px;background:var(--green-bg);border:1px solid hsl(142,76%,75%);border-radius:var(--radius);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--green-text);font-weight:600">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Contract fully paid — ${fmtCurrency(totalAmt)}
+      </div>`;
+    }
+
+    panel.innerHTML = html;
+  } catch(e) {
+    panel.innerHTML = `<p style="color:var(--red-text);padding:16px;font-size:13px">Failed to load payments.</p>`;
+  }
+}
+
+$('btn-export-csv').addEventListener('click',()=>{
+  const headers=['contractNumber','customerNo','clientName','contractType','treatmentMethod','frequency','noOfSessions','warrantyPeriod','contractStartDate','contractEndDate','totalAmount','assignedTeam','salesAgent','status','notes'];
+  const rows=filteredContracts.map(c=>[
+    c.contractNumber,c.customerNo,
+    (clientMap[c.customerNo]?.name||'').replace(/\s*\(.*?\)\s*/g,'').trim(),
+    c.contractType,c.treatmentMethod,c.frequency,c.noOfSessions,c.warrantyPeriod,
+    fmtDate(c.contractStartDate),fmtDate(c.contractEndDate),c.totalAmount,
+    c.assignedTeam,c.salesAgent,computeStatus(c),c.notes
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`pestastic_contracts_${Date.now()}.csv`});
+  a.click(); showToast(`Exported ${filteredContracts.length} contracts.`);
+});
+
+$('btn-dl-template').addEventListener('click',()=>{
+  const h='customerNo,contractNumber,contractType,treatmentMethod,frequency,noOfSessions,warrantyPeriod,contractStartDate,contractEndDate,totalAmount,assignedTeam,salesAgent,communicationSource,status,notes';
+  const ex='PC-00001,CTR-00001,Termite Control,Chemical,monthly,12,6,2024-01-15,2024-12-15,12000,Team A,Agent Name,Referral,active,';
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([h+'\n'+ex],{type:'text/csv'})),download:'pestastic_contracts_template.csv'});
+  a.click();
+});
+
+function parseFlexDate(val) {
+  if(!val) return null;
+  const s=String(val).trim();
+  if(/^\d{5}$/.test(s)) {
+    const d=new Date(Date.UTC(1899,11,30));
+    d.setUTCDate(d.getUTCDate()+parseInt(s));
+    return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  }
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y,m,d]=s.split('-').map(Number);
+    return new Date(y,m-1,d);
+  }
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [m,d,y]=s.split('/').map(Number);
+    return new Date(y,m-1,d);
+  }
+  const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const m2=/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/i.exec(s);
+  if(m2) { const[,d,mon,y]=m2; return new Date(Number(y),months[mon.toLowerCase()],Number(d)); }
+  const d=new Date(s);
+  return isNaN(d)?null:d;
+}
+
+$('btn-import-csv').addEventListener('click',()=>{
+  csvRows=[]; $('upload-preview').style.display='none'; $('btn-confirm-import').disabled=true; $('csv-file-input').value='';
+  openModal('csv-import-modal');
+});
+
+const csvZone=$('csv-upload-zone');
+csvZone.addEventListener('click',()=>$('csv-file-input').click());
+csvZone.addEventListener('dragover',e=>{e.preventDefault();csvZone.classList.add('drag');});
+csvZone.addEventListener('dragleave',()=>csvZone.classList.remove('drag'));
+csvZone.addEventListener('drop',e=>{e.preventDefault();csvZone.classList.remove('drag');handleCSVFile(e.dataTransfer.files[0]);});
+$('csv-file-input').addEventListener('change',e=>handleCSVFile(e.target.files[0]));
+
+function handleCSVFile(file) {
+  if(!file||!file.name.endsWith('.csv')){ showToast('Please upload a .csv file.','error'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
+    const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase().replace(/\s+/g,''));
+    csvRows=lines.slice(1).map(line=>{
+      const vals=line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||[];
+      const row={};
+      headers.forEach((h,i)=>{row[h]=(vals[i]||'').replace(/^"|"$/g,'').trim();});
+      return row;
+    }).filter(r=>r.customerno||r.customerNo||r.contracttype||r.contractType);
+    $('preview-filename').textContent=file.name;
+    $('preview-count').textContent=`${csvRows.length} records`;
+    $('preview-table-wrap').innerHTML=`<table style="width:100%;border-collapse:collapse">${
+      [headers.slice(0,5),...csvRows.slice(0,4).map(r=>headers.slice(0,5).map(h=>r[h]||''))].map((row,i)=>`<tr style="${i===0?'background:var(--bg-secondary);font-weight:700':''}"><td style="padding:4px 6px;border-bottom:1px solid var(--border)">${row.join('</td><td style="padding:4px 6px;border-bottom:1px solid var(--border)">')}</td></tr>`).join('')
+    }</table>`;
+    $('upload-preview').style.display='';
+    $('btn-confirm-import').disabled=csvRows.length===0;
+    $('import-btn-text').textContent=`Import ${csvRows.length} Records`;
+  };
+  reader.readAsText(file);
+}
+
+$('btn-confirm-import').addEventListener('click', async()=>{
+  if(!csvRows.length) return;
+  $('btn-confirm-import').disabled=true; $('import-btn-text').textContent='Importing…';
+  const batch=writeBatch(db);
+  let count=0;
+  for(const row of csvRows) {
+    const g=k=>row[k.toLowerCase()]||row[k]||'';
+    const customerNo=g('customerNo')||g('customerno');
+    const contractType=g('contractType')||g('contracttype');
+    if(!customerNo||!contractType) continue;
+    const startDate=parseFlexDate(g('contractStartDate')||g('contractstartdate'));
+    const endDate  =parseFlexDate(g('contractEndDate')||g('contractenddate'));
+    const ref=doc(collection(db,'contracts'));
+    batch.set(ref,{
+      customerNo,
+      contractType,
+      contractTypes: [contractType],
+      contractNumber: g('contractNumber')||g('contractnumber')||'',
+      treatmentMethod:g('treatmentMethod')||'',
+      frequency:      g('frequency')||'',
+      noOfSessions:   parseInt(g('noOfSessions')||g('noofsessions'))||0,
+      warrantyPeriod: parseInt(g('warrantyPeriod')||g('warrantyperiod'))||0,
+      contractStartDate: startDate||null,
+      contractEndDate:   endDate||null,
+      totalAmount:  parseFloat(g('totalAmount')||g('totalamount'))||0,
+      assignedTeam: g('assignedTeam')||'',
+      salesAgent:   g('salesAgent')||'',
+      communicationSource: g('communicationSource')||'',
+      status:       g('status')||'active',
+      notes:        g('notes')||'',
+      createdAt:    serverTimestamp(), updatedAt: serverTimestamp()
+    });
+    count++;
+  }
+  await batch.commit();
+      await invalidateAfterWrite('clients', 'contracts', 'treatments', 'payments', 'complaints', 'inspections', 'renewals', 'teams', 'users', 'config');
+  await logAction('bulk_import','contract','batch',`Imported ${count} contracts via CSV`);
+  closeModal('csv-import-modal');
+  showToast(`Successfully imported ${count} contract records.`);
+  await loadAll();
+  $('import-btn-text').textContent='Import Records';
+});
+
+async function loadSidebarBadges() {
+  /* Replaced by sidebar-badges live listener.
+     Reads SUMMARY/DASHBOARD doc once with onSnapshot; was
+     reading 6 entire collections per call. */
+  try {
+    mountSidebarBadges({ currentRole: (typeof currentRole !== 'undefined' ? currentRole : null) });
+  } catch (e) { console.warn('[badges]', e?.message || e); }
+}
+
+onAuthStateChanged(auth, async user=>{
+  if(!user){ dismissLoadingScreen();window.location.replace('login.html'); return; }
+  currentUser=user;
+  try {
+    const snap=await getDoc(doc(db,'users',user.uid));
+    if(!snap.exists()) {
+      await smartSetDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
+      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block'; return;
+    }
+    const data=snap.data();
+    updateLastLoginNoInvalidate(doc(db,'users',user.uid), {lastLogin: serverTimestamp()}).catch(()=>{});
+    if(data.status!=='approved'){ dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block'; return; }
+    currentRole=data.role;
+    dismissLoadingScreen();$('auth-screen').style.display='none';$('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
+    loadSidebarBadges();
+    const name=user.displayName||user.email;
+    $('user-display-name').textContent=name;
+    $('user-role-label').textContent=(data.role||'user').replace('_',' ');
+    if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
+    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
+    if(data.role==='super_admin')$('nav-settings').style.display='';
+    await loadAll();
+
+    const _rp = new URLSearchParams(window.location.search);
+    if(_rp.get('id')) { openDetailModal(_rp.get('id')); }
+    else if(_rp.get('mode')==='renewal')    { openRenewalMode(_rp); }
+    else if(_rp.get('mode')==='inspection') { openInspectionMode(_rp); }
+  } catch(err){ dismissLoadingScreen();console.error(err); }
+});
+
+$('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
+$('btn-signout-pending').addEventListener('click',()=>signOut(auth));
+$('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
+$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth).then(()=>window.location.replace('login.html'));});
+
+const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
+hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+</script>
+</body>
+</html>

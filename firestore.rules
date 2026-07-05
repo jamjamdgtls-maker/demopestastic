@@ -1,0 +1,86 @@
+rules_version = '2';
+
+// ════════════════════════════════════════════════════════════════════
+// Firestore security rules for Pestastic
+//
+// Model:
+//   • Anyone can sign in via Google → creates users/{uid} with status=pending
+//   • Admins approve users (set status=approved, role=user|admin|super_admin)
+//   • Approved users read most collections
+//   • Only admins/super_admins write to summary, config, users
+//   • audit_log is append-only for approved users; nobody can edit/delete
+//   • The summary/dashboard doc is read by everyone, written by admins +
+//     Cloud Functions (admin SDK bypasses these rules)
+// ════════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── helpers ────────────────────────────────────────────────────
+    function isSignedIn()     { return request.auth != null; }
+    function userDoc()        { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isApproved()     { return isSignedIn() && userDoc().status == 'approved'; }
+    function role()           { return userDoc().role; }
+    function isAdmin()        { return isApproved() && (role() == 'admin' || role() == 'super_admin'); }
+    function isSuperAdmin()   { return isApproved() && role() == 'super_admin'; }
+
+    // ─── users ─────────────────────────────────────────────────────
+    match /users/{uid} {
+      // anyone can create their own pending profile on first sign-in
+      allow create: if isSignedIn() && request.auth.uid == uid
+                    && request.resource.data.status == 'pending';
+
+      // self-read; admins can read all
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // self-update lastLogin only; admins can change role/status
+      allow update: if isSignedIn() &&
+        ((request.auth.uid == uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['lastLogin', 'displayName', 'photoURL']))
+         || isAdmin());
+
+      // only super_admin can delete users
+      allow delete: if isSuperAdmin();
+    }
+
+    // ─── summary/dashboard (real-time badges) ──────────────────────
+    // Read: every approved user. Write: admins + Cloud Functions.
+    match /summary/{docId} {
+      allow read:   if isApproved();
+      allow write:  if isAdmin();
+    }
+
+    // ─── config/settings ───────────────────────────────────────────
+    match /config/{docId} {
+      allow read:   if isApproved();
+      allow write:  if isAdmin();
+    }
+
+    // ─── audit_log ─────────────────────────────────────────────────
+    // Append-only by approved users; nobody updates or deletes.
+    // (Cloud Functions / admin SDK bypass these rules for retention jobs.)
+    match /audit_log/{logId} {
+      allow read:   if isApproved();
+      allow create: if isApproved()
+                    && request.resource.data.performedByUid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSuperAdmin();
+    }
+
+    // ─── operational collections ───────────────────────────────────
+    // clients, contracts, treatments, payments, complaints,
+    // inspections, renewals, teams, counters
+    match /{collection}/{docId}
+      where collection in ['clients','contracts','treatments','payments',
+                           'complaints','inspections','renewals','teams','counters'] {
+      allow read:   if isApproved();
+      allow write:  if isApproved();
+    }
+
+    // ─── default deny ──────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

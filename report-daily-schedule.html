@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pestastic — Daily Schedule Report</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --primary:hsl(142,76%,36%);--primary-hover:hsl(142,76%,30%);--primary-light:hsl(142,76%,95%);--primary-border:hsl(142,76%,80%);
+      --bg:#fff;--bg-secondary:#f8f9fa;--bg-tertiary:#f1f3f5;
+      --sidebar-bg:#0f1b12;--sidebar-text:#c8d6ca;--sidebar-muted:#6b7f6e;
+      --text:#111827;--text-secondary:#4b5563;--text-muted:#9ca3af;
+      --border:#e5e7eb;
+      --radius:8px;--radius-sm:4px;--radius-lg:12px;
+      --shadow:0 2px 8px rgba(0,0,0,.10);--shadow-lg:0 8px 24px rgba(0,0,0,.12);
+      --green:hsl(142,76%,36%);--green-bg:hsl(142,76%,95%);--green-text:hsl(142,76%,28%);
+      --blue:hsl(213,94%,47%);--blue-bg:hsl(213,94%,95%);--blue-text:hsl(213,94%,35%);
+      --amber:hsl(38,92%,50%);--amber-bg:hsl(38,92%,95%);--amber-text:hsl(38,92%,32%);
+      --red:hsl(0,84%,50%);--red-bg:hsl(0,84%,96%);--red-text:hsl(0,84%,38%);
+      --gray:hsl(220,9%,46%);--gray-bg:hsl(220,9%,95%);--gray-text:hsl(220,9%,35%);
+      --sidebar-width:260px;--topbar-height:60px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif
+    }
+    html,body{height:100%;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg-secondary);line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    button{font-family:var(--font);cursor:pointer}
+    input,select{font-family:var(--font);font-size:14px}
+
+    /* AUTH */
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1b12 0%,#1a2e1d 50%,#0d1f0f 100%)}
+    .auth-card{background:white;border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
+    .auth-logo{width:64px;height:64px;background:var(--primary-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .auth-logo svg{width:36px;height:36px}
+    .auth-card h1{font-size:24px;font-weight:700;margin-bottom:4px}
+    .auth-card>p{color:var(--text-muted);font-size:14px;margin-bottom:32px}
+    .btn-google{width:100%;padding:12px 20px;border:1.5px solid var(--border);background:white;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;gap:12px;font-size:15px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s}
+    .btn-google:hover{background:var(--bg-secondary)}
+    .btn-google svg{width:20px;height:20px}
+    .auth-error{margin-top:16px;padding:10px 14px;background:var(--red-bg);color:var(--red-text);border-radius:var(--radius-sm);font-size:13px;border:1px solid #fca5a5;display:none}
+    .pending-icon{width:72px;height:72px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+    .pending-icon svg{width:36px;height:36px;color:var(--amber)}
+    .btn-pending-check{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;margin-bottom:12px;cursor:pointer}
+    .btn-signout-pending{width:100%;padding:12px;background:transparent;color:var(--text-secondary);border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;cursor:pointer}
+
+    /* APP SHELL */
+    #app-shell{display:none;height:100vh;overflow:hidden}
+
+    /* SIDEBAR */
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;z-index:200;transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .sidebar-logo-icon{width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sidebar-logo-icon svg{width:20px;height:20px;color:white}
+    .sidebar-logo-text span{display:block;font-size:15px;font-weight:700;color:white;line-height:1.2}
+    .sidebar-logo-text small{font-size:10px;color:var(--sidebar-muted);text-transform:uppercase;letter-spacing:.08em}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px}
+    .sidebar-nav::-webkit-scrollbar{width:4px}
+    .sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+    .nav-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--sidebar-muted);padding:12px 10px 6px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--sidebar-text);font-size:13.5px;font-weight:450;cursor:pointer;transition:all .15s;position:relative;user-select:none}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:white}
+    .nav-item.active{background:rgba(34,197,94,.15);color:hsl(142,76%,65%)}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--primary);border-radius:0 2px 2px 0}
+    .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85}
+    .nav-item.active svg{opacity:1}
+    .nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
+    .nav-badge.amber{background:var(--amber)}
+    .sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
+    .sidebar-user{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s}
+    .sidebar-user:hover{background:rgba(255,255,255,.07)}
+    .user-avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;flex-shrink:0;overflow:hidden}
+    .user-avatar img{width:100%;height:100%;object-fit:cover}
+    .user-info{flex:1;min-width:0}
+    .user-name{font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:11px;color:var(--sidebar-muted);text-transform:capitalize}
+    .btn-signout{background:none;border:none;padding:6px;color:var(--sidebar-muted);border-radius:var(--radius-sm);transition:all .15s;display:flex;align-items:center;cursor:pointer}
+    .btn-signout:hover{color:var(--red);background:rgba(239,68,68,.1)}
+    .btn-signout svg{width:16px;height:16px}
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+
+    /* MAIN */
+    .main-wrapper{margin-left:var(--sidebar-width);width:calc(100vw - var(--sidebar-width));;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+    .hamburger{display:none;background:none;border:none;padding:6px;border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer}
+    .hamburger svg{width:20px;height:20px}
+    .topbar-title{font-size:16px;font-weight:700}
+    .topbar-spacer{flex:1}
+    .topbar-btn{width:34px;height:34px;background:none;border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer}
+    .topbar-btn svg{width:16px;height:16px}
+    .page-content{flex:1;overflow-y:auto;padding:24px}
+    .page-content::-webkit-scrollbar{width:6px}
+    .page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+    /* SCREEN CONTROLS */
+    .controls-bar{display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;flex-wrap:wrap}
+    .controls-bar label{font-size:13px;font-weight:600;color:var(--text-secondary)}
+    .date-input{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;outline:none;transition:border-color .15s;font-family:var(--font)}
+    .date-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,197,94,.10)}
+    .filter-select{padding:8px 32px 8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13.5px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;outline:none;cursor:pointer;color:var(--text)}
+    .controls-spacer{flex:1}
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .btn svg{width:15px;height:15px}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:hover{background:var(--primary-hover)}
+    .btn-secondary{background:white;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg-secondary)}
+
+    /* SUMMARY ROW */
+    .summary-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .sum-pill{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:10px;flex:1;min-width:100px}
+    .sum-pill-val{font-size:22px;font-weight:800;line-height:1}
+    .sum-pill-lbl{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+
+    /* BADGES */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+    .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .badge-green{background:var(--green-bg);color:var(--green-text)}
+    .badge-blue{background:var(--blue-bg);color:var(--blue-text)}
+    .badge-red{background:var(--red-bg);color:var(--red-text)}
+    .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
+    .badge-gray{background:var(--gray-bg);color:var(--gray-text)}
+
+    /* SPINNER / TOAST */
+    .spinner{width:18px;height:18px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+    .toast{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;min-width:280px;max-width:380px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-start;gap:10px;pointer-events:all;animation:toastIn .2s ease;border-left:4px solid var(--primary)}
+    .toast.error{border-left-color:var(--red)}
+    .toast-icon svg{width:16px;height:16px}
+    .toast-body{flex:1}
+    .toast-title{font-size:13.5px;font-weight:600}
+    .toast-msg{font-size:12.5px;color:var(--text-secondary);margin-top:2px}
+    .toast-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0}
+    .toast-close svg{width:14px;height:14px}
+    @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+    /* ══════════════════════════════════════════
+       PRINTABLE REPORT AREA
+    ══════════════════════════════════════════ */
+    #report-area{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:32px 36px}
+
+    /* LETTERHEAD */
+    .letterhead{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #111;padding-bottom:16px;margin-bottom:20px;gap:20px}
+    .letterhead-logo{display:flex;align-items:center;gap:14px}
+    .letterhead-logo-icon{width:52px;height:52px;background:var(--primary);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .letterhead-logo-icon svg{width:28px;height:28px;color:white}
+    .letterhead-company{line-height:1.3}
+    .letterhead-company h1{font-size:20px;font-weight:900;color:#111;letter-spacing:-.3px}
+    .letterhead-company p{font-size:12px;color:#555;margin-top:2px}
+    .letterhead-right{text-align:right}
+    .letterhead-doc-title{font-size:17px;font-weight:800;color:#111;text-transform:uppercase;letter-spacing:.04em}
+    .letterhead-doc-date{font-size:13px;color:#444;margin-top:4px}
+    .letterhead-doc-meta{font-size:11.5px;color:#777;margin-top:2px}
+
+    /* REPORT SUMMARY */
+    .report-summary{display:flex;gap:20px;margin-bottom:22px;padding:12px 16px;background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px}
+    .report-summary-item{text-align:center;flex:1}
+    .report-summary-val{font-size:20px;font-weight:900;color:#111}
+    .report-summary-lbl{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+    /* TEAM SECTION */
+    .team-section{margin-bottom:28px}
+    .team-section-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#111;color:white;border-radius:6px 6px 0 0;margin-bottom:0}
+    .team-section-name{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+    .team-section-count{font-size:12px;opacity:.75;margin-left:auto}
+
+    /* REPORT TABLE */
+    .report-table{width:100%;border-collapse:collapse}
+    .report-table th{padding:9px 12px;background:#f1f3f5;border:1px solid #d1d5db;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#374151;text-align:left}
+    .report-table td{padding:9px 12px;border:1px solid #e5e7eb;font-size:12.5px;color:#111;vertical-align:middle}
+    .report-table tbody tr:nth-child(even){background:#fafafa}
+    .report-table td.num{color:#6b7280;font-size:12px;text-align:center;width:36px}
+    .report-table td.treat-no{font-family:monospace;font-size:11.5px;color:#6b7280}
+    .status-dot{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:12px}
+    .status-dot.completed{background:#dcfce7;color:#15803d}
+    .status-dot.scheduled{background:#dbeafe;color:#1d4ed8}
+    .status-dot.overdue{background:#fee2e2;color:#dc2626}
+    .status-dot.rescheduled{background:#fef3c7;color:#b45309}
+    .status-dot.cancelled{background:#f3f4f6;color:#6b7280}
+    .status-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+
+    /* NO TREATMENTS */
+    .no-treatments{text-align:center;padding:48px 20px;color:#9ca3af}
+    .no-treatments svg{width:40px;height:40px;margin-bottom:12px;opacity:.4}
+    .no-treatments h3{font-size:15px;font-weight:600;color:#374151;margin-bottom:6px}
+    .no-treatments p{font-size:13px}
+
+    /* REPORT FOOTER */
+    .report-footer{margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#9ca3af}
+
+    /* INSPECTION SECTION */
+    .inspection-section{margin-top:28px;margin-bottom:28px}
+    .inspection-section-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:hsl(262,83%,38%);color:white;border-radius:6px 6px 0 0}
+    .inspection-section-name{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+    .inspection-section-count{font-size:12px;opacity:.75;margin-left:auto}
+    .inspection-table{width:100%;border-collapse:collapse}
+    .inspection-table th{padding:9px 12px;background:#f3f0ff;border:1px solid #d1d5db;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4c1d95;text-align:left}
+    .inspection-table td{padding:9px 12px;border:1px solid #e5e7eb;font-size:12.5px;color:#111;vertical-align:middle}
+    .inspection-table tbody tr:nth-child(even){background:#faf8ff}
+    .insp-status{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:12px}
+    .insp-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .insp-status.Scheduled{background:#ede9fe;color:#5b21b6}
+    .insp-status.Completed{background:#dcfce7;color:#15803d}
+    .insp-status.Converted{background:#dbeafe;color:#1d4ed8}
+    .insp-status.Cancelled{background:#f3f4f6;color:#6b7280}
+    .insp-status.No-Show{background:#fef3c7;color:#b45309}
+    .insp-status.Lost{background:#fee2e2;color:#dc2626}
+
+    /* SIGNATURE BLOCK */
+    .sig-block{display:flex;gap:40px;margin-top:28px;padding-top:20px;border-top:1px dashed #d1d5db}
+    .sig-line{flex:1;text-align:center}
+    .sig-line-bar{border-top:1px solid #111;margin-bottom:6px}
+    .sig-line-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+
+    /* RESPONSIVE */
+    @media(max-width:1024px){
+      .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+      .sidebar-overlay.open{display:block}.main-wrapper{margin-left:0}.hamburger{display:flex}
+    }
+    @media(max-width:768px){.page-content{padding:16px}.controls-bar{flex-direction:column;align-items:stretch}}
+
+    /* ══════════════════════════════════════════
+       PRINT CSS — hides everything except report
+    ══════════════════════════════════════════ */
+    @media print{
+      @page{margin:12mm 10mm;size:A4}
+
+      /* ── Hide all shell chrome ── */
+      .sidebar,.sidebar-overlay,.topbar,.hamburger,
+      .controls-bar,.summary-row,.summary-pills,.summary-grid,
+      .filters-bar,.page-header,
+      #toast-container,.btn-print,.btn-secondary,.btn-ghost,
+      .page-content > *:not(#report-area){display:none!important}
+
+      /* ── Reset ALL height/overflow that clips multi-page content ── */
+      *{box-sizing:border-box!important}
+      html,body{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        background:white!important;
+        margin:0!important;padding:0!important;
+      }
+      #app-shell{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        flex:none!important;
+      }
+      .main-wrapper{
+        display:block!important;
+        margin-left:0!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        flex:none!important;
+      }
+      .page-content{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        padding:0!important;
+        flex:none!important;
+      }
+      #report-area{
+        display:block!important;
+        width:100%!important;max-width:100%!important;
+        height:auto!important;min-height:0!important;
+        overflow:visible!important;
+        border:none!important;border-radius:0!important;
+        padding:0!important;box-shadow:none!important;
+      }
+
+      /* ── Tables fill full width ── */
+      table{width:100%!important;table-layout:auto!important}
+
+            /* Team sections */
+      .team-section{{page-break-inside:avoid;break-inside:avoid}}
+      .inspection-section{{page-break-inside:avoid;break-inside:avoid}}
+      .sig-block{{page-break-inside:avoid}}
+      /* Preserve colors */
+      .report-table th{{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .report-table tbody tr:nth-child(even){{background:#fafafa!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .team-section-header{{background:#111!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .inspection-section-header{{background:hsl(262,83%,38%)!important;color:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .inspection-table th{{background:#f3f0ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .inspection-table tbody tr:nth-child(even){{background:#faf8ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+      .status-dot,.insp-status,.report-summary{{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    }
+  
+    /* ── PAGE LOAD SCREEN ── */
+    #loading-screen{position:fixed;inset:0;background:#0f1b12;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;transition:opacity .25s}
+    #loading-screen.fade-out{opacity:0;pointer-events:none}
+    .ls-logo{width:60px;height:60px;background:hsl(142,76%,36%);border-radius:14px;display:flex;align-items:center;justify-content:center}
+    .ls-logo svg{width:34px;height:34px;color:white}
+    .ls-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.15);border-top-color:hsl(142,76%,60%);border-radius:50%;animation:spin .7s linear infinite}
+    .ls-text{font-size:13px;color:rgba(255,255,255,.45);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.02em}
+  </style>
+</head>
+<body>
+
+
+<!-- PAGE LOAD SCREEN — hides once Firebase auth resolves -->
+<div id="loading-screen">
+  <div class="ls-logo">
+    <img src="logo.jpg" alt="Pestastic" style="width:34px;height:34px;object-fit:contain" />
+  </div>
+  <div class="ls-spinner"></div>
+  <div class="ls-text">Pestastic</div>
+</div>
+
+<!-- AUTH -->
+<div id="auth-screen" style="display:none">
+  <div id="login-card" class="auth-card">
+    <div class="auth-logo"><img src="logo.jpg" alt="Pestastic" style="width:36px;height:36px;object-fit:contain" /></div>
+    <h1>Pestastic</h1><p>Sign in to continue</p>
+    <button class="btn-google" id="btn-google-signin"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
+    <div class="auth-error" id="login-error"></div>
+  </div>
+  <div id="pending-card" class="auth-card" style="display:none">
+    <div class="pending-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <h1 style="font-size:20px">Pending Approval</h1><p style="margin-bottom:24px">Your account awaits admin approval.</p>
+    <button class="btn-pending-check" id="btn-check-status">Check Status</button>
+    <button class="btn-signout-pending" id="btn-signout-pending">Sign Out</button>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo" style="justify-content:center;padding:14px 16px">
+      <div style="background:white;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:center;width:100%">
+        <img src="logo.jpg" alt="Pestastic" style="width:100%;max-width:188px;height:40px;object-fit:contain" />
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a class="nav-item" href="clients.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</a>
+      <a class="nav-item" href="contracts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Contracts</a>
+      <a class="nav-item" href="treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Treatments</a>
+      <div class="nav-section-label">Financial</div>
+      <a class="nav-item" href="payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payments</a>
+      <a class="nav-item" href="renewals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Renewals</a>
+      <div class="nav-section-label">Service</div>
+      <a class="nav-item" href="complaints.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="nav-badge" id="badge-complaints" style="display:none"></span></a>
+      <a class="nav-item" href="inspections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Inspections<span class="nav-badge amber" id="badge-inspections" style="display:none"></span></a>
+      <div class="nav-section-label">Monitoring</div>
+      <a class="nav-item" href="overdue.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue<span class="nav-badge" id="badge-overdue" style="display:none"></span></a>
+      <a class="nav-item" href="notification-calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span class="nav-badge" id="notif-count-badge" style="display:none"></span></a>
+      <div class="nav-section-label">Reports</div>
+      <a class="nav-item active" href="report-daily-schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Daily Schedule</a>
+      <a class="nav-item" href="report-service.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Report</a>
+      <a class="nav-item" href="report-client-soa.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Client SOA</a>
+      <a class="nav-item" href="report-monthly-collection.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Monthly Collection</a>
+      <a class="nav-item" href="report-overdue-treatments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue Report</a>
+      <div class="nav-section-label">Operations</div>
+      <a class="nav-item" href="teams.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Teams</a>
+      <a class="nav-item" href="audit-log.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Audit Log</a>
+      <div class="nav-section-label" id="admin-nav-label" style="display:none">Admin</div>
+      <a class="nav-item" href="user-management.html" id="nav-users" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>User Management</a>
+      <a class="nav-item" href="settings.html" id="nav-settings" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar"><span id="user-initials">?</span></div>
+        <div class="user-info"><div class="user-name" id="user-display-name">Loading…</div><div class="user-role" id="user-role-label">—</div></div>
+        <button class="btn-signout" id="btn-signout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <span class="topbar-title">Daily Schedule Report</span>
+      <div class="topbar-spacer"></div>
+      <span id="last-updated" class="last-updated-badge" data-pc-topbar="1" style="font-size:12px;color:#9ca3af;margin-right:8px;white-space:nowrap"></span><button id="btn-refresh" class="topbar-btn" title="Refresh data" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button><button class="topbar-btn" onclick="location.href='notification-calendar.html'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="topbar-notif-dot" id="notif-dot" style="display:none"></span></button>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Screen controls (hidden on print) -->
+      <div class="controls-bar">
+        <label for="date-picker">Schedule Date</label>
+        <input type="date" class="date-input" id="date-picker" />
+        <select class="filter-select" id="filter-team"><option value="">All Teams</option></select>
+        <select class="filter-select" id="filter-status">
+          <option value="">All Status</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="overdue">Overdue</option>
+          <option value="completed">Completed</option>
+          <option value="rescheduled">Rescheduled</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <div class="controls-spacer"></div>
+        <button class="btn btn-secondary" id="btn-load">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary btn-print" onclick="window.print()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Report
+        </button>
+      </div>
+
+      <!-- Screen summary pills (hidden on print) -->
+      <div class="summary-row" id="summary-row">
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-total">—</div><div class="sum-pill-lbl">Total Treatments</div></div></div>
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-teams" style="color:var(--primary)">—</div><div class="sum-pill-lbl">Teams</div></div></div>
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-scheduled" style="color:var(--blue)">—</div><div class="sum-pill-lbl">Scheduled</div></div></div>
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-completed" style="color:var(--green)">—</div><div class="sum-pill-lbl">Completed</div></div></div>
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-overdue" style="color:var(--red)">—</div><div class="sum-pill-lbl">Overdue</div></div></div>
+        <div class="sum-pill"><div><div class="sum-pill-val" id="sp-inspections" style="color:hsl(262,83%,58%)">—</div><div class="sum-pill-lbl">Inspections</div></div></div>
+      </div>
+
+      <!-- ══ PRINTABLE REPORT ══ -->
+      <div id="report-area">
+        <div style="text-align:center;padding:48px;color:var(--text-muted)" id="report-loading">
+          <div class="spinner" style="margin:0 auto 12px"></div>
+          <p>Loading schedule…</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════
+     FIREBASE + REPORT LOGIC
+════════════════════════════════════ -->
+<script type="module">
+
+function dismissLoadingScreen(){
+  const ls=document.getElementById('loading-screen');
+  if(!ls)return;
+  ls.classList.add('fade-out');
+  setTimeout(()=>{if(ls.parentNode)ls.parentNode.removeChild(ls);},280);
+}
+// Failsafe: force-dismiss after 6 seconds no matter what
+setTimeout(()=>dismissLoadingScreen(), 6000);
+
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { firebaseConfig } from './firebase-config.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc,
+  query, where, orderBy, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { app as _pcApp, auth as _pcAuth, db as _pcDb } from './js/firebase-init.js';
+import {
+  cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
+  smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
+} from './js/firestoreShim.js';
+import { mountSidebarBadges } from './js/sidebarBadges.js';
+import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
+
+
+/* Firebase init now centralized in js/firebase-init.js */
+const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
+
+/* ── State ── */
+let currentUser = null, currentRole = null;
+let clientMap = {}, contractMap = {};
+let companySettings = {};
+
+/* ── Helpers ── */
+const $ = id => document.getElementById(id);
+
+function toLocalDate(v) {
+  if(!v) return null;
+  if(v.toDate) { const d=v.toDate(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+  if(v instanceof Date) return new Date(v.getFullYear(),v.getMonth(),v.getDate());
+  const d = new Date(v); return isNaN(d)?null:new Date(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+function todayISO() {
+  const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+
+function fmtFullDate(isoStr) {
+  const [y,m,d]=isoStr.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function cleanName(n){return(n||'').replace(/\s*\(.*?\)\s*/g,'').trim()||'—';}
+
+/* Convert "HH:MM" (or "HH:MM:SS") to 12-hour format, e.g. "14:30" -> "2:30 PM" */
+function fmtTime12(t){
+  if(!t) return '—';
+  const m=String(t).match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return t;
+  let h=parseInt(m[1],10); const min=m[2];
+  if(isNaN(h)) return t;
+  const ampm = h>=12 ? 'PM' : 'AM';
+  h = h % 12; if(h===0) h=12;
+  return `${h}:${min} ${ampm}`;
+}
+
+/* Currency formatter (₱) — mirrors payments / SOA reports */
+function fmtCur(n){
+  const v=Number(n||0);
+  return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+/* Build a stable YYYY-M-D key from a Firestore timestamp / Date / string */
+function dateKey(v){
+  const d=toLocalDate(v); if(!d) return '';
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/* Payment status helpers — mirror payments.html */
+const COLLECTED_STATUSES=['Received','Deposited','Remitted','Collected'];
+function isPaid(p){ return COLLECTED_STATUSES.includes(p.status); }
+
+function statusDot(s) {
+  const map={scheduled:'scheduled',completed:'completed',overdue:'overdue',rescheduled:'rescheduled',cancelled:'cancelled'};
+  const label={scheduled:'Scheduled',completed:'Completed',overdue:'Overdue',rescheduled:'Rescheduled',cancelled:'Cancelled'};
+  return `<span class="status-dot ${map[s]||'cancelled'}">${label[s]||s||'—'}</span>`;
+}
+
+function dispStatus(t, selectedDate) {
+  const today=new Date(); today.setHours(0,0,0,0);
+  const [y,m,d]=selectedDate.split('-').map(Number);
+  const sel=new Date(y,m-1,d);
+  if(t.status==='scheduled' && sel < today) return 'overdue';
+  return t.status||'scheduled';
+}
+
+/* ── Load reference data ── */
+async function loadRefData() {
+  const cSnap=await cachedGetDocs(collection(db,'clients'));
+  clientMap={}; cSnap.forEach(d=>{const c=d.data();clientMap[c.customerNo]=c;});
+
+  const coSnap=await cachedGetDocs(collection(db,'contracts'));
+  contractMap={}; coSnap.forEach(d=>{contractMap[d.id]=d.data();});
+
+  const tSnap=await cachedGetDocs(collection(db,'teams'));
+  const teamNames=[...new Set(tSnap.docs.map(d=>d.data().teamName).filter(Boolean))].sort();
+  $('filter-team').innerHTML='<option value="">All Teams</option>'+teamNames.map(t=>`<option>${t}</option>`).join('');
+
+  try{const s=await cachedGetDoc(doc(db,'config','settings'));companySettings=s.exists()?s.data():{};}catch{}
+}
+
+/* ── Generate report ── */
+async function generateReport() {
+  const dateStr = $('date-picker').value;
+  const teamFilter = $('filter-team').value;
+  const statusFilter = $('filter-status').value;
+  if(!dateStr) return;
+
+  const [y,m,d]=dateStr.split('-').map(Number);
+  const selDate=new Date(y,m-1,d);
+  const nextDate=new Date(y,m-1,d+1);
+
+  // Fetch treatments for the selected date
+  const snap=await cachedGetDocs(query(collection(db,'treatments'),orderBy('treatmentDate','asc')));
+  let treatments=[];
+  snap.forEach(doc=>{
+    const t=doc.data();
+    const tDate=toLocalDate(t.treatmentDate);
+    if(!tDate) return;
+    if(tDate>=selDate && tDate<nextDate) treatments.push({id:doc.id,...t});
+  });
+
+  /* ── Fetch payments and build a lookup map by customerNo + contractId + dueDate ──
+     Used to surface the "receivable amount" of each treatment.            */
+  const paySnap=await cachedGetDocs(collection(db,'payments'));
+  const paymentsByKey={};       // primary lookup: customer + contract + date
+  const paymentsByCustDate={};  // fallback lookup: customer + date (no contract)
+  paySnap.forEach(d=>{
+    const p={id:d.id,...d.data()};
+    const dk=dateKey(p.dueDate);
+    if(!dk) return;
+    const k1=`${p.customerNo||''}|${p.contractId||''}|${dk}`;
+    (paymentsByKey[k1]=paymentsByKey[k1]||[]).push(p);
+    const k2=`${p.customerNo||''}|${dk}`;
+    (paymentsByCustDate[k2]=paymentsByCustDate[k2]||[]).push(p);
+  });
+
+  /* Resolve receivable(s) for a given treatment on the selected date.
+     Prefer exact match on (customerNo + contractId); fall back to
+     (customerNo + date) when the treatment has no contractId. */
+  const dkSel=`${selDate.getFullYear()}-${selDate.getMonth()}-${selDate.getDate()}`;
+  function getReceivablesFor(t){
+    const k1=`${t.customerNo||''}|${t.contractId||''}|${dkSel}`;
+    if(paymentsByKey[k1]&&paymentsByKey[k1].length) return paymentsByKey[k1];
+    const k2=`${t.customerNo||''}|${dkSel}`;
+    return paymentsByCustDate[k2]||[];
+  }
+
+  // Separate cancelled before applying filters (cancelled excluded from schedule by default)
+  const cancelledCount=treatments.filter(t=>t.status==='cancelled').length;
+  if(statusFilter!=='cancelled'){
+    treatments=treatments.filter(t=>t.status!=='cancelled');
+  }
+
+  // Apply filters
+  if(teamFilter) treatments=treatments.filter(t=>t.assignedTeam===teamFilter);
+  if(statusFilter) treatments=treatments.filter(t=>dispStatus(t,dateStr)===statusFilter);
+
+  // Update screen summary (cancelled always shown in summary for reference)
+  const teams=new Set(treatments.map(t=>t.assignedTeam||'Unassigned'));
+  $('sp-total').textContent=treatments.length;
+  $('sp-teams').textContent=teams.size;
+  $('sp-scheduled').textContent=treatments.filter(t=>dispStatus(t,dateStr)==='scheduled').length;
+  $('sp-completed').textContent=treatments.filter(t=>t.status==='completed').length;
+  $('sp-overdue').textContent=treatments.filter(t=>dispStatus(t,dateStr)==='overdue').length;
+
+  // Fetch inspections for the selected date
+  const insnap=await cachedGetDocs(query(collection(db,'inspections'),orderBy('inspectionDate','asc')));
+  let inspections=[];
+  insnap.forEach(d=>{
+    const i=d.data();
+    const iDate=toLocalDate(i.inspectionDate);
+    if(!iDate) return;
+    if(iDate>=selDate && iDate<nextDate) inspections.push({id:d.id,...i});
+  });
+  // Apply team filter to inspections too
+  if(teamFilter) inspections=inspections.filter(i=>i.assignedTeam===teamFilter);
+  $('sp-inspections').textContent=inspections.length;
+
+  // Sort by time within day (treatments with time before those without)
+  treatments.sort((a,b)=>{
+    const ta=a.treatmentTime||'99:99', tb=b.treatmentTime||'99:99';
+    return ta.localeCompare(tb);
+  });
+
+  // Group by team
+  const grouped={};
+  treatments.forEach(t=>{
+    const team=t.assignedTeam||'Unassigned';
+    if(!grouped[team]) grouped[team]=[];
+    grouped[team].push(t);
+  });
+  const sortedTeams=Object.keys(grouped).sort();
+
+  const companyName=companySettings.companyName||'Pestastic Pest Control Services';
+  const companyAddr=companySettings.companyAddress||'';
+  const companyPhone=companySettings.companyPhone||'';
+  const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  if(!treatments.length && !inspections.length) {
+    $('report-area').innerHTML=`
+      <div class="letterhead">
+        <div class="letterhead-logo">
+          <div class="letterhead-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
+          <div class="letterhead-company"><h1>${companyName}</h1><p>${companyAddr}${companyPhone?' · '+companyPhone:''}</p></div>
+        </div>
+        <div class="letterhead-right"><div class="letterhead-doc-title">Daily Schedule Report</div><div class="letterhead-doc-date">${fmtFullDate(dateStr)}</div></div>
+      </div>
+      <div class="no-treatments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <h3>No treatments or inspections scheduled</h3>
+        <p>No records found for ${fmtFullDate(dateStr)}${teamFilter?' for '+teamFilter:''}${statusFilter?' with status '+statusFilter:''}.</p>
+      </div>`;
+    return;
+  }
+
+  /* Compute total receivable across all displayed treatments (Pending only) */
+  let totalReceivableAll=0, totalUncollectedAll=0;
+  treatments.forEach(t=>{
+    const recs=getReceivablesFor(t);
+    recs.forEach(p=>{
+      const amt=Number(p.amount||0);
+      totalReceivableAll+=amt;
+      if(!isPaid(p)) totalUncollectedAll+=amt;
+    });
+  });
+
+  let html=`
+    <!-- LETTERHEAD -->
+    <div class="letterhead">
+      <div class="letterhead-logo">
+        <div class="letterhead-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
+        <div class="letterhead-company">
+          <h1>${companyName}</h1>
+          <p>${[companyAddr,companyPhone].filter(Boolean).join(' · ')}</p>
+        </div>
+      </div>
+      <div class="letterhead-right">
+        <div class="letterhead-doc-title">Daily Schedule Report</div>
+        <div class="letterhead-doc-date">${fmtFullDate(dateStr)}</div>
+        <div class="letterhead-doc-meta">${teamFilter?'Team: '+teamFilter:'All Teams'}${statusFilter?' · Status: '+statusFilter:''}</div>
+      </div>
+    </div>
+
+    <!-- REPORT SUMMARY -->
+    <div class="report-summary">
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.length}</div><div class="report-summary-lbl">Total Treatments</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${sortedTeams.length}</div><div class="report-summary-lbl">Teams</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t,dateStr)==='scheduled').length}</div><div class="report-summary-lbl">Scheduled</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>t.status==='completed').length}</div><div class="report-summary-lbl">Completed</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t,dateStr)==='overdue').length}</div><div class="report-summary-lbl">Overdue</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${cancelledCount}</div><div class="report-summary-lbl">Cancelled (excl.)</div></div>
+      <div class="report-summary-item"><div class="report-summary-val" style="color:hsl(262,83%,38%)">${inspections.length}</div><div class="report-summary-lbl">Inspections</div></div>
+      <div class="report-summary-item"><div class="report-summary-val" style="color:var(--blue-text);font-size:16px">${fmtCur(totalReceivableAll)}</div><div class="report-summary-lbl">Total Receivable</div></div>
+      <div class="report-summary-item"><div class="report-summary-val" style="color:${totalUncollectedAll>0?'var(--amber-text)':'var(--green-text)'};font-size:16px">${fmtCur(totalUncollectedAll)}</div><div class="report-summary-lbl">To Collect</div></div>
+    </div>`;
+
+  /* ── Team sections ── */
+  sortedTeams.forEach(team=>{
+    const rows=grouped[team];
+    let teamReceivable=0, teamUncollected=0;
+    html+=`
+    <div class="team-section">
+      <div class="team-section-header">
+        <span class="team-section-name">
+          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          ${team}
+        </span>
+        <span class="team-section-count">${rows.length} treatment${rows.length===1?'':'s'}</span>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Client Name</th>
+            <th>Customer No</th>
+            <th>Address</th>
+            <th>Treatment Type</th>
+            <th>Time</th>
+            <th>Treatment #</th>
+            <th>Technician</th>
+            <th style="text-align:right;white-space:nowrap">Receivable ₱</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach((t,i)=>{
+      const clientData=clientMap[t.customerNo];
+      const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
+      // Build full address from structured fields (falls back to legacy address)
+      const addrParts=[
+        clientData?.addressLine1||clientData?.address||'',
+        clientData?.barangay||'',
+        clientData?.city||'',
+        clientData?.province||'',
+        clientData?.postalCode||''
+      ].filter(Boolean);
+      const address=addrParts.join(', ')||'—';
+      const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
+      const treatmentType=t.treatmentType||contractType;
+      const notesFull=t.notes||'—';
+      const notesPreview=t.notes?(t.notes.length>60?t.notes.slice(0,60)+'…':t.notes):'—';
+      const ds=dispStatus(t,dateStr);
+
+      /* ── Receivable cell: matched payment(s) for this treatment ── */
+      const recs=getReceivablesFor(t);
+      let rowAmt=0, rowUncol=0;
+      recs.forEach(p=>{ const a=Number(p.amount||0); rowAmt+=a; if(!isPaid(p)) rowUncol+=a; });
+      teamReceivable+=rowAmt; teamUncollected+=rowUncol;
+
+      let receivableCell;
+      if(recs.length===0){
+        receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+      } else {
+        // Status indicator: all paid (green) / partially paid (amber) / unpaid (amber)
+        const allPaid = recs.every(isPaid);
+        const noneTouched = recs.every(p=>!isPaid(p));
+        const stateLabel = allPaid ? 'Paid' : (noneTouched ? 'Pending' : 'Partial');
+        const stateClass = allPaid ? 'completed' : (noneTouched ? 'rescheduled' : 'rescheduled');
+        receivableCell = `<td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+          <div style="font-weight:700;font-size:12.5px;color:#111">${fmtCur(rowAmt)}</div>
+          <div style="margin-top:2px"><span class="status-dot ${stateClass}" style="font-size:10px;padding:1px 6px">${stateLabel}</span></div>
+        </td>`;
+      }
+
+      html+=`<tr>
+        <td class="num">${i+1}</td>
+        <td style="font-weight:600;max-width:140px">${clientName}</td>
+        <td class="treat-no">${t.customerNo||'—'}</td>
+        <td style="font-size:11.5px;max-width:160px">${address}</td>
+        <td style="font-size:11.5px">${treatmentType}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtTime12(t.treatmentTime)}</td>
+        <td class="treat-no">${t.treatmentNo||'—'}</td>
+        <td style="font-size:12px">${t.technician||'—'}</td>
+        ${receivableCell}
+        <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
+        <td>${statusDot(ds)}</td>
+      </tr>`;
+    });
+
+    /* Team subtotal row */
+    html+=`<tr style="background:#f1f3f5!important;font-weight:700">
+      <td colspan="8" style="text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#374151">Team Subtotal</td>
+      <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+        <div style="color:#111;font-size:12.5px">${fmtCur(teamReceivable)}</div>
+        ${teamUncollected>0?`<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px">${fmtCur(teamUncollected)} to collect</div>`:`<div style="font-size:10.5px;color:#15803d;font-weight:600;margin-top:2px">All settled</div>`}
+      </td>
+      <td colspan="2"></td>
+    </tr>`;
+
+    html+=`</tbody></table></div>`;
+  });
+
+  /* ── Inspections Section ── */
+  if(inspections.length>0){
+    // Sort inspections: Scheduled first, then others
+    const inspOrder={'Scheduled':0,'No Show':1,'Completed':2,'Converted':3,'Cancelled':4,'Lost':5};
+    inspections.sort((a,b)=>(inspOrder[a.status]??9)-(inspOrder[b.status]??9));
+    html+=`
+    <div class="inspection-section">
+      <div class="inspection-section-header">
+        <span class="inspection-section-name">
+          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Scheduled Inspections
+        </span>
+        <span class="inspection-section-count">${inspections.length} inspection${inspections.length===1?'':'s'}</span>
+      </div>
+      <table class="inspection-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Client Name</th>
+            <th>Contact No.</th>
+            <th>Address</th>
+            <th>Pest Problems</th>
+            <th>Inspector / Team</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inspections.map((i,idx)=>{
+            const statusClass=(i.status||'Scheduled').replace(' ','-');
+            const pests=(i.pestProblems||[]).join(', ')||'—';
+            const notePreview=i.notes?(i.notes.slice(0,60)+(i.notes.length>60?'…':'')):'—';
+            return `<tr>
+              <td class="num">${idx+1}</td>
+              <td style="font-weight:600;max-width:130px">${i.clientName||'—'}</td>
+              <td style="font-size:12px">${i.contactNumber||'—'}</td>
+              <td style="font-size:11.5px;max-width:150px">${i.address||'—'}</td>
+              <td style="font-size:11.5px;max-width:120px">${pests}</td>
+              <td style="font-size:12px">${[i.inspectedBy,i.assignedTeam].filter(Boolean).join(' / ')||'—'}</td>
+              <td style="font-size:11.5px;max-width:130px;color:#6b7280">${notePreview}</td>
+              <td><span class="insp-status ${statusClass}">${i.status||'Scheduled'}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  /* ── Signature block ── */
+  html+=`
+    <div class="sig-block">
+      <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Prepared by</div></div>
+      <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Reviewed by</div></div>
+      <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Approved by</div></div>
+    </div>`;
+
+  /* ── Footer ── */
+  html+=`
+    <div class="report-footer">
+      <span>Pestastic Pest Control Services — Daily Schedule Report</span>
+      <span>Generated: ${genTime}</span>
+    </div>`;
+
+  $('report-area').innerHTML=html;
+}
+
+/* ── Date picker init and event ── */
+function initDatePicker() {
+  $('date-picker').value=todayISO();
+  $('date-picker').addEventListener('change',generateReport);
+  $('filter-team').addEventListener('change',generateReport);
+  $('filter-status').addEventListener('change',generateReport);
+  $('btn-load').addEventListener('click',generateReport);
+}
+
+/* ── Auth ── */
+
+async function loadSidebarBadges() {
+  /* Replaced by sidebar-badges live listener.
+     Reads SUMMARY/DASHBOARD doc once with onSnapshot; was
+     reading 6 entire collections per call. */
+  try {
+    mountSidebarBadges({ currentRole: (typeof currentRole !== 'undefined' ? currentRole : null) });
+  } catch (e) { console.warn('[badges]', e?.message || e); }
+}
+
+onAuthStateChanged(auth, async user=>{
+  if(!user){dismissLoadingScreen();window.location.replace('login.html');return;}
+  currentUser=user;
+  try{
+    const snap=await getDoc(doc(db,'users',user.uid));
+    if(!snap.exists()){
+      await smartSetDoc(doc(db,'users',user.uid),{uid:user.uid,email:user.email,displayName:user.displayName||'',photoURL:user.photoURL||'',role:'user',status:'pending',createdAt:serverTimestamp(),lastLogin:serverTimestamp()});
+      dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;
+    }
+    const data=snap.data();
+    updateLastLoginNoInvalidate(doc(db,'users',user.uid), {lastLogin: serverTimestamp()}).catch(()=>{});
+    if(data.status!=='approved'){dismissLoadingScreen();$('auth-screen').style.display='flex';$('login-card').style.display='none';$('pending-card').style.display='block';return;}
+    currentRole=data.role;
+    dismissLoadingScreen();$('auth-screen').style.display='none'; $('app-shell').style.cssText='display:flex;height:100vh;overflow:hidden;width:100vw;';
+    loadSidebarBadges();
+    const name=user.displayName||user.email;
+    $('user-display-name').textContent=name;
+    $('user-role-label').textContent=(data.role||'user').replace('_',' ');
+    if(user.photoURL)$('user-avatar').innerHTML=`<img src="${user.photoURL}" alt="${name}"/>`;
+    else $('user-initials').textContent=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    if(data.role==='admin'||data.role==='super_admin'){$('admin-nav-label').style.display='';$('nav-users').style.display='';}
+    if(data.role==='super_admin')$('nav-settings').style.display='';
+    initDatePicker();
+    await loadRefData();
+    await generateReport();
+  }catch(err){dismissLoadingScreen();console.error(err);}
+});
+
+$('btn-google-signin').addEventListener('click',async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){$('login-error').style.display='block';$('login-error').textContent='Sign-in failed.';}});
+$('btn-signout-pending').addEventListener('click',()=>signOut(auth));
+$('btn-check-status').addEventListener('click',async()=>{if(!currentUser)return;const s=await getDoc(doc(db,'users',currentUser.uid));if(s.exists()&&s.data().status==='approved')location.reload();});
+$('btn-signout').addEventListener('click',()=>{if(confirm('Sign out?'))signOut(auth).then(()=>window.location.replace('login.html'));});
+
+const sidebar=$('sidebar'),overlay=$('sidebar-overlay'),hamburger=$('hamburger');
+hamburger.addEventListener('click',()=>sidebar.classList.contains('open')?(sidebar.classList.remove('open'),overlay.classList.remove('open')):(sidebar.classList.add('open'),overlay.classList.add('open')));
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+
+/* ── Before/after print: strip height/overflow constraints ── */
+window.addEventListener('beforeprint', function() {
+  const shell = document.getElementById('app-shell');
+  const wrapper = document.querySelector('.main-wrapper');
+  const content = document.querySelector('.page-content');
+  if(shell)   { shell._savedStyle = shell.style.cssText; shell.style.cssText = 'display:block!important;height:auto!important;overflow:visible!important;width:100%!important'; }
+  if(wrapper) { wrapper._savedStyle = wrapper.style.cssText; wrapper.style.cssText = 'display:block!important;margin-left:0!important;width:100%!important;height:auto!important;overflow:visible!important'; }
+  if(content) { content._savedStyle = content.style.cssText; content.style.cssText = 'display:block!important;height:auto!important;overflow:visible!important;padding:0!important;width:100%!important;flex:none!important'; }
+});
+window.addEventListener('afterprint', function() {
+  const shell = document.getElementById('app-shell');
+  const wrapper = document.querySelector('.main-wrapper');
+  const content = document.querySelector('.page-content');
+  if(shell && shell._savedStyle !== undefined)   shell.style.cssText = shell._savedStyle;
+  if(wrapper && wrapper._savedStyle !== undefined) wrapper.style.cssText = wrapper._savedStyle;
+  if(content && content._savedStyle !== undefined) content.style.cssText = content._savedStyle;
+});
+</script>
+</body>
+</html>

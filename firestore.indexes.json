@@ -1,0 +1,121 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "action",    "order": "ASCENDING"  },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "entityType","order": "ASCENDING"  },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "audit_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "performedBy","order": "ASCENDING"  },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "contractId","order": "ASCENDING"  },
+        { "fieldPath": "dueDate",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerNo","order": "ASCENDING"  },
+        { "fieldPath": "dueDate",   "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",  "order": "ASCENDING" },
+        { "fieldPath": "dueDate", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "treatments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "contractId",   "order": "ASCENDING" },
+        { "fieldPath": "treatmentDate","order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "treatments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",       "order": "ASCENDING" },
+        { "fieldPath": "treatmentDate","order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "contracts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerNo",        "order": "ASCENDING"  },
+        { "fieldPath": "contractStartDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "contracts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",         "order": "ASCENDING" },
+        { "fieldPath": "contractEndDate","order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "complaints",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerNo",  "order": "ASCENDING"  },
+        { "fieldPath": "dateReported","order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "complaints",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",      "order": "ASCENDING"  },
+        { "fieldPath": "dateReported","order": "DESCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "inspections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",        "order": "ASCENDING" },
+        { "fieldPath": "inspectionDate","order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
