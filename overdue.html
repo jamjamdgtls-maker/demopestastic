@@ -736,15 +736,21 @@ async function loadAll() {
     $('pay-mode').innerHTML = '<option value="">— Select —</option>' + paymentModes.map(m => `<option>${m}</option>`).join('');
 
 
-    // Overdue treatments: fetch ALL treatments and include any non-final status
-    // whose treatmentDate is in the past ("All pending + date past").
+    // Overdue treatments: fetch all, filter by status + date client-side
+    // (avoids needing a composite index for the range query)
+    // NOTE: treatments can be created with different status spellings depending
+    // on where they come from (e.g. contracts.html sets 'Scheduled' or 'Need
+    // Schedule' for a brand-new package). The only statuses this app treats as
+    // *resolved* are 'completed', 'cancelled', and 'rescheduled' — anything else
+    // still needs to happen, so it's a candidate for overdue once its date has
+    // passed. An exact match on 'scheduled' alone silently missed those cases.
+    const RESOLVED_TREATMENT_STATUSES = ['completed', 'cancelled', 'rescheduled'];
     const trSnap=await cachedGetDocs(collection(db,'treatments'));
     overdueTreatments=[];
-    const FINAL_TREATMENT_STATUSES = ['completed','cancelled','canceled','rescheduled','skipped'];
     trSnap.forEach(d=>{
       const t=d.data();
-      const s=(t.status||'').toLowerCase();
-      if (FINAL_TREATMENT_STATUSES.includes(s)) return;
+      const status=(t.status||'').toLowerCase();
+      if(RESOLVED_TREATMENT_STATUSES.includes(status)) return;
       const tDate=toDate(t.treatmentDate);
       if(tDate&&tDate<today) overdueTreatments.push({id:d.id,...t,_days:daysOverdue(t.treatmentDate)});
     });
@@ -756,6 +762,10 @@ async function loadAll() {
     pSnap.forEach(d=>{
       const p=d.data();
       const dDate=toDate(p.dueDate);
+      // A payment date being recorded means it's been acted on — don't keep
+      // showing it as overdue just because status wasn't also flipped.
+      // Mirrors the same fix applied to isOverdue() in payments.html.
+      if(p.paymentDate) return;
       if(dDate&&dDate<today) overduePayments.push({id:d.id,...p,_days:daysOverdue(p.dueDate)});
     });
     overduePayments.sort((a,b)=>b._days-a._days);

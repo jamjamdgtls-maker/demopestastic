@@ -736,6 +736,7 @@ import {
   cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
   smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
 } from './js/firestoreShim.js';
+import { isContractCancelled, assertContractActionable } from './js/contractCancellation.js';
 import { mountSidebarBadges } from './js/sidebarBadges.js';
 import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
 
@@ -1322,6 +1323,13 @@ $('btn-save-complaint').addEventListener('click', async()=>{
   if(!contractType){showToast('Contract Type is required.','error');return;}
   if(!priority){showToast('Priority is required.','error');return;}
   if(!description){showToast('Description is required.','error');return;}
+
+  const _linkedContractId = $('form-linked-contract').value || null;
+  if (_linkedContractId) {
+    const _ctr = (contractsByCustomer[customerNo] || []).find(x => x.id === _linkedContractId);
+    const _g = assertContractActionable(_ctr, 'file complaint against this contract');
+    if (!_g.ok) { showToast(_g.reason, 'error'); return; }
+  }
 
   const btn=$('btn-save-complaint'); btn.disabled=true; $('save-btn-text').textContent='Saving…';
   const client=clientMap[customerNo];

@@ -134,6 +134,10 @@
     .date-range{display:flex;align-items:center;gap:6px;background:white;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px}
     .date-range input[type="date"]{border:none;font-size:13px;color:var(--text);outline:none;background:transparent;cursor:pointer}
     .date-range span{font-size:12px;color:var(--text-muted)}
+    .date-quick-filters{display:flex;gap:6px}
+    .date-quick-btn{height:34px;padding:0 12px;background:white;border:1px solid var(--border);border-radius:var(--radius);font-size:12.5px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .15s;font-family:var(--font)}
+    .date-quick-btn:hover{background:var(--bg-secondary);color:var(--text)}
+    .date-quick-btn.active{background:var(--primary);color:white;border-color:var(--primary);font-weight:600}
     .table-card{background:white;border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
     .table-wrapper{overflow:auto;flex:1;min-height:0}
     table{width:100%;border-collapse:collapse}
@@ -168,6 +172,14 @@
     .form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
     .form-textarea{resize:vertical;min-height:72px}
     .form-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px}
+    .segmented-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .seg-btn{flex:1;padding:9px 12px;background:white;border:none;border-right:1px solid var(--border);font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .15s;font-family:var(--font)}
+    .seg-btn:last-child{border-right:none}
+    .seg-btn:hover{background:var(--bg-secondary)}
+    .seg-btn.active{background:var(--primary);color:white;font-weight:600}
+    .payment-type-badge{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;vertical-align:middle;margin-left:4px}
+    .payment-type-badge.additional{background:#ede9fe;color:#5b21b6}
+    .payment-type-badge.redistributed{background:#dbeafe;color:#1d4ed8}
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .form-row.three{grid-template-columns:1fr 1fr 1fr}
     .form-input[readonly]{background:var(--bg-secondary);color:var(--text-secondary)}
@@ -398,9 +410,11 @@
       </div>
       <div class="filters-bar">
         <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="search-input" id="search-input" placeholder="Search client name, customer #, OR number…" /></div>
+        <div class="date-quick-filters" id="date-quick-filters">
+          <button type="button" class="date-quick-btn" data-range="today">Today</button>
+          <button type="button" class="date-quick-btn" data-range="tomorrow">Tomorrow</button>
+        </div>
         <div class="date-range"><input type="date" id="filter-date-from" title="Due date from" /><span>to</span><input type="date" id="filter-date-to" title="Due date to" /></div>
-        <button class="btn btn-ghost btn-sm" id="btn-quick-today" type="button" title="Show payments due today">Today</button>
-        <button class="btn btn-ghost btn-sm" id="btn-quick-tomorrow" type="button" title="Show payments due tomorrow">Tomorrow</button>
         <button class="btn btn-ghost btn-sm" id="btn-clear-filters">Clear</button>
       </div>
       <div class="table-card" style="flex:1;min-height:0">
@@ -455,6 +469,21 @@
         <div class="form-group">
           <label class="form-label">Contract <span class="req">*</span></label>
           <select class="form-select" id="form-contract"><option value="">— Select Customer first —</option></select>
+        </div>
+      </div>
+      <div class="form-group" id="payment-type-group">
+        <label class="form-label">Payment Type</label>
+        <div class="segmented-toggle">
+          <button type="button" class="seg-btn active" id="ptype-additional">Additional (standalone)</button>
+          <button type="button" class="seg-btn" id="ptype-scheduled">Scheduled (redistribute)</button>
+        </div>
+        <div class="form-hint" id="payment-type-hint">Extra charge outside the installment plan — won't change the amounts of other scheduled payments.</div>
+      </div>
+      <div class="form-group" id="additional-timing-group">
+        <label class="form-label">When</label>
+        <div class="segmented-toggle">
+          <button type="button" class="seg-btn active" id="atime-paid">Already Paid (today)</button>
+          <button type="button" class="seg-btn" id="atime-scheduled">Scheduled for later</button>
         </div>
       </div>
       <div class="form-row">
@@ -559,6 +588,7 @@ import {
   cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
   smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
 } from './js/firestoreShim.js';
+import { isContractCancelled, assertContractActionable } from './js/contractCancellation.js';
 import { mountSidebarBadges } from './js/sidebarBadges.js';
 import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
 
@@ -600,7 +630,13 @@ function addMonths(date,n){const d=new Date(date);d.setMonth(d.getMonth()+n);ret
 function getIntervalMonths(freq){return {monthly:1,'bi-monthly':2,quarterly:3,'semi-annual':6,annual:12,'one-time':null}[freq]||1;}
 function dispAmt(p){return Number(p.__displayAmount ?? p.amount ?? 0);}
 
-function isOverdue(p){const due=toDate(p.dueDate);const today=new Date();today.setHours(0,0,0,0);return p.status==='Pending'&&due&&due<today;}
+function isOverdue(p){const due=toDate(p.dueDate);const today=new Date();today.setHours(0,0,0,0);
+  // A payment shouldn't still count as overdue once a payment date has been
+  // recorded for it — previously this only checked status==='Pending', so
+  // editing just the Payment Date field (without also flipping status) left
+  // it stuck on the overdue list even though it now has a recorded date.
+  const hasPaymentDate=!!toDate(p.paymentDate);
+  return p.status==='Pending'&&!hasPaymentDate&&due&&due<today;}
 function statusBadge(p){if(isOverdue(p))return`<span class="badge badge-red">Overdue</span>`;const m={Pending:'amber',Received:'green',Deposited:'green',Remitted:'green',Collected:'green'};return`<span class="badge badge-${m[p.status]||'gray'}">${p.status||'—'}</span>`;}
 
 function getRecentNote(p){
@@ -671,7 +707,16 @@ function buildPaymentRows(){
 
   // Iterate ALL contracts (not just those with payments) so we synthesize for contracts with zero records
   Object.values(contractMap).forEach(c=>{
-    const real=(byContract[c.id]||[]).slice();
+    const allReal=(byContract[c.id]||[]).slice();
+
+    // Additional / standalone payments (isAdditional===true) are extra
+    // charges outside the contract's agreed installment plan — e.g. a
+    // rush fee or add-on service. They must never be pulled into the
+    // redistribution pool or counted against the contract's balance;
+    // they're displayed with their own fixed amount, full stop.
+    const additional=allReal.filter(p=>p.isAdditional);
+    const real=allReal.filter(p=>!p.isAdditional);
+
     const totalAmt=Number(c.totalAmount||0);
     const collected=real.filter(p=>COLLECTED_STATUSES.includes(p.status)).reduce((s,p)=>s+Number(p.amount||0),0);
     const balance=Math.max(0,totalAmt-collected);
@@ -761,6 +806,9 @@ function buildPaymentRows(){
       p.__redistributed=(rev!==undefined && Math.abs(rev-orig)>=0.01);
       rows.push(p);
     });
+    // Additional/standalone payments always show their own literal amount —
+    // never redistributed, never folded into the balance math above.
+    additional.forEach(p=>{p.__displayAmount=Number(p.amount||0);p.__additional=true;rows.push(p);});
   });
 
   // Append orphan payments (no contract link) so we never hide real DB records
@@ -984,26 +1032,43 @@ $('btn-clear-filters').addEventListener('click',()=>{
   $('filter-date-from').value='';
   $('filter-date-to').value='';
   columnFilters={};
+  document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('thead th').forEach(th=>th.style.background='');
   applyFilters();
 });
 
-function _isoDay(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function _applyQuickDay(offset){
-  const d=new Date(); d.setDate(d.getDate()+offset);
-  const iso=_isoDay(d);
-  $('filter-date-from').value=iso;
-  $('filter-date-to').value=iso;
-  applyFilters();
-}
-$('btn-quick-today').addEventListener('click',()=>_applyQuickDay(0));
-$('btn-quick-tomorrow').addEventListener('click',()=>_applyQuickDay(1));
+/* ── Quick date filters: Today / Tomorrow (filters by Due Date) ── */
+const fmtDateInput=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`;};
+const clearQuickActive=()=>document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b=>b.classList.remove('active'));
+document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(btn.classList.contains('active')){
+      btn.classList.remove('active');
+      $('filter-date-from').value='';$('filter-date-to').value='';
+      applyFilters();
+      return;
+    }
+    const now=new Date();
+    const target=new Date(now);
+    if(btn.dataset.range==='tomorrow') target.setDate(now.getDate()+1);
+    const val=fmtDateInput(target);
+    $('filter-date-from').value=val;
+    $('filter-date-to').value=val;
+    clearQuickActive();
+    btn.classList.add('active');
+    applyFilters();
+  });
+});
+// Manual date edits clear quick-filter active state
+['filter-date-from','filter-date-to'].forEach(id=>$(id).addEventListener('input',clearQuickActive));
 
 document.getElementById('payments-tbody').addEventListener('click',function(e){
   const editBtn=e.target.closest('.btn-edit');
   if(editBtn&&editBtn.dataset.id){openEditModal(editBtn.dataset.id);return;}
   const recBtn=e.target.closest('.btn-record');
   if(recBtn&&recBtn.dataset.id){openRecordModal(recBtn.dataset.id);return;}
+  const addForBtn=e.target.closest('.btn-add-for-contract');
+  if(addForBtn&&addForBtn.dataset.id){openAddForContract(addForBtn.dataset.id);return;}
 });
 
 function renderTable(){
@@ -1023,14 +1088,24 @@ function renderTable(){
     const displayAmt=dispAmt(p);
     const origAmt=Number(p.amount||0);
     const showOrig=p.__redistributed && !p.__virtual && Math.abs(displayAmt-origAmt)>=0.01;
-    const amtCell=showOrig
+    // Payment type badge: makes it explicit whether this row is a standalone
+    // additional charge (never redistributed) or part of the auto-redistributed
+    // installment schedule.
+    const typeBadge = p.__additional
+      ? `<span class="payment-type-badge additional">Additional</span>`
+      : (p.__redistributed ? `<span class="payment-type-badge redistributed">Redistributed</span>` : '');
+    const amtCell=(showOrig
       ? `<div style="font-weight:600;color:${ov?'var(--red-text)':'var(--blue-text)'}">${fmtCur(displayAmt)}</div><div style="font-size:10.5px;color:var(--text-muted);text-decoration:line-through;margin-top:1px">${fmtCur(origAmt)}</div>`
-      : fmtCur(displayAmt);
+      : fmtCur(displayAmt)) + (typeBadge?`<div style="margin-top:2px">${typeBadge}</div>`:'');
 
-    // Action button: real → Edit; virtual → Record
+    // Action buttons: virtual → Record; real → Edit + a separate Add Payment
+    // (pre-filled with this row's customer/contract, always opens in "Add"
+    // mode) so it's never ambiguous whether you're changing this payment
+    // or creating a brand new one alongside it.
     const actionBtn=p.__virtual
       ? `<button class="btn btn-sm btn-secondary btn-record" data-id="${p.id}" title="Create a payment record for this scheduled session"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Record</button>`
-      : `<button class="btn btn-sm btn-secondary btn-edit" data-id="${p.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`;
+      : `<button class="btn btn-sm btn-secondary btn-edit" data-id="${p.id}" title="Edit this payment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        <button class="btn btn-sm btn-secondary btn-add-for-contract" data-id="${p.id}" title="Add a new payment for this same customer/contract"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>`;
 
     // Subtle "Scheduled" tag for virtual rows
     const virtualTag=p.__virtual?` <span style="display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--gray-bg);color:var(--gray-text);padding:1px 5px;border-radius:3px;vertical-align:middle;margin-left:4px">Scheduled</span>`:'';
@@ -1078,6 +1153,7 @@ $('btn-add-note').addEventListener('click',async()=>{
       const existing=Array.isArray(payment.notes)?[...payment.notes]:[];
       existing.push(entry);
       await smartUpdateDoc(doc(db,'payments',editId),{notes:existing,updatedAt:serverTimestamp()});
+      await invalidateAfterWrite('payments');
       payment.notes=existing;formNotes=existing;renderNotesThread();buildPaymentRows();applyFilters();showToast('Note added.');
     }
   }else{formNotes.push(entry);renderNotesThread();}
@@ -1093,7 +1169,56 @@ function loadContractsForCustomer(customerNo){
   $('form-contract').innerHTML='<option value="">— Select Contract —</option>'+contracts.map(c=>{const end=toDate(c.contractEndDate);const dispS=(c.status==='active'&&end&&end<today)?'expired':c.status;return`<option value="${c.id}">${c.contractNumber||c.id.slice(0,8)} — ${c.contractType} (${dispS})</option>`;}).join('');
 }
 
-$('btn-add-payment').addEventListener('click',()=>{clearForm();$('form-modal-title').textContent='Add Payment';$('save-btn-text').textContent='Save Payment';$('form-payment-id').value='';formNotes=[];renderNotesThread();openModal('payment-form-modal');});
+/* ── Payment Type toggle (Additional/standalone vs Scheduled/redistribute) ──
+   "Additional" is the default for a plain new payment — it's an extra
+   charge outside the contract's installment plan, so it must never dilute
+   the amounts of other scheduled payments. "Scheduled" opts back into the
+   normal redistribution behavior, for when you're genuinely adding/backfilling
+   an installment that belongs to the plan. ── */
+function setPaymentType(type){
+  const isAdditional = type==='additional';
+  $('ptype-additional').classList.toggle('active', isAdditional);
+  $('ptype-scheduled').classList.toggle('active', !isAdditional);
+  $('additional-timing-group').style.display = isAdditional ? '' : 'none';
+  $('payment-type-hint').textContent = isAdditional
+    ? "Extra charge outside the installment plan — won't change the amounts of other scheduled payments."
+    : 'Part of the contract\'s installment plan — amounts may be redistributed with the other scheduled payments.';
+  if(isAdditional) setAdditionalTiming($('atime-scheduled').classList.contains('active') ? 'scheduled' : 'paid');
+}
+function setAdditionalTiming(timing){
+  const isPaid = timing==='paid';
+  $('atime-paid').classList.toggle('active', isPaid);
+  $('atime-scheduled').classList.toggle('active', !isPaid);
+  const todayStr = toInputDate(new Date());
+  if(isPaid){
+    $('form-payment-date').value = todayStr;
+    $('form-due-date').value = todayStr;
+    // Pick a "collected" status that's actually available in the select
+    // (COLLECTED_STATUSES is the module-level canonical list; the select's
+    // options come from settings and may be a different subset/order).
+    const availableOpts=[...$('form-status').options].map(o=>o.value);
+    const collectedOpt=COLLECTED_STATUSES.find(s=>availableOpts.includes(s));
+    if(collectedOpt) $('form-status').value=collectedOpt;
+  } else {
+    $('form-payment-date').value = '';
+    $('form-status').value='Pending';
+  }
+}
+$('ptype-additional').addEventListener('click', ()=>setPaymentType('additional'));
+$('ptype-scheduled').addEventListener('click', ()=>setPaymentType('scheduled'));
+$('atime-paid').addEventListener('click', ()=>setAdditionalTiming('paid'));
+$('atime-scheduled').addEventListener('click', ()=>setAdditionalTiming('scheduled'));
+
+$('btn-add-payment').addEventListener('click',()=>{
+  clearForm();
+  $('form-modal-title').textContent='Add Payment';$('save-btn-text').textContent='Save Payment';
+  $('form-payment-id').value='';formNotes=[];renderNotesThread();
+  // Default: Additional (standalone), already paid today — matches the
+  // common case of logging an extra charge that was just collected.
+  $('payment-type-group').style.display='';
+  setPaymentType('additional');
+  openModal('payment-form-modal');
+});
 
 function openEditModal(id){
   const p=allPaymentRows.find(x=>x.id===id);if(!p||p.__virtual)return;
@@ -1107,6 +1232,16 @@ function openEditModal(id){
   $('form-payment-date').value=toInputDate(p.paymentDate);$('form-mode').value=p.paymentMode||'';
   $('form-or-number').value=p.orNumber||'';$('form-received-by').value=p.receivedBy||'';
   $('form-status').value=p.status||'Pending';
+  // Reflect this payment's actual type/timing rather than resetting to defaults
+  $('payment-type-group').style.display='';
+  setPaymentType(p.isAdditional ? 'additional' : 'scheduled');
+  if(p.isAdditional) setAdditionalTiming(p.paymentDate ? 'paid' : 'scheduled');
+  // setAdditionalTiming() above pre-fills date/status for a *new* additional
+  // payment — restore this payment's actual saved values now that we know its type.
+  $('form-amount').value=p.amount||'';
+  $('form-due-date').value=toInputDate(p.dueDate);
+  $('form-payment-date').value=toInputDate(p.paymentDate);
+  $('form-status').value=p.status||'Pending';
   formNotes=Array.isArray(p.notes)?[...p.notes]:[];
   if(!formNotes.length&&p.remarks&&typeof p.remarks==='string'&&p.remarks.trim())
     formNotes.push({text:p.remarks.trim(),author:'System (migrated)',timestamp:p.createdAt||p.updatedAt||null});
@@ -1114,8 +1249,30 @@ function openEditModal(id){
   openModal('payment-form-modal');
 }
 
+// Open the Add Payment modal pre-filled with THIS row's customer/contract,
+// but always in "Add" mode (blank payment-id) — a deliberately separate
+// action from Edit, so there's never ambiguity between "I'm changing this
+// payment" (Edit) and "I'm adding a new one alongside it" (this button).
+// Defaults to Additional/standalone, same as the general Add Payment button.
+function openAddForContract(id){
+  const p=allPaymentRows.find(x=>x.id===id);if(!p)return;
+  clearForm();
+  $('form-modal-title').textContent='Add Payment';$('save-btn-text').textContent='Save Payment';
+  $('form-payment-id').value=''; // blank → always creates a new record, never touches p
+  $('form-customer-no').value=p.customerNo||'';
+  const name=clientMap[p.customerNo];$('customer-hint').textContent=name?`✓ ${cleanName(name)}`:'';
+  loadContractsForCustomer(p.customerNo||'');
+  setTimeout(()=>{$('form-contract').value=p.contractId||'';},50);
+  $('payment-type-group').style.display='';
+  setPaymentType('additional');
+  formNotes=[];renderNotesThread();
+  openModal('payment-form-modal');
+}
+
 // Open the Add Payment modal pre-filled from a synthesized (virtual) schedule row.
 // Saving creates a NEW payment record — the virtual row was never in Firestore.
+// This is always a genuine scheduled installment, never an "additional" charge,
+// so the Payment Type toggle is hidden here rather than left to default wrong.
 function openRecordModal(id){
   const p=allPaymentRows.find(x=>x.id===id);if(!p)return;
   clearForm();
@@ -1129,6 +1286,8 @@ function openRecordModal(id){
   $('form-amount').value=dispAmt(p)||'';
   $('form-due-date').value=toInputDate(p.dueDate);
   $('form-status').value='Pending';
+  $('payment-type-group').style.display='none';
+  setPaymentType('scheduled');
   formNotes=[];renderNotesThread();
   openModal('payment-form-modal');
 }
@@ -1138,6 +1297,8 @@ function clearForm(){
   ['form-contract','form-mode','form-received-by'].forEach(id=>$(id).value='');
   $('form-status').value='Pending';$('customer-hint').textContent='';
   $('form-contract').innerHTML='<option value="">— Select Customer first —</option>';
+  $('payment-type-group').style.display='';
+  setPaymentType('additional');
   formNotes=[];
 }
 
@@ -1146,21 +1307,28 @@ $('btn-save-payment').addEventListener('click',async()=>{
   if(!customerNo){showToast('Customer No is required.','error');return;}
   if(!amount){showToast('Amount is required.','error');return;}
   if(!dueDate){showToast('Due Date is required.','error');return;}
+  if (contractId) {
+    const _g = assertContractActionable(contractMap[contractId], 'add payment');
+    if (!_g.ok) { showToast(_g.reason, 'error'); return; }
+  }
   const btn=$('btn-save-payment');btn.disabled=true;$('save-btn-text').textContent='Saving…';
   const parseLocalDate=(s)=>{if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
   const pendingNote=$('form-new-note').value.trim();
   if(pendingNote){formNotes.push({text:pendingNote,author:currentUser?.displayName||currentUser?.email||'Unknown',timestamp:new Date()});$('form-new-note').value='';}
-  const data={customerNo,contractId,amount,status,dueDate:parseLocalDate(dueDate),paymentDate:parseLocalDate($('form-payment-date').value),paymentMode:$('form-mode').value,orNumber:$('form-or-number').value.trim(),receivedBy:$('form-received-by').value,notes:formNotes,updatedAt:serverTimestamp()};
+  const isAdditional = $('ptype-additional').classList.contains('active');
+  const data={customerNo,contractId,amount,status,isAdditional,dueDate:parseLocalDate(dueDate),paymentDate:parseLocalDate($('form-payment-date').value),paymentMode:$('form-mode').value,orNumber:$('form-or-number').value.trim(),receivedBy:$('form-received-by').value,notes:formNotes,updatedAt:serverTimestamp()};
   const editId=$('form-payment-id').value;
   try{
     if(editId){
       await smartUpdateDoc(doc(db,'payments',editId),data);
+      await invalidateAfterWrite('payments');
       const idx=allPayments.findIndex(x=>x.id===editId);if(idx>=0)allPayments[idx]={...allPayments[idx],...data};
       await logAction('updated','payment',editId,`Updated payment for ${customerNo} — ₱${amount.toLocaleString()} — ${status}`);
       showToast('Payment updated.');
     }else{
       data.createdAt=serverTimestamp();
       const ref=await smartAddDoc(collection(db,'payments'),data);allPayments.unshift({id:ref.id,...data});
+      await invalidateAfterWrite('payments');
       await logAction('created','payment',ref.id,`Created payment for ${customerNo} — ₱${amount.toLocaleString()} — ${status}`);
       showToast('Payment added.');
     }
@@ -1182,7 +1350,7 @@ $('btn-export-csv').addEventListener('click',()=>{
 
 $('btn-dl-template').addEventListener('click',()=>{
   const h='customerNo,contractId,amount,dueDate,paymentDate,paymentMode,orNumber,receivedBy,status,remarks';
-  const ex='PC-00001,,5000,2024-01-15,2024-01-20,gcash,OR-00001,Agent Name,Received,';
+  const ex='PC-00001,,0.00,2024-01-15,2024-01-20,gcash,OR-00001,Agent Name,Received,';
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([h+'\n'+ex],{type:'text/csv'})),download:'pestastic_payments_template.csv'});a.click();
 });
 

@@ -104,6 +104,18 @@
     .btn-primary:hover{background:var(--primary-hover)}
     .btn-secondary{background:white;color:var(--text);border:1px solid var(--border)}
     .btn-secondary:hover{background:var(--bg-secondary)}
+    .btn-secondary:disabled{opacity:.45;cursor:not-allowed}
+    .date-nav-group{display:flex;align-items:center;gap:6px}
+    .btn-date-arrow{padding:8px 10px}
+    .all-dates-toggle{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;user-select:none;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:white}
+    .all-dates-toggle input{width:15px;height:15px;cursor:pointer;accent-color:var(--primary)}
+    .all-dates-toggle.active{background:var(--primary-light);border-color:var(--primary-border);color:var(--primary-hover)}
+    .orientation-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .orient-btn{display:flex;align-items:center;gap:6px;padding:8px 12px;background:white;border:none;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .15s}
+    .orient-btn+.orient-btn{border-left:1px solid var(--border)}
+    .orient-btn svg{width:14px;height:14px}
+    .orient-btn:hover{background:var(--bg-secondary)}
+    .orient-btn.active{background:var(--primary);color:white}
 
     /* SUMMARY ROW */
     .summary-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
@@ -178,6 +190,12 @@
     .status-dot.rescheduled{background:#fef3c7;color:#b45309}
     .status-dot.cancelled{background:#f3f4f6;color:#6b7280}
     .status-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+
+    /* JOB TYPE BADGE (unified team table) */
+    .job-type-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+    .job-type-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .job-type-badge.treatment{background:#dbeafe;color:#1d4ed8}
+    .job-type-badge.inspection{background:#ede9fe;color:#5b21b6}
 
     /* NO TREATMENTS */
     .no-treatments{text-align:center;padding:48px 20px;color:#9ca3af}
@@ -387,7 +405,19 @@
       <!-- Screen controls (hidden on print) -->
       <div class="controls-bar">
         <label for="date-picker">Schedule Date</label>
-        <input type="date" class="date-input" id="date-picker" />
+        <div class="date-nav-group">
+          <button class="btn btn-secondary btn-date-arrow" id="btn-prev-date" title="Previous day" aria-label="Previous day">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <input type="date" class="date-input" id="date-picker" />
+          <button class="btn btn-secondary btn-date-arrow" id="btn-next-date" title="Next day" aria-label="Next day">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <label class="all-dates-toggle" id="all-dates-toggle-label">
+          <input type="checkbox" id="filter-all-dates" />
+          All Dates
+        </label>
         <select class="filter-select" id="filter-team"><option value="">All Teams</option></select>
         <select class="filter-select" id="filter-status">
           <option value="">All Status</option>
@@ -398,6 +428,16 @@
           <option value="cancelled">Cancelled</option>
         </select>
         <div class="controls-spacer"></div>
+        <div class="orientation-toggle" id="orientation-toggle" role="group" aria-label="Print orientation">
+          <button type="button" class="orient-btn active" id="btn-orient-portrait" data-orientation="portrait" title="Portrait">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+            Portrait
+          </button>
+          <button type="button" class="orient-btn" id="btn-orient-landscape" data-orientation="landscape" title="Landscape">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+            Landscape
+          </button>
+        </div>
         <button class="btn btn-secondary" id="btn-load">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           Refresh
@@ -485,6 +525,10 @@ function todayISO() {
   const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
 }
 
+function isoOfDate(dateObj) {
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+}
+
 function fmtFullDate(isoStr) {
   const [y,m,d]=isoStr.split('-').map(Number);
   return new Date(y,m-1,d).toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -526,12 +570,34 @@ function statusDot(s) {
   return `<span class="status-dot ${map[s]||'cancelled'}">${label[s]||s||'—'}</span>`;
 }
 
-function dispStatus(t, selectedDate) {
+/* dispStatus now derives "overdue" from the treatment's OWN scheduled date
+   compared against today — instead of relying on a single global selected
+   date. This keeps behavior identical in single-day mode (where the
+   treatment's date equals the selected date) while also working correctly
+   when treatments from many different dates are shown at once (All Dates
+   mode). */
+function dispStatus(t) {
   const today=new Date(); today.setHours(0,0,0,0);
-  const [y,m,d]=selectedDate.split('-').map(Number);
-  const sel=new Date(y,m-1,d);
-  if(t.status==='scheduled' && sel < today) return 'overdue';
+  const tDate=toLocalDate(t.treatmentDate);
+  if(t.status==='scheduled' && tDate && tDate < today) return 'overdue';
   return t.status||'scheduled';
+}
+
+/* Inspection status badge — mirrors the .insp-status styling used previously
+   in the standalone inspections table, now reused inside the unified
+   per-team table. */
+function inspStatusBadge(status) {
+  const s = status || 'Scheduled';
+  const cls = s.replace(' ','-');
+  return `<span class="insp-status ${cls}">${s}</span>`;
+}
+
+/* Small pill distinguishing a row as a Treatment vs an Inspection job
+   inside the unified per-team table. */
+function jobTypeBadge(jobType) {
+  return jobType === 'inspection'
+    ? `<span class="job-type-badge inspection">Inspection</span>`
+    : `<span class="job-type-badge treatment">Treatment</span>`;
 }
 
 /* ── Load reference data ── */
@@ -549,32 +615,387 @@ async function loadRefData() {
   try{const s=await cachedGetDoc(doc(db,'config','settings'));companySettings=s.exists()?s.data():{};}catch{}
 }
 
+/* ── Render the unified team-grouped tables + unassigned-inspections
+   section for a single date's worth of treatments/inspections.
+   Returns { html, teamCount, totalReceivable, totalUncollected } so callers
+   (single-date or all-dates modes) can aggregate summary numbers. ── */
+function renderScheduleTables(dateStr, treatments, inspections, paymentsByKey, paymentsByCustDate) {
+  function getReceivablesFor(t){
+    const dk=dateKey(t.treatmentDate);
+    const k1=`${t.customerNo||''}|${t.contractId||''}|${dk}`;
+    if(paymentsByKey[k1]&&paymentsByKey[k1].length) return paymentsByKey[k1];
+    const k2=`${t.customerNo||''}|${dk}`;
+    return paymentsByCustDate[k2]||[];
+  }
+
+  // Sort by time within day
+  treatments = [...treatments].sort((a,b)=>{
+    const ta = a.treatmentTime||'99:99', tb = b.treatmentTime||'99:99';
+    return ta.localeCompare(tb);
+  });
+
+  const inspectionsWithTeam = inspections.filter(i=>i.assignedTeam);
+  const unassignedInspections = inspections.filter(i=>!i.assignedTeam);
+
+  const grouped={};
+  treatments.forEach(t=>{
+    const team=t.assignedTeam||'Unassigned';
+    if(!grouped[team]) grouped[team]=[];
+    grouped[team].push({...t,_jobType:'treatment'});
+  });
+  inspectionsWithTeam.forEach(i=>{
+    const team=i.assignedTeam;
+    if(!grouped[team]) grouped[team]=[];
+    grouped[team].push({...i,_jobType:'inspection'});
+  });
+  Object.keys(grouped).forEach(team=>{
+    grouped[team].sort((a,b)=>{
+      const ta = a._jobType==='treatment' ? (a.treatmentTime||'99:99') : (a.inspectionTime||a.time||'99:99');
+      const tb = b._jobType==='treatment' ? (b.treatmentTime||'99:99') : (b.inspectionTime||b.time||'99:99');
+      return ta.localeCompare(tb);
+    });
+  });
+  const sortedTeams=Object.keys(grouped).sort();
+
+  let totalReceivableAll=0, totalUncollectedAll=0;
+  treatments.forEach(t=>{
+    getReceivablesFor(t).forEach(p=>{
+      const amt=Number(p.amount||0);
+      totalReceivableAll+=amt;
+      if(!isPaid(p)) totalUncollectedAll+=amt;
+    });
+  });
+
+  let html='';
+
+  sortedTeams.forEach(team=>{
+    const rows=grouped[team];
+    let teamReceivable=0, teamUncollected=0;
+    html+=`
+    <div class="team-section">
+      <div class="team-section-header">
+        <span class="team-section-name">
+          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          ${team}
+        </span>
+        <span class="team-section-count">Total Jobs: ${rows.length}</span>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Job Type</th>
+            <th>Client Name</th>
+            <th>Customer No</th>
+            <th>Address</th>
+            <th>Service</th>
+            <th>Time</th>
+            <th>Ref #</th>
+            <th>Technician</th>
+            <th style="text-align:right;white-space:nowrap">Receivable ₱</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach((job,i)=>{
+      const isInsp = job._jobType === 'inspection';
+      const clientData=clientMap[job.customerNo];
+      const clientName=isInsp
+        ? (job.clientName||'—')
+        : cleanName(clientData?.clientName||job.customerNo||'—');
+      const addrParts=[
+        clientData?.addressLine1||clientData?.address||'',
+        clientData?.barangay||'',
+        clientData?.city||'',
+        clientData?.province||'',
+        clientData?.postalCode||''
+      ].filter(Boolean);
+      const address=isInsp
+        ? (job.address||'—')
+        : (addrParts.join(', ')||'—');
+      const contractType=job.contractType||(contractMap[job.contractId]?.contractType)||'—';
+      const service=isInsp ? 'General Inspection' : (job.treatmentType||contractType);
+      const timeVal=isInsp ? (job.inspectionTime||job.time) : job.treatmentTime;
+      const technician=isInsp ? (job.inspectedBy||'—') : (job.technician||'—');
+      const refNo=isInsp ? '—' : (job.treatmentNo||'—');
+      const notesFull=job.notes||'—';
+      const notesPreview=job.notes?(job.notes.length>60?job.notes.slice(0,60)+'…':job.notes):'—';
+      const statusCell=isInsp ? inspStatusBadge(job.status) : statusDot(dispStatus(job));
+
+      let receivableCell;
+      if(isInsp){
+        receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+      } else {
+        const recs=getReceivablesFor(job);
+        let rowAmt=0, rowUncol=0;
+        recs.forEach(p=>{ const a=Number(p.amount||0); rowAmt+=a; if(!isPaid(p)) rowUncol+=a; });
+        teamReceivable+=rowAmt; teamUncollected+=rowUncol;
+
+        if(recs.length===0){
+          receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+        } else {
+          const allPaid = recs.every(isPaid);
+          const noneTouched = recs.every(p=>!isPaid(p));
+          const stateLabel = allPaid ? 'Paid' : (noneTouched ? 'Pending' : 'Partial');
+          const stateClass = allPaid ? 'completed' : 'rescheduled';
+          receivableCell = `<td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+            <div style="font-weight:700;font-size:12.5px;color:#111">${fmtCur(rowAmt)}</div>
+            <div style="margin-top:2px"><span class="status-dot ${stateClass}" style="font-size:10px;padding:1px 6px">${stateLabel}</span></div>
+          </td>`;
+        }
+      }
+
+      html+=`<tr>
+        <td class="num">${i+1}</td>
+        <td>${jobTypeBadge(job._jobType)}</td>
+        <td style="font-weight:600;max-width:140px">${clientName}</td>
+        <td class="treat-no">${job.customerNo||'—'}</td>
+        <td style="font-size:11.5px;max-width:160px">${address}</td>
+        <td style="font-size:11.5px">${service}</td>
+        <td style="font-size:12px;white-space:nowrap">${fmtTime12(timeVal)}</td>
+        <td class="treat-no">${refNo}</td>
+        <td style="font-size:12px">${technician}</td>
+        ${receivableCell}
+        <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
+        <td>${statusCell}</td>
+      </tr>`;
+    });
+
+    html+=`<tr style="background:#f1f3f5!important;font-weight:700">
+      <td colspan="9" style="text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#374151">Team Subtotal</td>
+      <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+        <div style="color:#111;font-size:12.5px">${fmtCur(teamReceivable)}</div>
+        ${teamUncollected>0?`<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px">${fmtCur(teamUncollected)} to collect</div>`:`<div style="font-size:10.5px;color:#15803d;font-weight:600;margin-top:2px">All settled</div>`}
+      </td>
+      <td colspan="2"></td>
+    </tr>`;
+
+    html+=`</tbody></table></div>`;
+  });
+
+  if(unassignedInspections.length>0){
+    const inspOrder={'Scheduled':0,'No Show':1,'Completed':2,'Converted':3,'Cancelled':4,'Lost':5};
+    const sortedUnassigned=[...unassignedInspections].sort((a,b)=>(inspOrder[a.status]??9)-(inspOrder[b.status]??9));
+    html+=`
+    <div class="inspection-section">
+      <div class="inspection-section-header">
+        <span class="inspection-section-name">
+          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Unassigned Inspections
+        </span>
+        <span class="inspection-section-count">${sortedUnassigned.length} inspection${sortedUnassigned.length===1?'':'s'}</span>
+      </div>
+      <table class="inspection-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Client Name</th>
+            <th>Contact No.</th>
+            <th>Address</th>
+            <th>Pest Problems</th>
+            <th>Inspector</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sortedUnassigned.map((i,idx)=>{
+            const statusClass=(i.status||'Scheduled').replace(' ','-');
+            const pests=(i.pestProblems||[]).join(', ')||'—';
+            const notePreview=i.notes?(i.notes.slice(0,60)+(i.notes.length>60?'…':'')):'—';
+            return `<tr>
+              <td class="num">${idx+1}</td>
+              <td style="font-weight:600;max-width:130px">${i.clientName||'—'}</td>
+              <td style="font-size:12px">${i.contactNumber||'—'}</td>
+              <td style="font-size:11.5px;max-width:150px">${i.address||'—'}</td>
+              <td style="font-size:11.5px;max-width:120px">${pests}</td>
+              <td style="font-size:12px">${i.inspectedBy||'—'}</td>
+              <td style="font-size:11.5px;max-width:130px;color:#6b7280">${notePreview}</td>
+              <td><span class="insp-status ${statusClass}">${i.status||'Scheduled'}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  return { html, teamCount: sortedTeams.length, totalReceivableAll, totalUncollectedAll };
+}
+
+/* ── Render a single unified table (All Dates mode) with Date + Team
+   columns, instead of separate per-date / per-team sections. All
+   treatments and ALL inspections (assigned or not) are flattened into one
+   sorted list: Date asc, then Team, then Time. ── */
+function renderUnifiedTable(treatments, inspections, paymentsByKey, paymentsByCustDate) {
+  function getReceivablesFor(t){
+    const dk=dateKey(t.treatmentDate);
+    const k1=`${t.customerNo||''}|${t.contractId||''}|${dk}`;
+    if(paymentsByKey[k1]&&paymentsByKey[k1].length) return paymentsByKey[k1];
+    const k2=`${t.customerNo||''}|${dk}`;
+    return paymentsByCustDate[k2]||[];
+  }
+
+  const rows=[];
+  treatments.forEach(t=>{
+    const tDate=toLocalDate(t.treatmentDate);
+    rows.push({...t,_jobType:'treatment',_dateISO:tDate?isoOfDate(tDate):'',_team:t.assignedTeam||'Unassigned',_time:t.treatmentTime});
+  });
+  inspections.forEach(i=>{
+    const iDate=toLocalDate(i.inspectionDate);
+    rows.push({...i,_jobType:'inspection',_dateISO:iDate?isoOfDate(iDate):'',_team:i.assignedTeam||'Unassigned',_time:i.inspectionTime||i.time});
+  });
+
+  rows.sort((a,b)=>{
+    if(a._dateISO!==b._dateISO) return a._dateISO.localeCompare(b._dateISO);
+    if(a._team!==b._team) return a._team.localeCompare(b._team);
+    const ta=a._time||'99:99', tb=b._time||'99:99';
+    return ta.localeCompare(tb);
+  });
+
+  const teamSet=new Set(rows.map(r=>r._team));
+  let grandReceivable=0, grandUncollected=0;
+
+  let html=`
+  <div class="team-section">
+    <div class="team-section-header">
+      <span class="team-section-name">
+        <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        All Scheduled Jobs
+      </span>
+      <span class="team-section-count">Total Jobs: ${rows.length}</span>
+    </div>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th>Date</th>
+          <th>Team</th>
+          <th>Job Type</th>
+          <th>Client Name</th>
+          <th>Customer No</th>
+          <th>Address</th>
+          <th>Service</th>
+          <th>Time</th>
+          <th>Ref #</th>
+          <th>Technician</th>
+          <th style="text-align:right;white-space:nowrap">Receivable ₱</th>
+          <th>Notes</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  rows.forEach((job,i)=>{
+    const isInsp = job._jobType==='inspection';
+    const clientData=clientMap[job.customerNo];
+    const clientName=isInsp
+      ? (job.clientName||'—')
+      : cleanName(clientData?.clientName||job.customerNo||'—');
+    const addrParts=[
+      clientData?.addressLine1||clientData?.address||'',
+      clientData?.barangay||'',
+      clientData?.city||'',
+      clientData?.province||'',
+      clientData?.postalCode||''
+    ].filter(Boolean);
+    const address=isInsp
+      ? (job.address||'—')
+      : (addrParts.join(', ')||'—');
+    const contractType=job.contractType||(contractMap[job.contractId]?.contractType)||'—';
+    const service=isInsp ? 'General Inspection' : (job.treatmentType||contractType);
+    const technician=isInsp ? (job.inspectedBy||'—') : (job.technician||'—');
+    const refNo=isInsp ? '—' : (job.treatmentNo||'—');
+    const notesFull=job.notes||'—';
+    const notesPreview=job.notes?(job.notes.length>60?job.notes.slice(0,60)+'…':job.notes):'—';
+    const statusCell=isInsp ? inspStatusBadge(job.status) : statusDot(dispStatus(job));
+    const dateLabel=job._dateISO ? new Date(...job._dateISO.split('-').map((v,idx)=>idx===1?Number(v)-1:Number(v))).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) : '—';
+
+    let receivableCell;
+    if(isInsp){
+      receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+    } else {
+      const recs=getReceivablesFor(job);
+      let rowAmt=0, rowUncol=0;
+      recs.forEach(p=>{ const a=Number(p.amount||0); rowAmt+=a; if(!isPaid(p)) rowUncol+=a; });
+      grandReceivable+=rowAmt; grandUncollected+=rowUncol;
+
+      if(recs.length===0){
+        receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
+      } else {
+        const allPaid = recs.every(isPaid);
+        const noneTouched = recs.every(p=>!isPaid(p));
+        const stateLabel = allPaid ? 'Paid' : (noneTouched ? 'Pending' : 'Partial');
+        const stateClass = allPaid ? 'completed' : 'rescheduled';
+        receivableCell = `<td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+          <div style="font-weight:700;font-size:12.5px;color:#111">${fmtCur(rowAmt)}</div>
+          <div style="margin-top:2px"><span class="status-dot ${stateClass}" style="font-size:10px;padding:1px 6px">${stateLabel}</span></div>
+        </td>`;
+      }
+    }
+
+    html+=`<tr>
+      <td class="num">${i+1}</td>
+      <td style="font-size:11.5px;white-space:nowrap;font-weight:600">${dateLabel}</td>
+      <td style="font-size:11.5px;white-space:nowrap">${job._team}</td>
+      <td>${jobTypeBadge(job._jobType)}</td>
+      <td style="font-weight:600;max-width:140px">${clientName}</td>
+      <td class="treat-no">${job.customerNo||'—'}</td>
+      <td style="font-size:11.5px;max-width:160px">${address}</td>
+      <td style="font-size:11.5px">${service}</td>
+      <td style="font-size:12px;white-space:nowrap">${fmtTime12(job._time)}</td>
+      <td class="treat-no">${refNo}</td>
+      <td style="font-size:12px">${technician}</td>
+      ${receivableCell}
+      <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
+      <td>${statusCell}</td>
+    </tr>`;
+  });
+
+  html+=`<tr style="background:#f1f3f5!important;font-weight:700">
+    <td colspan="11" style="text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#374151">Grand Total</td>
+    <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
+      <div style="color:#111;font-size:12.5px">${fmtCur(grandReceivable)}</div>
+      ${grandUncollected>0?`<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px">${fmtCur(grandUncollected)} to collect</div>`:`<div style="font-size:10.5px;color:#15803d;font-weight:600;margin-top:2px">All settled</div>`}
+    </td>
+    <td colspan="2"></td>
+  </tr>`;
+
+  html+=`</tbody></table></div>`;
+
+  return { html, teamCount: teamSet.size, totalReceivableAll: grandReceivable, totalUncollectedAll: grandUncollected };
+}
+
 /* ── Generate report ── */
 async function generateReport() {
+  const allDatesMode = $('filter-all-dates').checked;
   const dateStr = $('date-picker').value;
   const teamFilter = $('filter-team').value;
   const statusFilter = $('filter-status').value;
-  if(!dateStr) return;
+  if(!allDatesMode && !dateStr) return;
 
-  const [y,m,d]=dateStr.split('-').map(Number);
-  const selDate=new Date(y,m-1,d);
-  const nextDate=new Date(y,m-1,d+1);
+  let selDate=null, nextDate=null;
+  if(!allDatesMode){
+    const [y,m,d]=dateStr.split('-').map(Number);
+    selDate=new Date(y,m-1,d);
+    nextDate=new Date(y,m-1,d+1);
+  }
 
-  // Fetch treatments for the selected date
+  // Fetch treatments (optionally restricted to the selected date)
   const snap=await cachedGetDocs(query(collection(db,'treatments'),orderBy('treatmentDate','asc')));
   let treatments=[];
-  snap.forEach(doc=>{
-    const t=doc.data();
+  snap.forEach(docu=>{
+    const t=docu.data();
     const tDate=toLocalDate(t.treatmentDate);
     if(!tDate) return;
-    if(tDate>=selDate && tDate<nextDate) treatments.push({id:doc.id,...t});
+    if(allDatesMode || (tDate>=selDate && tDate<nextDate)) treatments.push({id:docu.id,...t});
   });
 
-  /* ── Fetch payments and build a lookup map by customerNo + contractId + dueDate ──
-     Used to surface the "receivable amount" of each treatment.            */
+  /* ── Fetch payments and build lookup maps by customerNo + contractId + dueDate ── */
   const paySnap=await cachedGetDocs(collection(db,'payments'));
-  const paymentsByKey={};       // primary lookup: customer + contract + date
-  const paymentsByCustDate={};  // fallback lookup: customer + date (no contract)
+  const paymentsByKey={};
+  const paymentsByCustDate={};
   paySnap.forEach(d=>{
     const p={id:d.id,...d.data()};
     const dk=dateKey(p.dueDate);
@@ -585,17 +1006,6 @@ async function generateReport() {
     (paymentsByCustDate[k2]=paymentsByCustDate[k2]||[]).push(p);
   });
 
-  /* Resolve receivable(s) for a given treatment on the selected date.
-     Prefer exact match on (customerNo + contractId); fall back to
-     (customerNo + date) when the treatment has no contractId. */
-  const dkSel=`${selDate.getFullYear()}-${selDate.getMonth()}-${selDate.getDate()}`;
-  function getReceivablesFor(t){
-    const k1=`${t.customerNo||''}|${t.contractId||''}|${dkSel}`;
-    if(paymentsByKey[k1]&&paymentsByKey[k1].length) return paymentsByKey[k1];
-    const k2=`${t.customerNo||''}|${dkSel}`;
-    return paymentsByCustDate[k2]||[];
-  }
-
   // Separate cancelled before applying filters (cancelled excluded from schedule by default)
   const cancelledCount=treatments.filter(t=>t.status==='cancelled').length;
   if(statusFilter!=='cancelled'){
@@ -604,48 +1014,35 @@ async function generateReport() {
 
   // Apply filters
   if(teamFilter) treatments=treatments.filter(t=>t.assignedTeam===teamFilter);
-  if(statusFilter) treatments=treatments.filter(t=>dispStatus(t,dateStr)===statusFilter);
+  if(statusFilter) treatments=treatments.filter(t=>dispStatus(t)===statusFilter);
 
-  // Update screen summary (cancelled always shown in summary for reference)
-  const teams=new Set(treatments.map(t=>t.assignedTeam||'Unassigned'));
+  // Update screen summary
+  const teamsScreen=new Set(treatments.map(t=>t.assignedTeam||'Unassigned'));
   $('sp-total').textContent=treatments.length;
-  $('sp-teams').textContent=teams.size;
-  $('sp-scheduled').textContent=treatments.filter(t=>dispStatus(t,dateStr)==='scheduled').length;
+  $('sp-teams').textContent=teamsScreen.size;
+  $('sp-scheduled').textContent=treatments.filter(t=>dispStatus(t)==='scheduled').length;
   $('sp-completed').textContent=treatments.filter(t=>t.status==='completed').length;
-  $('sp-overdue').textContent=treatments.filter(t=>dispStatus(t,dateStr)==='overdue').length;
+  $('sp-overdue').textContent=treatments.filter(t=>dispStatus(t)==='overdue').length;
 
-  // Fetch inspections for the selected date
+  // Fetch inspections (optionally restricted to the selected date)
   const insnap=await cachedGetDocs(query(collection(db,'inspections'),orderBy('inspectionDate','asc')));
   let inspections=[];
   insnap.forEach(d=>{
     const i=d.data();
     const iDate=toLocalDate(i.inspectionDate);
     if(!iDate) return;
-    if(iDate>=selDate && iDate<nextDate) inspections.push({id:d.id,...i});
+    if(allDatesMode || (iDate>=selDate && iDate<nextDate)) inspections.push({id:d.id,...i});
   });
-  // Apply team filter to inspections too
   if(teamFilter) inspections=inspections.filter(i=>i.assignedTeam===teamFilter);
   $('sp-inspections').textContent=inspections.length;
-
-  // Sort by time within day (treatments with time before those without)
-  treatments.sort((a,b)=>{
-    const ta=a.treatmentTime||'99:99', tb=b.treatmentTime||'99:99';
-    return ta.localeCompare(tb);
-  });
-
-  // Group by team
-  const grouped={};
-  treatments.forEach(t=>{
-    const team=t.assignedTeam||'Unassigned';
-    if(!grouped[team]) grouped[team]=[];
-    grouped[team].push(t);
-  });
-  const sortedTeams=Object.keys(grouped).sort();
 
   const companyName=companySettings.companyName||'Pestastic Pest Control Services';
   const companyAddr=companySettings.companyAddress||'';
   const companyPhone=companySettings.companyPhone||'';
   const genTime=new Date().toLocaleString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const docTitle = allDatesMode ? 'All Dates' : fmtFullDate(dateStr);
+  const noRecordsFor = allDatesMode ? 'the selected filters' : fmtFullDate(dateStr);
 
   if(!treatments.length && !inspections.length) {
     $('report-area').innerHTML=`
@@ -654,26 +1051,34 @@ async function generateReport() {
           <div class="letterhead-logo-icon"><img src="logo.jpg" alt="Pestastic" style="width:28px;height:28px;object-fit:contain;filter:brightness(0) invert(1)" /></div>
           <div class="letterhead-company"><h1>${companyName}</h1><p>${companyAddr}${companyPhone?' · '+companyPhone:''}</p></div>
         </div>
-        <div class="letterhead-right"><div class="letterhead-doc-title">Daily Schedule Report</div><div class="letterhead-doc-date">${fmtFullDate(dateStr)}</div></div>
+        <div class="letterhead-right"><div class="letterhead-doc-title">Daily Schedule Report</div><div class="letterhead-doc-date">${docTitle}</div></div>
       </div>
       <div class="no-treatments">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <h3>No treatments or inspections scheduled</h3>
-        <p>No records found for ${fmtFullDate(dateStr)}${teamFilter?' for '+teamFilter:''}${statusFilter?' with status '+statusFilter:''}.</p>
+        <p>No records found for ${noRecordsFor}${teamFilter?' for '+teamFilter:''}${statusFilter?' with status '+statusFilter:''}.</p>
       </div>`;
     return;
   }
 
-  /* Compute total receivable across all displayed treatments (Pending only) */
-  let totalReceivableAll=0, totalUncollectedAll=0;
-  treatments.forEach(t=>{
-    const recs=getReceivablesFor(t);
-    recs.forEach(p=>{
-      const amt=Number(p.amount||0);
-      totalReceivableAll+=amt;
-      if(!isPaid(p)) totalUncollectedAll+=amt;
-    });
-  });
+  let totalReceivableAll=0, totalUncollectedAll=0, totalTeamCount=0;
+  let tablesHtml='';
+
+  if(!allDatesMode){
+    const r = renderScheduleTables(dateStr, treatments, inspections, paymentsByKey, paymentsByCustDate);
+    tablesHtml = r.html;
+    totalReceivableAll = r.totalReceivableAll;
+    totalUncollectedAll = r.totalUncollectedAll;
+    totalTeamCount = r.teamCount;
+  } else {
+    // Unified flat view: one table, sorted Date → Team → Time,
+    // with dedicated Date and Team columns.
+    const r = renderUnifiedTable(treatments, inspections, paymentsByKey, paymentsByCustDate);
+    tablesHtml = r.html;
+    totalReceivableAll = r.totalReceivableAll;
+    totalUncollectedAll = r.totalUncollectedAll;
+    totalTeamCount = r.teamCount;
+  }
 
   let html=`
     <!-- LETTERHEAD -->
@@ -687,7 +1092,7 @@ async function generateReport() {
       </div>
       <div class="letterhead-right">
         <div class="letterhead-doc-title">Daily Schedule Report</div>
-        <div class="letterhead-doc-date">${fmtFullDate(dateStr)}</div>
+        <div class="letterhead-doc-date">${docTitle}</div>
         <div class="letterhead-doc-meta">${teamFilter?'Team: '+teamFilter:'All Teams'}${statusFilter?' · Status: '+statusFilter:''}</div>
       </div>
     </div>
@@ -695,178 +1100,78 @@ async function generateReport() {
     <!-- REPORT SUMMARY -->
     <div class="report-summary">
       <div class="report-summary-item"><div class="report-summary-val">${treatments.length}</div><div class="report-summary-lbl">Total Treatments</div></div>
-      <div class="report-summary-item"><div class="report-summary-val">${sortedTeams.length}</div><div class="report-summary-lbl">Teams</div></div>
-      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t,dateStr)==='scheduled').length}</div><div class="report-summary-lbl">Scheduled</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${totalTeamCount}</div><div class="report-summary-lbl">Teams</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t)==='scheduled').length}</div><div class="report-summary-lbl">Scheduled</div></div>
       <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>t.status==='completed').length}</div><div class="report-summary-lbl">Completed</div></div>
-      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t,dateStr)==='overdue').length}</div><div class="report-summary-lbl">Overdue</div></div>
+      <div class="report-summary-item"><div class="report-summary-val">${treatments.filter(t=>dispStatus(t)==='overdue').length}</div><div class="report-summary-lbl">Overdue</div></div>
       <div class="report-summary-item"><div class="report-summary-val">${cancelledCount}</div><div class="report-summary-lbl">Cancelled (excl.)</div></div>
       <div class="report-summary-item"><div class="report-summary-val" style="color:hsl(262,83%,38%)">${inspections.length}</div><div class="report-summary-lbl">Inspections</div></div>
       <div class="report-summary-item"><div class="report-summary-val" style="color:var(--blue-text);font-size:16px">${fmtCur(totalReceivableAll)}</div><div class="report-summary-lbl">Total Receivable</div></div>
       <div class="report-summary-item"><div class="report-summary-val" style="color:${totalUncollectedAll>0?'var(--amber-text)':'var(--green-text)'};font-size:16px">${fmtCur(totalUncollectedAll)}</div><div class="report-summary-lbl">To Collect</div></div>
-    </div>`;
+    </div>
 
-  /* ── Team sections ── */
-  sortedTeams.forEach(team=>{
-    const rows=grouped[team];
-    let teamReceivable=0, teamUncollected=0;
-    html+=`
-    <div class="team-section">
-      <div class="team-section-header">
-        <span class="team-section-name">
-          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          ${team}
-        </span>
-        <span class="team-section-count">${rows.length} treatment${rows.length===1?'':'s'}</span>
-      </div>
-      <table class="report-table">
-        <thead>
-          <tr>
-            <th style="width:36px">#</th>
-            <th>Client Name</th>
-            <th>Customer No</th>
-            <th>Address</th>
-            <th>Treatment Type</th>
-            <th>Time</th>
-            <th>Treatment #</th>
-            <th>Technician</th>
-            <th style="text-align:right;white-space:nowrap">Receivable ₱</th>
-            <th>Notes</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>`;
+    ${tablesHtml}
 
-    rows.forEach((t,i)=>{
-      const clientData=clientMap[t.customerNo];
-      const clientName=cleanName(clientData?.clientName||t.customerNo||'—');
-      // Build full address from structured fields (falls back to legacy address)
-      const addrParts=[
-        clientData?.addressLine1||clientData?.address||'',
-        clientData?.barangay||'',
-        clientData?.city||'',
-        clientData?.province||'',
-        clientData?.postalCode||''
-      ].filter(Boolean);
-      const address=addrParts.join(', ')||'—';
-      const contractType=t.contractType||(contractMap[t.contractId]?.contractType)||'—';
-      const treatmentType=t.treatmentType||contractType;
-      const notesFull=t.notes||'—';
-      const notesPreview=t.notes?(t.notes.length>60?t.notes.slice(0,60)+'…':t.notes):'—';
-      const ds=dispStatus(t,dateStr);
-
-      /* ── Receivable cell: matched payment(s) for this treatment ── */
-      const recs=getReceivablesFor(t);
-      let rowAmt=0, rowUncol=0;
-      recs.forEach(p=>{ const a=Number(p.amount||0); rowAmt+=a; if(!isPaid(p)) rowUncol+=a; });
-      teamReceivable+=rowAmt; teamUncollected+=rowUncol;
-
-      let receivableCell;
-      if(recs.length===0){
-        receivableCell=`<td style="text-align:right;color:#9ca3af;font-size:11.5px">—</td>`;
-      } else {
-        // Status indicator: all paid (green) / partially paid (amber) / unpaid (amber)
-        const allPaid = recs.every(isPaid);
-        const noneTouched = recs.every(p=>!isPaid(p));
-        const stateLabel = allPaid ? 'Paid' : (noneTouched ? 'Pending' : 'Partial');
-        const stateClass = allPaid ? 'completed' : (noneTouched ? 'rescheduled' : 'rescheduled');
-        receivableCell = `<td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
-          <div style="font-weight:700;font-size:12.5px;color:#111">${fmtCur(rowAmt)}</div>
-          <div style="margin-top:2px"><span class="status-dot ${stateClass}" style="font-size:10px;padding:1px 6px">${stateLabel}</span></div>
-        </td>`;
-      }
-
-      html+=`<tr>
-        <td class="num">${i+1}</td>
-        <td style="font-weight:600;max-width:140px">${clientName}</td>
-        <td class="treat-no">${t.customerNo||'—'}</td>
-        <td style="font-size:11.5px;max-width:160px">${address}</td>
-        <td style="font-size:11.5px">${treatmentType}</td>
-        <td style="font-size:12px;white-space:nowrap">${fmtTime12(t.treatmentTime)}</td>
-        <td class="treat-no">${t.treatmentNo||'—'}</td>
-        <td style="font-size:12px">${t.technician||'—'}</td>
-        ${receivableCell}
-        <td style="font-size:11.5px;max-width:150px;color:#6b7280" title="${notesFull.replace(/"/g,'&quot;')}">${notesPreview}</td>
-        <td>${statusDot(ds)}</td>
-      </tr>`;
-    });
-
-    /* Team subtotal row */
-    html+=`<tr style="background:#f1f3f5!important;font-weight:700">
-      <td colspan="8" style="text-align:right;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#374151">Team Subtotal</td>
-      <td style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">
-        <div style="color:#111;font-size:12.5px">${fmtCur(teamReceivable)}</div>
-        ${teamUncollected>0?`<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px">${fmtCur(teamUncollected)} to collect</div>`:`<div style="font-size:10.5px;color:#15803d;font-weight:600;margin-top:2px">All settled</div>`}
-      </td>
-      <td colspan="2"></td>
-    </tr>`;
-
-    html+=`</tbody></table></div>`;
-  });
-
-  /* ── Inspections Section ── */
-  if(inspections.length>0){
-    // Sort inspections: Scheduled first, then others
-    const inspOrder={'Scheduled':0,'No Show':1,'Completed':2,'Converted':3,'Cancelled':4,'Lost':5};
-    inspections.sort((a,b)=>(inspOrder[a.status]??9)-(inspOrder[b.status]??9));
-    html+=`
-    <div class="inspection-section">
-      <div class="inspection-section-header">
-        <span class="inspection-section-name">
-          <svg style="width:15px;height:15px;display:inline;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Scheduled Inspections
-        </span>
-        <span class="inspection-section-count">${inspections.length} inspection${inspections.length===1?'':'s'}</span>
-      </div>
-      <table class="inspection-table">
-        <thead>
-          <tr>
-            <th style="width:36px">#</th>
-            <th>Client Name</th>
-            <th>Contact No.</th>
-            <th>Address</th>
-            <th>Pest Problems</th>
-            <th>Inspector / Team</th>
-            <th>Notes</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${inspections.map((i,idx)=>{
-            const statusClass=(i.status||'Scheduled').replace(' ','-');
-            const pests=(i.pestProblems||[]).join(', ')||'—';
-            const notePreview=i.notes?(i.notes.slice(0,60)+(i.notes.length>60?'…':'')):'—';
-            return `<tr>
-              <td class="num">${idx+1}</td>
-              <td style="font-weight:600;max-width:130px">${i.clientName||'—'}</td>
-              <td style="font-size:12px">${i.contactNumber||'—'}</td>
-              <td style="font-size:11.5px;max-width:150px">${i.address||'—'}</td>
-              <td style="font-size:11.5px;max-width:120px">${pests}</td>
-              <td style="font-size:12px">${[i.inspectedBy,i.assignedTeam].filter(Boolean).join(' / ')||'—'}</td>
-              <td style="font-size:11.5px;max-width:130px;color:#6b7280">${notePreview}</td>
-              <td><span class="insp-status ${statusClass}">${i.status||'Scheduled'}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  }
-
-  /* ── Signature block ── */
-  html+=`
+    <!-- Signature block -->
     <div class="sig-block">
       <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Prepared by</div></div>
       <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Reviewed by</div></div>
       <div class="sig-line"><div class="sig-line-bar" style="margin-top:48px"></div><div class="sig-line-label">Approved by</div></div>
-    </div>`;
+    </div>
 
-  /* ── Footer ── */
-  html+=`
+    <!-- Footer -->
     <div class="report-footer">
       <span>Pestastic Pest Control Services — Daily Schedule Report</span>
       <span>Generated: ${genTime}</span>
     </div>`;
 
   $('report-area').innerHTML=html;
+}
+
+/* ── Print orientation (Portrait / Landscape) ──
+   @page rules can't be scoped with normal class selectors, so we inject a
+   small <style> tag whose content is swapped whenever the person picks an
+   orientation, or when All Dates mode is toggled (that view has many more
+   columns and reads better in landscape). ── */
+let printOrientation = 'portrait';
+
+function updatePrintOrientationStyle() {
+  let styleEl = document.getElementById('print-orientation-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'print-orientation-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `@media print { @page { size: A4 ${printOrientation}; margin: 12mm 10mm; } }`;
+}
+
+function setPrintOrientation(o) {
+  printOrientation = o;
+  $('btn-orient-portrait').classList.toggle('active', o==='portrait');
+  $('btn-orient-landscape').classList.toggle('active', o==='landscape');
+  updatePrintOrientationStyle();
+}
+
+function initOrientationToggle() {
+  updatePrintOrientationStyle();
+  $('btn-orient-portrait').addEventListener('click', ()=>setPrintOrientation('portrait'));
+  $('btn-orient-landscape').addEventListener('click', ()=>setPrintOrientation('landscape'));
+}
+
+/* ── Date navigation helpers ── */
+function shiftDate(days) {
+  const val=$('date-picker').value || todayISO();
+  const [y,m,d]=val.split('-').map(Number);
+  const dt=new Date(y,m-1,d+days);
+  $('date-picker').value=isoOfDate(dt);
+  generateReport();
+}
+
+function setAllDatesMode(active) {
+  $('date-picker').disabled=active;
+  $('btn-prev-date').disabled=active;
+  $('btn-next-date').disabled=active;
+  $('all-dates-toggle-label').classList.toggle('active',active);
 }
 
 /* ── Date picker init and event ── */
@@ -876,6 +1181,14 @@ function initDatePicker() {
   $('filter-team').addEventListener('change',generateReport);
   $('filter-status').addEventListener('change',generateReport);
   $('btn-load').addEventListener('click',generateReport);
+  $('btn-prev-date').addEventListener('click',()=>shiftDate(-1));
+  $('btn-next-date').addEventListener('click',()=>shiftDate(1));
+  $('filter-all-dates').addEventListener('change',e=>{
+    setAllDatesMode(e.target.checked);
+    setPrintOrientation(e.target.checked?'landscape':'portrait');
+    generateReport();
+  });
+  initOrientationToggle();
 }
 
 /* ── Auth ── */

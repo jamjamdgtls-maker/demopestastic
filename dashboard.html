@@ -420,6 +420,25 @@
 
     .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
+    .card-header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .gt-quick-filters { display: flex; align-items: center; gap: 6px; padding: 12px 18px 0; flex-wrap: wrap; }
+    .gt-quick-btn {
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .gt-quick-btn:hover { background: var(--bg-secondary, #f9fafb); border-color: var(--border-hover); color: var(--text); }
+    .gt-quick-btn.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+
     .card-body { padding: 14px 18px; }
 
     .view-all-link {
@@ -800,7 +819,7 @@
             <div class="kpi-sub neutral" id="sub-contracts">—</div>
           </a>
 
-          <!-- Scheduled Treatments this month -->
+          <!-- Confirmed Treatments this month -->
           <a class="kpi-card amber loading" href="treatments.html" id="kpi-treatments">
             <div class="kpi-top">
               <div class="kpi-icon amber">
@@ -936,14 +955,23 @@
         <!-- Bottom row: Upcoming Treatments + Recent Activity -->
         <div class="dash-bottom">
 
-          <!-- Upcoming Treatments -->
+          <!-- Upcoming GT -->
           <div class="card">
             <div class="card-header">
               <div>
                 <div class="card-title">Upcoming GT</div>
-                <div class="card-subtitle" id="upcoming-subtitle">General Treatments — Next 7 days</div>
+                <div class="card-subtitle" id="upcoming-subtitle">Next 7 days</div>
               </div>
-              <a class="view-all-link" href="treatments.html">View all →</a>
+              <div class="card-header-actions">
+                <a class="view-all-link" href="treatments.html">View all →</a>
+              </div>
+            </div>
+            <div class="gt-quick-filters" id="gt-quick-filters">
+              <button type="button" class="gt-quick-btn" data-days="7">7 days</button>
+              <button type="button" class="gt-quick-btn" data-days="30">30 days</button>
+              <button type="button" class="gt-quick-btn" data-days="60">60 days</button>
+              <button type="button" class="gt-quick-btn" data-days="90">90 days</button>
+              <button type="button" class="gt-quick-btn" data-days="120">120 days</button>
             </div>
             <div id="upcoming-treatments-body">
               <table class="mini-table">
@@ -1222,16 +1250,16 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
       document.getElementById('sub-clients').textContent = `Registered clients`;
       doneLoading('kpi-clients');
 
-      // Active contracts — must be status=active AND not cancelled/renewed/expired
+      // Active contracts
       const contractsSnap = await cachedGetDocs(collection(db, 'contracts'));
       let activeContracts = 0;
-      const FINAL_CONTRACT_STATUSES = ['cancelled','canceled','renewed','expired','terminated'];
       contractsSnap.forEach(d => {
         const data = d.data();
+        const status = data.status || 'active';
         const endDate = toDate(data.contractEndDate);
-        const s = (data.status || '').toLowerCase();
-        if (FINAL_CONTRACT_STATUSES.includes(s)) return;   // exclude cancelled/renewed etc.
-        if (s === 'active' || (endDate && endDate >= today)) {
+        // Mirrors contracts.html's computeStatus(): only status 'active' counts,
+        // and only if it hasn't passed its end date (otherwise it's effectively expired).
+        if (status === 'active' && (!endDate || endDate >= today)) {
           activeContracts++;
         }
       });
@@ -1239,22 +1267,25 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
       document.getElementById('sub-contracts').textContent = `of ${contractsSnap.size} total contracts`;
       doneLoading('kpi-contracts');
 
-      // Treatments: Confirmed-this-month + Overdue (all non-completed/cancelled with past date)
+      // Confirmed treatments this month / overdue treatments
       const treatmentsSnap = await cachedGetDocs(collection(db, 'treatments'));
+      const RESOLVED_TREATMENT_STATUSES = ['completed', 'cancelled', 'rescheduled'];
       let confirmedThisMonth = 0;
       let overdueCount = 0;
-      const FINAL_TREATMENT_STATUSES = ['completed','cancelled','canceled','rescheduled','skipped'];
       treatmentsSnap.forEach(d => {
         const data = d.data();
         const tDate = toDate(data.treatmentDate);
         if (!tDate) return;
-        const s = (data.status || '').toLowerCase();
-        // Overdue: any non-final treatment whose date is in the past
-        if (!FINAL_TREATMENT_STATUSES.includes(s) && tDate < today) {
+        const status = (data.status || '').toLowerCase();
+        // Overdue: not yet resolved (completed/cancelled/rescheduled), and date has passed.
+        // Matches overdue.html's definition — treatments can be created with different
+        // status spellings (e.g. 'Scheduled' or 'Need Schedule' from a new contract),
+        // so an exact match on one spelling of 'scheduled' silently missed those.
+        if (!RESOLVED_TREATMENT_STATUSES.includes(status) && tDate < today) {
           overdueCount++;
         }
         // Confirmed this month
-        if (s === 'confirmed' && tDate >= mStart && tDate <= mEnd) {
+        if (status === 'confirmed' && tDate >= mStart && tDate <= mEnd) {
           confirmedThisMonth++;
         }
       });
@@ -1289,8 +1320,11 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
       let activeCount = 0;
       contractsSnap.forEach(d => {
         const data = d.data();
+        const status = data.status || 'active';
         const endDate = toDate(data.contractEndDate);
-        if (data.status === 'active' || (endDate && endDate >= today)) {
+        // Mirrors contracts.html's computeStatus(): only status 'active' counts,
+        // and only if it hasn't passed its end date (otherwise it's effectively expired).
+        if (status === 'active' && (!endDate || endDate >= today)) {
           contractValue += Number(data.totalAmount) || 0;
           activeCount++;
         }
@@ -1388,9 +1422,11 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
     }
 
     /* ── 4. Upcoming Treatments ── */
+    let gtRangeDays = 7;
     async function loadUpcomingTreatments() {
       const today = todayStart();
-      const next7 = new Date(today); next7.setDate(next7.getDate() + 7);
+      const rangeDays = gtRangeDays;
+      const rangeEnd = new Date(today); rangeEnd.setDate(rangeEnd.getDate() + rangeDays);
 
       // Build client map for names
       const clientsSnap = await cachedGetDocs(collection(db,'clients'));
@@ -1399,16 +1435,23 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
 
       const treatSnap = await cachedGetDocs(collection(db,'treatments'));
       const upcoming = [];
+      // Type must be exactly "GT" — check contractType and treatmentType
+      // independently, since a record can carry a non-GT contractType
+      // (e.g. "Annual Contract") while its treatmentType is the actual
+      // GT visit.
+      const RESOLVED_TREATMENT_STATUSES = ['completed', 'cancelled', 'rescheduled'];
 
       treatSnap.forEach(d => {
         const data = d.data();
         const tDate = toDate(data.treatmentDate);
         if (!tDate) return;
-        const method = (data.treatmentMethod || data.type || data.treatmentType || '').toString().toUpperCase();
-        const isGT = method === 'GT' || method.includes('GT') || method.includes('GENERAL');
-        const s = (data.status || '').toLowerCase();
-        const isFinal = ['completed','cancelled','canceled','rescheduled','skipped'].includes(s);
-        if (isGT && !isFinal && tDate >= today && tDate <= next7) {
+        const contractType = (data.contractType || '').trim().toLowerCase();
+        const treatmentType = (data.treatmentType || '').trim().toLowerCase();
+        const isGT = contractType === 'gt' || treatmentType === 'gt';
+        if (!isGT) return;
+        const status = (data.status || '').toLowerCase();
+        if (RESOLVED_TREATMENT_STATUSES.includes(status)) return;
+        if (tDate >= today && tDate <= rangeEnd) {
           upcoming.push({ ...data, id: d.id, _date: tDate });
         }
       });
@@ -1416,17 +1459,18 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
       upcoming.sort((a,b) => a._date - b._date);
 
       const tbody = document.getElementById('upcoming-tbody');
+      document.getElementById('upcoming-subtitle').textContent = `Next ${rangeDays} days`;
       if (upcoming.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>No upcoming GT this week</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>No upcoming GT in the next ${rangeDays} days</p></div></td></tr>`;
         return;
       }
 
-      document.getElementById('upcoming-subtitle').textContent = `${upcoming.length} GT treatment${upcoming.length===1?'':'s'} in the next 7 days`;
+      document.getElementById('upcoming-subtitle').textContent = `${upcoming.length} GT${upcoming.length===1?'':'s'} in the next ${rangeDays} days`;
 
       tbody.innerHTML = upcoming.slice(0, 8).map(t => {
         const name = clientMap[t.customerNo] || t.customerNo || '—';
         const cleanName = name.replace(/\s*\(.*?\)\s*/g,'').trim();
-        const statusBadge = t.status === 'scheduled'
+        const statusBadge = (t.status || '').toLowerCase() === 'scheduled'
           ? `<span class="badge badge-blue">Scheduled</span>`
           : `<span class="badge badge-gray">${t.status}</span>`;
         return `<tr>
@@ -1437,6 +1481,16 @@ const app = _pcApp; const auth = _pcAuth; const db = _pcDb;
         </tr>`;
       }).join('');
     }
+    document.querySelectorAll('#gt-quick-filters .gt-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('active')) return;
+        document.querySelectorAll('#gt-quick-filters .gt-quick-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gtRangeDays = parseInt(btn.dataset.days, 10) || 7;
+        loadUpcomingTreatments();
+      });
+    });
+    document.querySelector(`#gt-quick-filters .gt-quick-btn[data-days="${gtRangeDays}"]`)?.classList.add('active');
 
     /* ── 5. Recent Activity (audit log) ── */
     async function loadRecentActivity() {

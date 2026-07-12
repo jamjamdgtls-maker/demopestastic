@@ -796,6 +796,7 @@ import {
   cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
   smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
 } from './js/firestoreShim.js';
+import { isContractCancelled, assertContractActionable } from './js/contractCancellation.js';
 import { mountSidebarBadges } from './js/sidebarBadges.js';
 import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
 

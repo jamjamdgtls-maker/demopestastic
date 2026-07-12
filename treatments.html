@@ -193,6 +193,9 @@
     .page-btn:hover:not(:disabled){background:var(--bg-secondary);color:var(--text)}
     .page-btn.active{background:var(--primary);color:white;border-color:var(--primary);font-weight:600}
     .page-btn:disabled{opacity:.4;cursor:not-allowed}
+    .date-nav-btn{min-width:32px;height:32px;padding:0;background:white;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+    .date-nav-btn:hover{background:var(--bg-secondary);color:var(--text)}
+    .date-nav-btn svg{width:16px;height:16px}
 
     /* FORMS */
     .form-group{margin-bottom:16px}
@@ -459,7 +462,7 @@
             <button type="button" class="date-quick-btn" data-range="month">This Month</button>
           </div>
           <div class="date-filter-group">
-            <button type="button" class="date-filter-clear" id="btn-date-prev" title="Previous day" aria-label="Previous day">
+            <button type="button" class="date-nav-btn" id="btn-date-prev" title="Previous dates" aria-label="Previous dates">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <div class="date-filter-field">
@@ -470,11 +473,11 @@
               <label for="filter-date-to">To</label>
               <input type="date" id="filter-date-to" class="date-filter-input" />
             </div>
-            <button type="button" class="date-filter-clear" id="btn-date-next" title="Next day" aria-label="Next day">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
             <button type="button" class="date-filter-clear" id="btn-clear-date-filter" title="Clear dates" aria-label="Clear date filter">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button type="button" class="date-nav-btn" id="btn-date-next" title="Next dates" aria-label="Next dates">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
           <button class="btn btn-secondary" id="btn-download-template">
@@ -851,6 +854,7 @@ import {
   cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
   smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
 } from './js/firestoreShim.js';
+import { isContractCancelled, assertContractActionable } from './js/contractCancellation.js';
 import { mountSidebarBadges } from './js/sidebarBadges.js';
 import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
 
@@ -1205,36 +1209,6 @@ $('btn-clear-date-filter').addEventListener('click', () => {
 });
 updateDateClearVisibility();
 
-/* ── Prev/Next day arrows: shift the current date filter by ±1 day
-   (or seed to today if no dates set). Keeps From/To span the same length. ── */
-function _shiftDateFilter(deltaDays){
-  const fromEl = $('filter-date-from');
-  const toEl   = $('filter-date-to');
-  const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
-  const fmtISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  let from = fromEl.value ? parseISO(fromEl.value) : null;
-  let to   = toEl.value   ? parseISO(toEl.value)   : null;
-  if (!from && !to) {
-    const today = new Date(); today.setDate(today.getDate() + deltaDays);
-    from = to = today;
-  } else if (from && !to) {
-    from.setDate(from.getDate() + deltaDays); to = new Date(from);
-  } else if (!from && to) {
-    to.setDate(to.getDate() + deltaDays); from = new Date(to);
-  } else {
-    from.setDate(from.getDate() + deltaDays);
-    to.setDate(to.getDate() + deltaDays);
-  }
-  fromEl.value = fmtISO(from);
-  toEl.value   = fmtISO(to);
-  document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(b => b.classList.remove('active'));
-  updateDateClearVisibility();
-  applyFilters();
-}
-$('btn-date-prev').addEventListener('click', () => _shiftDateFilter(-1));
-$('btn-date-next').addEventListener('click', () => _shiftDateFilter(1));
-
-
 /* ── Quick date filters: Today / This Week / This Month ── */
 const fmtDateInput = d => {
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
@@ -1280,6 +1254,40 @@ document.querySelectorAll('#date-quick-filters .date-quick-btn').forEach(btn => 
 ['filter-date-from','filter-date-to'].forEach(id => {
   $(id).addEventListener('input', clearQuickActive);
 });
+
+/* ── Prev/Next date navigation: shifts the current From–To range by its
+   own span (e.g. a 7-day range moves back/forward 7 days; a single day
+   moves back/forward 1 day). If no range is set yet, defaults to today
+   and steps one day at a time. ── */
+const parseInputDate = str => {
+  if (!str) return null;
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
+};
+const shiftDateRange = direction => {
+  let from = parseInputDate($('filter-date-from').value);
+  let to   = parseInputDate($('filter-date-to').value);
+
+  if (!from && !to) {
+    from = to = new Date(); from.setHours(0,0,0,0);
+  } else if (from && !to) {
+    to = from;
+  } else if (!from && to) {
+    from = to;
+  }
+
+  const spanDays = Math.round((to - from) / 86400000) + 1; // inclusive day count
+  from = new Date(from); from.setDate(from.getDate() + direction * spanDays);
+  to   = new Date(to);   to.setDate(to.getDate()   + direction * spanDays);
+
+  $('filter-date-from').value = fmtDateInput(from);
+  $('filter-date-to').value   = fmtDateInput(to);
+  clearQuickActive();
+  updateDateClearVisibility();
+  applyFilters();
+};
+$('btn-date-prev').addEventListener('click', () => shiftDateRange(-1));
+$('btn-date-next').addEventListener('click', () => shiftDateRange(1));
 
 /* ── Event delegation for table action buttons ── */
 $('treatments-tbody').addEventListener('click', e => {
@@ -2252,6 +2260,8 @@ $('btn-save-new-treatment').addEventListener('click', async () => {
   if (!customerNo)  { showToast('Customer No is required.', 'error');      return; }
   if (!clientMap[customerNo]) { showToast('Customer not found. Please enter a valid Customer No.', 'error'); return; }
   if (!contractId)  { showToast('Please select a contract.', 'error');       return; }
+  const _ctrGuard = assertContractActionable(contractMap[contractId], 'schedule treatment');
+  if (!_ctrGuard.ok) { showToast(_ctrGuard.reason, 'error'); return; }
   if (!treatType)   { showToast('Treatment Type is required.', 'error');   return; }
   if (!dateStr)     { showToast('Date is required.', 'error');              return; }
 

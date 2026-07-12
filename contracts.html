@@ -659,6 +659,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Edit
         </button>
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-from-detail" style="color:var(--red-text);border-color:#fca5a5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          Cancel Contract
+        </button>
         <button class="btn btn-danger btn-sm" id="btn-delete-from-detail" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           Delete
@@ -667,6 +671,7 @@
       </div>
     </div>
     <div class="modal-body">
+      <div id="detail-cancelled-banner" style="display:none;margin-bottom:12px;padding:12px 14px;border:1px solid #fca5a5;background:#fef2f2;border-radius:8px;color:var(--red-text);font-size:13px;font-weight:500"></div>
       <div class="tabs">
         <button class="tab active" data-tab="info">Info</button>
         <button class="tab" data-tab="treatments">Treatments</button>
@@ -677,6 +682,36 @@
       <div id="tab-treatments" class="tab-panel" style="display:none"></div>
       <div id="tab-payments" class="tab-panel" style="display:none"></div>
       <div id="tab-notes" class="tab-panel" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     CANCEL CONTRACT MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="cancel-contract-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">Cancel Contract</span>
+      <button class="modal-close" data-close="cancel-contract-modal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--red-text)">
+        <strong>This will cascade across the entire system.</strong><br>
+        All future scheduled treatments, pending inspections, unpaid invoices, open renewals and calendar appointments linked to this contract will be marked <strong>Cancelled</strong>. Completed/paid history is preserved. The client itself remains active.
+      </div>
+      <div id="cancel-contract-summary" style="font-size:13px;color:var(--text-muted);margin-bottom:12px"></div>
+      <div class="form-group">
+        <label class="form-label" for="cancel-contract-reason">Cancellation reason <span style="color:var(--red-text)">*</span></label>
+        <textarea class="form-input" id="cancel-contract-reason" rows="3" placeholder="e.g. Client requested termination, moved out, contract disputed…" style="resize:vertical"></textarea>
+      </div>
+      <input type="hidden" id="cancel-contract-id" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="cancel-contract-modal">Keep Contract</button>
+      <button class="btn btn-danger" id="btn-confirm-cancel-contract">
+        <span id="cancel-btn-text">Cancel Contract</span>
+      </button>
     </div>
   </div>
 </div>
@@ -746,6 +781,7 @@ import {
   cachedGetDocs, cachedGetDoc, smartAddDoc, smartUpdateDoc, smartDeleteDoc,
   smartSetDoc, invalidateAfterWrite, updateLastLoginNoInvalidate
 } from './js/firestoreShim.js';
+import { cancelContractCascade, isContractCancelled } from './js/contractCancellation.js';
 import { mountSidebarBadges } from './js/sidebarBadges.js';
 import { mountLastUpdated, wireRefreshButton } from './js/pageInit.js';
 
@@ -875,9 +911,11 @@ function generateTreatmentDates(startDate, freq, sessions, contractId, customerN
   return entries;
 }
 
-function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contractId, customerNo, downpaymentPct, planType) {
-  const entries = [];
-  const interval = getIntervalMonths(freq);
+// Computes the per-payment amount split for a given total, session count,
+// downpayment %, and plan type. Shared by generatePaymentSchedule (new
+// contracts) and recalcPaymentSchedule (edits that change payment terms),
+// so both paths always agree on the math.
+function computeInstallmentAmounts(totalAmount, sessions, downpaymentPct, planType) {
   const usePlanType = planType || systemSettings.defaultPaymentPlanType;
   const dpPct = (downpaymentPct !== undefined && downpaymentPct !== null)
     ? downpaymentPct
@@ -900,6 +938,14 @@ function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contrac
       amounts.push(parseFloat((totalAmount - sumSoFar).toFixed(2)));
     }
   }
+  return amounts;
+}
+
+function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contractId, customerNo, downpaymentPct, planType) {
+  const entries = [];
+  const interval = getIntervalMonths(freq);
+  const usePlanType = planType || systemSettings.defaultPaymentPlanType;
+  const amounts = computeInstallmentAmounts(totalAmount, sessions, downpaymentPct, planType);
 
   for(let i=0;i<sessions;i++) {
     const d = freq==='one-time' ? new Date(startDate) : addMonths(startDate,interval*i);
@@ -919,6 +965,40 @@ function generatePaymentSchedule(startDate, totalAmount, freq, sessions, contrac
     });
   }
   return entries;
+}
+
+// Recalculates payment amounts for an existing contract's payment schedule
+// after an edit changes terms that affect the split (total amount,
+// downpayment %, or plan type). Only touches payments that are still
+// Pending — if anything has already been collected, it's left alone and
+// the user is asked to review manually, so we never silently rewrite
+// money that's already been received.
+async function recalcPaymentSchedule(contractId, totalAmount, dpPct, planType) {
+  const COLLECTED_STATUSES = ['Received','Deposited','Remitted','Collected'];
+  const paySnap = await cachedGetDocs(query(collection(db,'payments'), where('contractId','==',contractId)));
+  const paymentDocs = [];
+  paySnap.forEach(d => paymentDocs.push({ id: d.id, ...d.data() }));
+  if(!paymentDocs.length) return;
+
+  const anyCollected = paymentDocs.some(p => COLLECTED_STATUSES.includes(p.status));
+  if(anyCollected) {
+    showToast('Payment terms changed, but this contract already has payments recorded as received — the schedule was not auto-updated. Please review the Payments module manually.', 'warning', 'Payments Not Auto-Updated');
+    return;
+  }
+
+  // Preserve original ordering (payment #1 = downpayment) by due date.
+  paymentDocs.sort((a,b) => (toLocalDate(a.dueDate)?.getTime()||0) - (toLocalDate(b.dueDate)?.getTime()||0));
+  const sessions = paymentDocs.length;
+  const amounts = computeInstallmentAmounts(totalAmount, sessions, dpPct, planType);
+
+  const batch = writeBatch(db);
+  paymentDocs.forEach((p,i) => {
+    batch.update(doc(db,'payments',p.id), { amount: amounts[i] ?? 0, updatedAt: serverTimestamp() });
+  });
+  await batch.commit();
+  await invalidateAfterWrite('payments');
+  await logAction('updated','payment',contractId,`Recalculated payment schedule for contract ${contractId} after terms change (Total: ${totalAmount}, DP: ${dpPct}%, Plan: ${planType}).`);
+  showToast(`Payment schedule updated — ${sessions} payment${sessions===1?'':'s'} recalculated based on the new terms.`, 'success');
 }
 
 async function loadAll() {
@@ -1206,7 +1286,15 @@ document.getElementById('contracts-tbody').addEventListener('click', function(e)
   const editBtn   = e.target.closest('.btn-edit');
   const deleteBtn = e.target.closest('.btn-delete');
   if (viewBtn && viewBtn.dataset.id) { openDetailModal(viewBtn.dataset.id); return; }
-  if (editBtn && editBtn.dataset.id) { openEditModal(editBtn.dataset.id); return; }
+  if (editBtn && editBtn.dataset.id) {
+    const target = allContracts.find(x => x.id === editBtn.dataset.id);
+    if (isContractCancelled(target)) {
+      showToast('Cancelled contracts cannot be edited.', 'warning');
+      return;
+    }
+    openEditModal(editBtn.dataset.id);
+    return;
+  }
   if (deleteBtn && deleteBtn.dataset.id) { deleteContract(deleteBtn.dataset.id); return; }
 });
 
@@ -1243,6 +1331,65 @@ async function deleteContract(id) {
     showToast('Failed to delete contract: ' + err.message, 'error');
   }
 }
+
+/* ── Cascading contract cancellation ──
+   Opens the reason modal; on confirm delegates the ENTIRE cascade
+   (contract, future treatments, pending inspections, unpaid payments,
+    open renewals, complaint flagging, audit_log, cache invalidation)
+   to cancelContractCascade(). This is the ONLY place contracts get
+   cancelled — never open-coded elsewhere.                                */
+function openCancelContractModal(id) {
+  const c = allContracts.find(x => x.id === id);
+  if (!c) return;
+  if (isContractCancelled(c)) {
+    showToast('This contract is already cancelled.', 'warning');
+    return;
+  }
+  const contractNo = c.contractNumber || c.id.slice(0,8).toUpperCase();
+  const clientName = (clientMap[c.customerNo]?.name || '—').replace(/\s*\(.*?\)\s*/g,'').trim();
+  $('cancel-contract-id').value = id;
+  $('cancel-contract-reason').value = '';
+  $('cancel-contract-summary').innerHTML =
+    `<strong>${contractNo}</strong> — ${clientName} (${c.customerNo || '—'})`;
+  openModal('cancel-contract-modal');
+}
+
+$('btn-confirm-cancel-contract').addEventListener('click', async () => {
+  const id     = $('cancel-contract-id').value;
+  const reason = $('cancel-contract-reason').value.trim();
+  if (!id) return;
+  if (!reason) {
+    showToast('Please provide a cancellation reason.', 'warning');
+    return;
+  }
+  const btn = $('btn-confirm-cancel-contract');
+  btn.disabled = true;
+  $('cancel-btn-text').textContent = 'Cancelling…';
+  try {
+    const result = await cancelContractCascade(db, {
+      contractId:     id,
+      reason,
+      cancelledBy:    currentUser?.email || 'unknown',
+      cancelledByUid: currentUser?.uid   || '',
+      page:           'contracts'
+    });
+    const a = result.affected;
+    const summary =
+      `${a.treatments} treatments, ${a.inspections} inspections, ` +
+      `${a.payments} payments, ${a.renewals} renewals cancelled` +
+      (a.complaintsFlagged ? ` · ${a.complaintsFlagged} complaints flagged` : '');
+    showToast(summary, 'success', 'Contract Cancelled');
+    closeModal('cancel-contract-modal');
+    if (activeDetailId === id) closeModal('contract-detail-modal');
+    await loadAll();
+  } catch (err) {
+    console.error('[cancelContractCascade] failed:', err);
+    showToast('Failed to cancel contract: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    $('cancel-btn-text').textContent = 'Cancel Contract';
+  }
+});
 
 function renderTable() {
   const total=filteredContracts.length, totalPages=Math.max(1,Math.ceil(total/PER_PAGE));
@@ -1445,7 +1592,37 @@ async function openRenewalMode(params) {
 
   if(params.get('oldEnd')) {
     const [ey,em,ed] = params.get('oldEnd').split('-').map(Number);
-    const nextDay = new Date(ey,em-1,ed+1);
+    let nextDay = new Date(ey,em-1,ed+1);
+
+    // Guard against overlapping/merging with any treatment the old contract
+    // still has pending. contractEndDate is a static field computed at
+    // creation time and can drift out of sync with reality (rescheduled
+    // sessions, delays, etc.) — so a treatment can still be sitting out
+    // there (e.g. in September) even though contractEndDate says the
+    // contract already ended. If we started the new package's schedule
+    // from contractEndDate alone, its treatments could land on or before
+    // that still-open date, making the two packages look merged.
+    // Instead, push the new start date past the LATEST unresolved
+    // treatment date on the old contract, whichever is later.
+    try {
+      const RESOLVED = ['completed','cancelled','rescheduled'];
+      const oldTreatSnap = await cachedGetDocs(query(collection(db,'treatments'), where('contractId','==',oldId)));
+      let latestPending = null;
+      oldTreatSnap.forEach(d=>{
+        const t=d.data();
+        const status=(t.status||'').toLowerCase();
+        if(RESOLVED.includes(status)) return;
+        const td=toLocalDate(t.treatmentDate);
+        if(td && (!latestPending || td>latestPending)) latestPending=td;
+      });
+      if(latestPending && latestPending>=nextDay) {
+        nextDay = new Date(latestPending.getFullYear(),latestPending.getMonth(),latestPending.getDate()+1);
+        $('renewal-ref-text').textContent = oldNo
+          ? `Renewing Contract ${oldNo} · Start date pushed to ${nextDay.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})} — ${oldNo} still has a treatment pending on ${latestPending.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}, which stays unchanged on the old contract.`
+          : 'Pre-filled from previous contract — review & adjust before saving';
+      }
+    } catch(e) { console.warn('Could not check old contract remaining treatments:', e.message); }
+
     $('form-start-date').value = `${nextDay.getFullYear()}-${String(nextDay.getMonth()+1).padStart(2,'0')}-${String(nextDay.getDate()).padStart(2,'0')}`;
   }
 
@@ -1627,8 +1804,31 @@ $('btn-save-contract').addEventListener('click', async ()=>{
   const editId=$('form-contract-id').value;
   try {
     if(editId) {
+      const oldContract = allContracts.find(x=>x.id===editId) || null;
       await smartUpdateDoc(doc(db,'contracts',editId),data);
       await logAction('updated','contract',editId,`Updated contract ${data.contractNumber} for ${customerNo}`);
+
+      // If terms that affect the payment split changed, recalculate the
+      // payment amounts to match — previously an edit only updated the
+      // contract record and left existing Payments untouched, so e.g.
+      // changing the downpayment % never flowed through to actual amounts.
+      if(oldContract) {
+        const oldDpPct    = oldContract.downpaymentPct ?? systemSettings.defaultDownpaymentPct;
+        const oldPlanType = oldContract.paymentPlanType || systemSettings.defaultPaymentPlanType;
+        const oldSessions = oldContract.noOfSessions;
+        const termsChanged = (oldContract.totalAmount !== amount) || (oldDpPct !== dpPct) || (oldPlanType !== planType);
+
+        if(termsChanged && oldSessions === sessions) {
+          await recalcPaymentSchedule(editId, amount, dpPct, planType);
+        } else if(termsChanged && oldSessions !== sessions) {
+          // Session count also changed — the number of payment records
+          // needs to be added/removed, not just re-amounted. That's a
+          // bigger structural change, so leave it for manual review
+          // rather than guessing how to restructure the schedule.
+          showToast('Payment terms and number of sessions both changed — please review the Payments module manually to adjust the schedule.', 'warning', 'Review Payments');
+        }
+      }
+
       showToast('Contract updated successfully.');
     } else {
       const _oldVal = $('form-old-contract-id').value.trim();
@@ -1705,7 +1905,41 @@ async function openDetailModal(id) {
 
   $('detail-title').textContent=contractNo;
   $('detail-subtitle').textContent=`${clientName} · ${c.customerNo||''}`;
-  $('btn-edit-from-detail').onclick=()=>{ closeModal('contract-detail-modal'); openEditModal(id); };
+
+  const cancelled = isContractCancelled(c);
+
+  /* Cancelled banner + disable destructive/mutating actions */
+  const banner = $('detail-cancelled-banner');
+  if (cancelled) {
+    const when = c.cancelledAt?.toDate ? fmtDate(c.cancelledAt) : '';
+    banner.style.display = '';
+    banner.innerHTML = `<strong>This contract is CANCELLED.</strong>` +
+      (when ? ` Cancelled on ${when}.` : '') +
+      (c.cancelledBy ? ` By ${c.cancelledBy}.` : '') +
+      (c.cancellationReason ? `<br><span style="font-weight:400">Reason: ${c.cancellationReason}</span>` : '');
+  } else {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+  }
+
+  const editBtn   = $('btn-edit-from-detail');
+  const cancelBtn = $('btn-cancel-from-detail');
+  editBtn.disabled = cancelled;
+  editBtn.style.opacity = cancelled ? '0.5' : '';
+  editBtn.style.pointerEvents = cancelled ? 'none' : '';
+  editBtn.onclick = () => {
+    if (cancelled) { showToast('Cancelled contracts cannot be edited.', 'warning'); return; }
+    closeModal('contract-detail-modal'); openEditModal(id);
+  };
+
+  if (cancelled) {
+    cancelBtn.style.display = 'none';
+    cancelBtn.onclick = null;
+  } else {
+    cancelBtn.style.display = '';
+    cancelBtn.onclick = () => openCancelContractModal(id);
+  }
+
   const delBtn = $('btn-delete-from-detail');
   if (currentRole === 'super_admin') {
     delBtn.style.display = '';

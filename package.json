@@ -1,0 +1,10 @@
+{
+  "name": "pestastic",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx --yes http-server . -p 8080 -c-1 --silent",
+    "build": "true",
+    "build:dev": "true"
+  }
+}

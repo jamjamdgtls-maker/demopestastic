@@ -1,0 +1,4 @@
+[run]
+dev = "npx --yes http-server . -p 8080 -c-1 --silent"
+build:dev = "true"
+build = "true"
